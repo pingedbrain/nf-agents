@@ -139,4 +139,4 @@ D SSE + normalization flags, E Docker image + offline example/e2e + CI `docker` 
 
 ### Ready for Proposal
 
-Yes. Scope, endpoint priorities and the PR split are clear; no maintainer input is blocking.
+Yes. Scope, endpoint priorities and the PR split are clear; no open question is blocking.

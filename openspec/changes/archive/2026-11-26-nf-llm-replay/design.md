@@ -248,5 +248,5 @@ No migration. Cassette `v: 1` and the key recipe are a compatibility contract gu
 ## Open Questions
 
 - [ ] Should a GHA build cache (`docker/build-push-action` + `type=gha`) be added once the `docker` job exceeds ~5 min?
-- [ ] Record the example cassette against real `gpt-5-mini` once a maintainer key is available (README documents it; not blocking).
+- [ ] Record the example cassette against real `gpt-5-mini` once an API key is available (README documents it; not blocking).
 - [ ] Nextflow CLI flags (`-with-agent-trace`) change the system prompt and thus keys: document only, or add a default volatile pattern for that sentence? (Documented only for now.)

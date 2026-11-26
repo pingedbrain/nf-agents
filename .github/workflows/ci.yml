@@ -77,7 +77,8 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo test -p nf-lineage --test s3_ministack --locked
 
-  # Builds the image (never pushed) and runs the example pipeline offline against it.
+  # Builds the images (never pushed): the proxy runs the example pipeline offline, the MCP
+  # server answers a scripted stdio session against a committed fixture store.
   docker:
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -98,3 +99,18 @@ jobs:
         env:
           E2E_REQUIRE_DOCKER: "1"
           IMAGE: nf-llm-replay:ci
+      - run: docker build -f crates/nf-lineage-mcp/Dockerfile -t nf-lineage-mcp:ci .
+      - name: MCP image runs as 65532:65532 and is at most 30 MB
+        run: |
+          user=$(docker image inspect nf-lineage-mcp:ci --format '{{.Config.User}}')
+          size=$(docker image inspect nf-lineage-mcp:ci --format '{{.Size}}')
+          echo "user=$user size=$size"
+          test "$user" = "65532:65532"
+          test "$size" -le 31457280
+      - name: MCP stdio smoke session against the 26.10.7 fixture store
+        run: |
+          out=$(docker run -i --rm -v "$PWD/fixtures/lineage/26.10.7/.lineage:/store:ro" \
+            nf-lineage-mcp:ci --store /store < crates/nf-lineage-mcp/tests/data/session.jsonl)
+          echo "$out"
+          test "$(grep -o 'lid://[0-9a-f]\{32\}' <<<"$out" | sort -u | wc -l)" -eq 2
+          grep -q '"isError":false' <<<"$out"
