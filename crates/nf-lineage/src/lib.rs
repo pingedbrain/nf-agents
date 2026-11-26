@@ -36,3 +36,8 @@ pub use view::view;
 
 /// The `object_store` crate, re-exported for [`ObjectLineageStore::new`].
 pub use object_store;
+
+// Compiles the README examples as doctests.
+#[cfg(doctest)]
+#[doc = include_str!("../README.md")]
+struct ReadmeDoctests;

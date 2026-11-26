@@ -314,3 +314,94 @@ ends in a match arm that records a failure); no tautologies. Layers: integration
 
 PASS WITH WARNINGS — every C1 gate green; CLI parity for list/view/find/diff/check proven on all
 fixture versions; within budget.
+
+---
+
+# Verification Report: nf-lineage — PR C2 (final batch)
+
+**Mode**: Strict TDD. **Scope**: tasks C2.1–C2.5, plus the whole-change scenario map (C2.5).
+**Date**: 2026-11-26.
+
+## Completeness
+
+| Metric | Value |
+|--------|-------|
+| PR C2 tasks in scope | 5 (C2.1–C2.5) |
+| Complete | 5 |
+| Whole change | all tasks A–C2 `[x]` (A.8/A.9 done as B1.1/B1.2) |
+
+## Execution
+
+| Check | Result |
+|-------|--------|
+| `cargo fmt --all -- --check` | ✅ |
+| `cargo clippy --workspace --all-targets --locked -- -D warnings` | ✅ |
+| `cargo test --workspace --locked` (no MiniStack) | ✅ 43 passed, 0 failed; both `s3_ministack` tests print a skip notice and pass |
+| same with `NF_LINEAGE_MINISTACK_URL` → `ministackorg/ministack:1.5.45` | ✅ 43 passed, both S3 tests executed |
+| `NF_LINEAGE_MINISTACK_URL=http://localhost:1` | ✅ both S3 tests FAIL after 60 s ("not ready"), not skipped |
+| `cargo deny check` | ✅ advisories, bans, licenses, sources ok (the known "no crate matched" warnings for ignored advisories) |
+| `cargo machete` | ✅ |
+| `RUSTDOCFLAGS="-D warnings" cargo doc -p nf-lineage --no-deps` | ✅ |
+| Doctests (store + 2 README examples) | ✅ 3 passed |
+| V-pkg `cargo package -p nf-lineage --locked` | ✅ (run with `--allow-dirty` before commit); ships `src/`, `README.md`, `Cargo.toml`, `Cargo.lock` |
+| V-grep (`Path::from(`, `set_var`, `std::process::exit` in `src/`) | ✅ 0 hits |
+| V-yaml: actionlint (`rhysd/actionlint` via Docker) | ✅ 0 errors; `grep -c 'secrets\.'` = 0; image pinned `ministackorg/ministack:1.5.45` |
+| V-doc greps in `CONTRIBUTING.md` | ✅ `ministackorg/ministack:1.5.45`, `NF_LINEAGE_MINISTACK_URL`, `s3_ministack` all match |
+| V-deny policy content | ✅ unchanged since B1 (`unknown-registry`/`unknown-git` = deny, crates.io only, no copyleft) |
+| Coverage | ➖ not available |
+
+## Spec compliance (PR C2 scenarios)
+
+| Requirement | Scenario | Test / check | Result |
+|-------------|----------|--------------|--------|
+| Store construction | S3 on MiniStack | `s3_ministack::s3_store_roundtrip` (26.10.7 store; `list_runs`, `find` all + `type=FileOutput`, every `#output` record equal to local) | ✅ |
+| Store construction | No MiniStack | `s3_ministack::*` without the variable → skip notice, pass | ✅ |
+| Check | S3 data | `s3_ministack::s3_check_valid_and_mismatch` (`Valid`, then `Mismatch` after rewrite) | ✅ |
+| Integration job | Service up | CI job `integration` (actionlint clean); same command run locally against MiniStack 1.5.45 | ✅ (local), CI pending |
+| Integration job | No secrets | `grep -c 'secrets\.'` = 0, image `1.5.45` | ✅ |
+| Integration test instructions | Newcomer runs S3 tests | V-doc greps | ✅ |
+| Safety and packaging | Package | V-pkg, doctests, V-grep | ✅ |
+
+## Whole-change scenario map (C2.5)
+
+Every `#### Scenario` in the four delta specs was mapped to its named test(s) or check: 23
+scenarios name 28 tests, all of which exist and passed in the runs above (`lid` ×4, `record` ×6,
+`fixtures_parse` ×2, `query` ×2, `store` ×3, `s3_ministack` ×2, `check` ×2, `diff` ×1,
+`provenance` ×1, `contract` ×5); the 9 check-only scenarios (oracle mismatch → `contract::*`
+failures name version and case; service up; no secrets; C-deny; V-deny ×2; V-doc; C-test skip;
+V-pkg) pass as listed. 32/32 scenarios compliant. PR line counts: A ≈ 940 (escape hatch), B1 ≈ 906, B2 ≈ 870, C1 ≈ 787,
+C2 ≈ 350.
+
+## TDD compliance
+
+C2.1 tests were written against existing S3 code paths (store from B1, S3 `check` from B2), so the
+first MiniStack run was green; their strength is shown by mutation probes (S3 mtime truncated to
+seconds → check test fails; hashed path without the bucket → fails) and by the unreachable
+endpoint run. README doctests mutation-probed (`list_runz` → FAILED). Evidence in
+apply-progress.md.
+
+## Coherence (design)
+
+| Decision | Followed? | Notes |
+|----------|-----------|-------|
+| MiniStack test env-gated, raw TCP `PUT` readiness ≤ 60 s, hard fail when set | ✅ | |
+| S3 check: `/<bucket>/<key>`, size + mtime from the parent listing | ✅ | exercised against MiniStack |
+| CI `integration` with service container, same steps as `test` | ✅ | |
+| Dummy credentials in the workflow | ⚠️ Deviated | fixed in the test code (hermetic against a contributor's `AWS_*`); spec reworded, design deviation note |
+| `publish = false` removed, 0.1.0 metadata | ✅ | + `include` (tests need repo fixtures) |
+
+## Issues
+
+**CRITICAL**: none.
+
+**WARNING**:
+- The `integration` job has not run on GitHub yet (validated with actionlint and the same command
+  locally); first PR run confirms it.
+
+**SUGGESTION**:
+- `categories` uses `science::bioinformatics`; crates.io validates categories only at publish time.
+
+## Verdict
+
+**PASS WITH WARNINGS** — all C2 tasks done and the whole change maps 32/32 scenarios to passing
+tests or checks; ready to archive.

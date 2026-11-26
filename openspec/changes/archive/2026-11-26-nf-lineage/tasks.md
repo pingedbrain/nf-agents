@@ -56,8 +56,11 @@ the `chrono`/`humantime` advisories and the cloud licenses) arrives in B1.
 
 ## PR C2 — MiniStack, integration CI, release-ready · est. ≈ 450 lines
 
-- [ ] C2.1 [C.4] `tests/s3_ministack.rs`: skip when `NF_LINEAGE_MINISTACK_URL` unset; readiness wait (raw TCP `PUT` bucket, ≤ 60 s); `s3_store_roundtrip`, `s3_check_valid_and_mismatch`. Run locally against `ministackorg/ministack:1.5.45`.
-- [ ] C2.2 [C.5 part] `.github/workflows/ci.yml`: job `integration` (service container, dummy creds, no secrets).
-- [ ] C2.3 [C.6] `CONTRIBUTING.md` MiniStack section (contributor-guide delta greps).
-- [ ] C2.4 [C.7] `Cargo.toml` `0.1.0`, drop `publish = false`, add description/readme/keywords/categories/docs; `README.md` with example; crate docs complete; `cargo package -p nf-lineage --locked` (V-pkg), V-grep.
-- [ ] C2.5 [C.8] Verify every spec scenario maps to a passing test; each PR diff ≤ 800 lines.
+- [x] C2.1 [C.4] `tests/s3_ministack.rs`: skip when `NF_LINEAGE_MINISTACK_URL` unset; readiness wait (raw TCP `PUT` bucket, ≤ 60 s); `s3_store_roundtrip`, `s3_check_valid_and_mismatch`. Run locally against `ministackorg/ministack:1.5.45`.
+- [x] C2.2 [C.5 part] `.github/workflows/ci.yml`: job `integration` (service container, no secrets; dummy creds in the test).
+- [x] C2.3 [C.6] `CONTRIBUTING.md` MiniStack section (contributor-guide delta greps).
+- [x] C2.4 [C.7] `Cargo.toml` `0.1.0`, drop `publish = false`, add description/readme/keywords/categories/docs; `README.md` with example; crate docs complete; `cargo package -p nf-lineage --locked` (V-pkg), V-grep.
+- [x] C2.5 [C.8] Verify every spec scenario maps to a passing test; each PR diff ≤ 800 lines.
+- **Deviation (2026-11-26, apply PR C2):** no escape hatch needed (≈ 350 hand-written lines). Dummy
+  credentials are fixed in the test instead of the workflow; the package ships only `src/` and the
+  README (see design.md "Deviations (2026-11-26, apply PR C2)").

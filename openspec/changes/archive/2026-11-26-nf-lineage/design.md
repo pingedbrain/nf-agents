@@ -160,7 +160,7 @@ Java double: `|x|∈[1e-3,1e7)` → `format!("{x}")` + `.0` if integral; else `f
 
 | Layer | What | Approach |
 |-------|------|----------|
-| Unit | Lid, envelope, query semantics, Java number strings, golden checksums, projection | table-driven `#[cfg(test)]`; query table from `scratch-nf-lineage/findexp` |
+| Unit | Lid, envelope, query semantics, Java number strings, golden checksums, projection | table-driven `#[cfg(test)]`; query table recorded from a `findexp` store (`tests/data/find_cli.json`) |
 | Fixture | all stores parse; snapshots | `tests/fixtures_parse.rs`, insta filters for hex32/UUID/ISO/run names |
 | Store | local fixtures, InMemory markers, errors, dyn use | `tests/store.rs` (`#[tokio::test]`, `Box<dyn LineageStore>`) |
 | Check | mtime restore via `File::set_modified`, tamper, delete | `tests/check.rs` on `tempfile` copies, `path_map` |
@@ -213,7 +213,7 @@ No migration. PRs land A → B → C after `lineage-fixtures`. `publish = false`
   JVM model would return null; harmless because every key segment must be a model property. Object
   and nested-array values never equal a query value (Groovy would compare `[a, b]` / `[k:v]`).
   Java's `Integer.parseInt` sign quirk in `URLDecoder` (`%+1`) is rejected instead of accepted.
-  The CLI table lives in `tests/data/find_cli.json` (generated from the lab `findexp` store and
+  The CLI table lives in `tests/data/find_cli.json` (generated from a `findexp` test store and
   recorded output, host paths scrubbed, `config`/`metadata`/`script` dropped).
 - **Store**: `.history` lines are split like Groovy `tokenize('\t')` (empty tokens dropped) and
   must yield 4 tokens with a valid LID. A `.data.json` under a key that is not a valid LID makes
@@ -274,3 +274,21 @@ No migration. PRs land A → B → C after `lineage-fixtures`. `publish = false`
   lineage model` → `InvalidQuery`).
 - **Extra tests**: `tests/view.rs` (`fragments_validate_redirect_and_navigate`, InMemory) and
   `provenance::cycles_are_visited_once`, `provenance::task_file_stops_at_its_task_and_runs_are_rejected`.
+
+## Deviations (2026-11-26, apply PR C2)
+
+- **Dummy credentials live in the test, not the workflow.** `tests/s3_ministack.rs` passes
+  `aws_endpoint`, `aws_allow_http`, `aws_region` and `test`/`test` keys explicitly as
+  `object_store` options, so a contributor's real `AWS_*` environment never leaks into the run and
+  the workflow only sets `NF_LINEAGE_MINISTACK_URL` (ci-pipeline delta reworded).
+- **Buckets and readiness.** Each test owns one fixed bucket (`nf-lineage-roundtrip`,
+  `nf-lineage-check`) created by a raw `PUT /<bucket>` that doubles as the readiness wait
+  (MiniStack answers `200` for an existing bucket too, so re-runs against a warm container work).
+  An unreachable endpoint fails both tests after 60 s (checked against `http://localhost:1`).
+- **S3 check expectation.** Uploading sets the object's mtime, so the FileOutput is built from the
+  parent listing (`size`, `last_modified` in ms) as Nextflow does, then the object is rewritten
+  with a different size (a same-millisecond rewrite still changes the checksum). The real
+  Nextflow-on-S3 value stays covered by `check::tests::golden_vectors`.
+- **Packaging.** `include = ["/src", "/README.md"]`: the integration tests need the repository
+  fixtures, so only the library ships. The README examples compile as doctests through a
+  `#[cfg(doctest)]` item in `lib.rs`.

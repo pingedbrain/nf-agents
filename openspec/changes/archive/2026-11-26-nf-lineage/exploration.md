@@ -1,9 +1,9 @@
 ## Exploration: nf-lineage (typed, tolerant reader for Nextflow lineage stores)
 
-Date: 2026-11-26. Inputs: the original plan, `docs/verification.md`, the project design notes,
-the lab (a local scratch directory, outside the repo) and the parallel change
-`lineage-fixtures` (proposal + spec, in progress). New experiments for this change ran in
-a local scratch directory (not committed).
+Date: 2026-11-26. Inputs: the project's stage-1 scope (lineage reader, `find`/`check`/`diff`),
+the empirical verification notes (Nextflow 25.04–26.10 behaviour, object_store and MiniStack
+probes), the extension-point contracts, and the parallel change `lineage-fixtures` (proposal +
+spec, in progress). Experiments for this change ran outside the repository and are not committed.
 
 ### Current State
 
@@ -19,13 +19,12 @@ a local scratch directory (not committed).
   `26.10.7-agent`) with `.lineage/`, data files at their path relative to the **recorded root
   `/nf-agents-fixture`** (no symlinks), `oracle/<case>.{args,out,err,exit}` (`.args` = JSON argv)
   + `ids.json`, `manifest.json` (`files[{path,size,mtime_ms,sha256}]`), `shape.txt`.
-  The lab equivalent is `runs/<ver>/{.lineage,cli/*.{cmd,out,err,exit}}`.
 
-### Verified facts that shape the design (beyond `docs/verification.md`)
+### Verified facts that shape the design (beyond the earlier verification notes)
 
-1. **`check` is fully derivable from the record.** For all 40 `FileOutput` records of the four lab
-   stores, `murmur3_x64_128(utf16le(path) ‖ le64(size) ‖ le64(floor_ms(modifiedAt)))` equals
-   `checksum.value` (`scratch-nf-lineage/from_record.py`: 40 ok, 0 bad). So `size`/`modifiedAt`
+1. **`check` is fully derivable from the record.** For all 40 `FileOutput` records of four local
+   test stores, `murmur3_x64_128(utf16le(path) ‖ le64(size) ‖ le64(floor_ms(modifiedAt)))` equals
+   `checksum.value` (a throwaway script: 40 ok, 0 bad). So `size`/`modifiedAt`
    in the record are exactly the hashed inputs.
 2. **Open item resolved — `check` on S3 works.** Ran the minimal pipeline on Nextflow 26.10.7 with
    `lineage.store.location = 's3://lineage/store'` and `-output-dir s3://lineage/results` against
@@ -48,7 +47,7 @@ a local scratch directory (not committed).
      (e.g. `store/82fc…#output`, size 0). Key filters must accept only `…/.data.json` records and
      `.history/<one segment>` entries.
 3. **`find` semantics** (26.10.7, `LinCommandImpl.find` → `LinPropertyValidator` → `DefaultLinStore.search`
-   → `LinUtils.checkParams/navigate`), confirmed with 40 CLI queries (`scratch-nf-lineage/findexp/results*.txt`):
+   → `LinUtils.checkParams/navigate`), confirmed with 40 CLI queries (a dedicated `findexp` test store):
    - Args `k=v`; no `=` → `Parameter <arg> doesn't contain '=' separator`; key and value are
      `URLDecoder`-decoded (`+` → space, `%XX`); `label` → `labels`; repeated keys accumulate.
    - Every dot-separated key segment must be a model property name (union of all model classes plus
@@ -103,7 +102,7 @@ a local scratch directory (not committed).
    - Effort: Medium.
 2. **Raw `serde_json::Value` everywhere + accessor helpers** — no structs.
    - Pros: never fails on type drift; less code.
-   - Cons: the original plan requires a typed `Record`; weak API for downstream crates; easy to misuse.
+   - Cons: the project requires a typed `Record`; weak API for downstream crates; easy to misuse.
    - Effort: Low.
 3. **Port Nextflow's Groovy model 1:1 (versioned modules per Nextflow release)** —
    - Pros: maximal fidelity. Cons: four near-identical copies; the format is one schema
@@ -119,7 +118,7 @@ and other schemes (no oracle yet).
 
 ### Recommendation
 
-Approach 1 with a single `ObjectLineageStore` over `object_store`. Keep the originally planned trait exactly
+Approach 1 with a single `ObjectLineageStore` over `object_store`. Keep the planned trait exactly
 (`list_runs`, `get`, `find`) — `.history` parsing is an implementation detail of `list_runs`; `diff`,
 `check`, `view`, `provenance` are free functions over `&dyn LineageStore`. Put `provenance` in the
 library (pure graph walk over `get`; reused by `nf-lineage-mcp` and stage-2 `rig-nf-lineage`).
