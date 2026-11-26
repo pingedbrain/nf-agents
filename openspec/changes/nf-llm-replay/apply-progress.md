@@ -1,7 +1,7 @@
 # Apply progress: nf-llm-replay
 
-**Mode**: Strict TDD (runner `cargo test --workspace`). Batches: PR A done (6/6 tasks), PR B done (6/6 tasks), PR C1 done (3/3 tasks), PR C2 done (4/4 tasks), PR D done (5/5 tasks); PR E pending.
-Overall: 24/31 tasks. (PR C was split into C1/C2 on 2026-11-26; task IDs unchanged, see tasks.md.)
+**Mode**: Strict TDD (runner `cargo test --workspace`). Batches: PR A done (6/6 tasks), PR B done (6/6 tasks), PR C1 done (3/3 tasks), PR C2 done (4/4 tasks), PR D done (5/5 tasks), PR E done (7/7 tasks).
+Overall: 31/31 tasks (C-docker awaits the PR run). (PR C was split into C1/C2 on 2026-11-26; task IDs unchanged, see tasks.md.)
 
 ## PR A — normalization + cassette model (2026-11-26)
 
@@ -222,4 +222,53 @@ Recorded in design.md ("Deviation (2026-11-26, PR D)") and tasks.md.
 
 ### Remaining
 
-PR E (E.1-E.7).
+None after PR D except PR E (done below).
+
+## PR E — Docker image, offline example, CI (2026-11-26)
+
+### Files changed
+
+| File | Action | What |
+|------|--------|------|
+| `crates/nf-llm-replay/examples/fake_upstream.rs` | Created | `#[path]` reuse of `tests/common/fake_upstream.rs`; `--port N` (default 18181), `127.0.0.1`, `listening on` line; usage error exits 1 |
+| `crates/nf-llm-replay/tests/secrets.rs` | Modified | S-cas `committed_example_cassette_contains_no_credentials` (loads as a valid cassette, ≥ 4 lines, no credential markers or absolute host paths) |
+| `crates/nf-llm-replay/Dockerfile` | Created | `rust:1.100.0-alpine` + `musl-dev` → `distroless/static-debian12:nonroot`, `USER 65532:65532`, env/EXPOSE/OCI labels per spec |
+| `.dockerignore` | Created | allowlist: `Cargo.toml`, `Cargo.lock`, `crates/` minus tests/examples |
+| `docs/examples/nf-llm-replay/main.nf` | Created | `qa`, `qa_structured` (record → strict `json_schema`), `shouty` + `uppercase` process tool (lab pipeline) |
+| `docs/examples/nf-llm-replay/nextflow.config` | Created | only `agent.baseUrl` from `REPLAY_BASE_URL` |
+| `docs/examples/nf-llm-replay/record.sh` | Created | host fake upstream + record proxy, Nextflow in Docker (host network), replaces the cassette on success; `UPSTREAM`/`NF_LLM_REPLAY_API_KEY` for real providers |
+| `docs/examples/nf-llm-replay/cassettes/example.jsonl` | Created (generated) | 4 entries, recorded twice → identical bytes |
+| `docs/examples/nf-llm-replay/e2e.sh` | Created | skip logic, plugin prefetch, `--internal` network, 3 outputs + 0 `outcome="miss"`, trap cleanup + chown |
+| `docs/examples/nf-llm-replay/README.md` | Created | replay, record (script + Docker dir mount + `--user`), `OPENAI_API_KEY` warning, same flags, pi notes, synthetic/research-only |
+| `.github/workflows/ci.yml` | Modified | `docker` job (build, user/size gate, `--help`, e2e; `timeout-minutes: 20`, no secrets/push) |
+
+### TDD cycle evidence
+
+| Task | Test file | Layer | Safety net | RED | GREEN | Triangulate | Refactor |
+|------|-----------|-------|------------|-----|-------|-------------|----------|
+| E.1 | example (smoke) | manual | ✅ 72/72 | ➖ structural (reused fake) | ✅ clippy clean; `--port 18181` answered a chat request; `--bogus` → usage error, exit 1 | ➖ | ➖ |
+| E.2 | `record.sh` | script | ✅ | ➖ generated artifact | ✅ 4 entries; second run `cmp` identical | ✅ two runs byte-identical | ➖ |
+| E.3 | `tests/secrets.rs` | Integration | ✅ | ✅ S-cas FAILED with a `/home/u` path injected into the cassette | ✅ 2/2 after restoring the recorded cassette | ✅ load + line count + 12 needles | ➖ |
+| E.4 | docker | build | ✅ | ➖ structural | ✅ D-build, D-run (`--help` 0), D-user `65532:65532`, D-size 15.7 MB, no `sh` in image | ➖ | ➖ |
+| E.5 | `e2e.sh` | E2E | ✅ | ✅ a cassette line removed → exit 1 with the 599 body + record command in Nextflow's error (plain `qa` entry) | ✅ D-e2e PASS (~15 s), no leftover containers/networks; D-skip (`SKIP`, 0) and `E2E_REQUIRE_DOCKER=1` (exit 1); shellcheck 0.10.0 clean | ✅ removed tool round-trip entry also fails (plugin tool-iteration error); first miss grep (`outcome=miss`) did not match the quoted log value — fixed to `outcome="miss"` | ➖ |
+| E.6 | README | doc | ➖ | ➖ | ✅ D-doc literals present | ➖ | ➖ |
+| E.7 | `ci.yml` | V-yaml | ✅ | ➖ | ✅ actionlint 1.7.7 clean; 0 `secrets.`/`docker push`/`docker login`/`packages: write` | ➖ | ➖ |
+
+### Test summary
+
+- Tests written in PR E: 1 (S-cas); workspace total 73, all passing. Plus the D-e2e script run locally.
+
+### Deviations from design
+
+Recorded in design.md ("Deviation (2026-11-26, PR E)"), tasks.md and the packaging spec (miss log check).
+
+### Issues found
+
+- A miss on the second request of a tool round trip surfaces in Nextflow as "Agent exceeded the maximum
+  number of tool-call iterations (20)", not as the 599 body (nf-agent plugin behaviour); the replay log
+  still names the missing request.
+- C-docker can only be confirmed on the PR run.
+
+### Remaining
+
+None (C-docker on the PR run).

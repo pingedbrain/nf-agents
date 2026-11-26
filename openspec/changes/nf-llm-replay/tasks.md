@@ -86,10 +86,20 @@ Every `tests/*.rs` / `examples/*.rs` starts with a `//!` line.
 
 ## PR E — Docker image, offline example, CI · ≈ 380 lines
 
-- [ ] E.1 `examples/fake_upstream.rs` (`#[path]` reuse, `--port`).
-- [ ] E.2 `docs/examples/nf-llm-replay/main.nf` (qa, qa_structured, shouty + `uppercase` process tool), `nextflow.config` (`REPLAY_BASE_URL`, no key), `record.sh`; run it to produce `cassettes/example.jsonl` (twice: identical bytes).
-- [ ] E.3 RED→GREEN `tests/secrets.rs` S-cas (no credentials, no absolute host paths).
-- [ ] E.4 `crates/nf-llm-replay/Dockerfile`, root `.dockerignore`; D-build, D-run, D-user, D-size locally.
-- [ ] E.5 `e2e.sh` (skip logic, plugin prefetch, `--internal` network, asserts 3 outputs + 0 misses, trap cleanup + chown); D-skip, D-e2e, D-lint; manual: delete a cassette line → 599 visible.
-- [ ] E.6 `README.md` (replay, record, `OPENAI_API_KEY` warning, same Nextflow flags for record/replay, Docker record mounts dir + `--user`, pi notes, research-only); D-doc.
-- [ ] E.7 `.github/workflows/ci.yml` `docker` job (`timeout-minutes: 20`, no secrets/push); V-yaml; C-docker on the PR run.
+- [x] E.1 `examples/fake_upstream.rs` (`#[path]` reuse, `--port`).
+- [x] E.2 `docs/examples/nf-llm-replay/main.nf` (qa, qa_structured, shouty + `uppercase` process tool), `nextflow.config` (`REPLAY_BASE_URL`, no key), `record.sh`; run it to produce `cassettes/example.jsonl` (twice: identical bytes).
+- [x] E.3 RED→GREEN `tests/secrets.rs` S-cas (no credentials, no absolute host paths).
+- [x] E.4 `crates/nf-llm-replay/Dockerfile`, root `.dockerignore`; D-build, D-run, D-user, D-size locally.
+- [x] E.5 `e2e.sh` (skip logic, plugin prefetch, `--internal` network, asserts 3 outputs + 0 misses, trap cleanup + chown); D-skip, D-e2e, D-lint; manual: delete a cassette line → 599 visible.
+- [x] E.6 `README.md` (replay, record, `OPENAI_API_KEY` warning, same Nextflow flags for record/replay, Docker record mounts dir + `--user`, pi notes, research-only); D-doc.
+- [x] E.7 `.github/workflows/ci.yml` `docker` job (`timeout-minutes: 20`, no secrets/push); V-yaml; C-docker on the PR run (pending: needs the pushed PR).
+
+> Deviation (2026-11-26, PR E): (1) replay logs carry `outcome="miss"` (the JSON type
+> `nf_llm_replay_miss` is only in the 599 body), so `e2e.sh` asserts zero `outcome="miss"` log lines.
+> (2) `record.sh` runs the host binaries (`cargo build` of the bin + the `fake_upstream` example) and
+> Nextflow in Docker with `--network host`, records into a fresh temp cassette and replaces
+> `cassettes/example.jsonl` only on success (record mode only fills missing keys). (3) The README lives in
+> the example dir (spec); no separate crate README. (4) Manual miss check: removing the plain `qa` entry
+> shows the 599 body with the record command in Nextflow's error; removing the tool round-trip's second
+> request instead ends in the plugin's "maximum number of tool-call iterations (20)" error (no 599 body
+> shown; the replay log still names the missing request). Actual size ≈ 375 changed lines.

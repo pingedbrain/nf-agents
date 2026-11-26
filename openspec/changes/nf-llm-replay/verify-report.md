@@ -1,6 +1,6 @@
 # Verification Report: nf-llm-replay
 
-**Mode**: Strict TDD. Scope so far: PR A (A.1-A.6), PR B (B.1-B.6), PR C1 (C.1, C.2, C.4). Later batches merge their sections below.
+**Mode**: Strict TDD. Scope: PR A, B, C1, C2, D, E (all batches). Later batches merge their sections below.
 
 ## PR A — normalization + cassette model (2026-11-26)
 
@@ -541,3 +541,102 @@ Resolved from C2: S-8 (coalesced waiters log `hit`), P-pass partial (E-live).
 ### Verdict
 
 **PASS** — PR D is complete; all gates green; 12/12 scoped scenarios compliant.
+
+## PR E — Docker image, offline example, CI (2026-11-26)
+
+**Mode**: Strict TDD (orchestrator-injected). Scope: E.1–E.7.
+
+### Completeness
+
+| Metric | Value |
+|--------|-------|
+| PR E tasks | 7 |
+| Complete | 7 (E.7's C-docker can only be observed on the PR run) |
+| Change total | 31/31 |
+
+### Build and tests (executed in the worktree)
+
+| Command | Result |
+|---------|--------|
+| `cargo fmt --all -- --check` | ✅ |
+| `cargo clippy --workspace --all-targets --locked -- -D warnings` | ✅ (includes `examples/fake_upstream.rs`) |
+| `cargo test --workspace --locked` | ✅ 73 passed, 0 failed, 0 ignored |
+| `cargo deny check` | ✅ advisories, bans, licenses, sources ok |
+| `cargo machete` | ✅ no unused deps |
+| `docker build -f crates/nf-llm-replay/Dockerfile -t nf-llm-replay:ci .` | ✅ ~90 s cold |
+| `docker image inspect` | ✅ `Config.User` = `65532:65532`, size 15 731 642 B (≤ 25 MB) |
+| `docker run --rm nf-llm-replay:ci --help` | ✅ exit 0; `--entrypoint sh` fails (no shell); filesystem = distroless + `/nf-llm-replay` |
+| `E2E_REQUIRE_DOCKER=1 IMAGE=nf-llm-replay:ci docs/examples/nf-llm-replay/e2e.sh` | ✅ PASS (~15 s); no leftover `nfllm-*` containers/networks, temp dir removed |
+| `PATH=<dir without docker> e2e.sh` | ✅ `SKIP: docker not available`, exit 0; with `E2E_REQUIRE_DOCKER=1` exit 1 |
+| shellcheck 0.10.0 (Docker) on `e2e.sh`, `record.sh` | ✅ clean |
+| actionlint 1.7.7 (Docker) | ✅ clean |
+| `record.sh` twice + `cmp` | ✅ byte-identical cassette (4 entries) |
+
+### Mutation spot checks
+
+| Mutation | Expected | Observed |
+|----------|----------|----------|
+| `/home/u` injected into the committed cassette | S-cas fails | ✅ FAILED (`example cassette contains /home/`) |
+| plain `qa` entry removed from the cassette | e2e exit ≠ 0, 599 body visible | ✅ exit 1; Nextflow error shows `{"error":{..."no cassette entry for POST /v1/chat/completions ...; record it with: NF_LLM_REPLAY_API_KEY=<key> nf-llm-replay --mode record ..."` |
+| tool round-trip entry removed | e2e exit ≠ 0 | ✅ exit 1 (Nextflow reports max tool-call iterations; replay log names the miss) |
+| miss grep `outcome=miss` (unquoted) | must match real logs | ❌ did not match `outcome="miss"` → fixed before final run |
+| image user empty (root) | CI user gate fails | ✅ `test "" = "65532:65532"` → 1 |
+
+### TDD compliance
+
+| Task | RED | GREEN | Note |
+|------|-----|-------|------|
+| E.3 | ✅ S-cas failed on a tainted cassette | ✅ | only Rust test of the batch |
+| E.5 | ✅ manual miss runs fail | ✅ D-e2e | script-level |
+| E.1, E.2, E.4, E.6, E.7 | ➖ structural / generated / docs / CI | ✅ executed checks above | triangulation: record twice, two miss variants |
+
+### Spec compliance matrix (PR E checks)
+
+| ID | Scenario | Evidence | Result |
+|----|----------|----------|--------|
+| D-build, D-run, D-user, D-size | Build and run | local docker commands above; CI `docker` job steps | ✅ COMPLIANT (local) |
+| D-e2e | Offline pipeline run; Replay in a container (read-only mount) | `e2e.sh` PASS on `--internal` network | ✅ COMPLIANT |
+| D-e2e manual | Missing entry surfaces clearly | mutation runs | ✅ COMPLIANT (plain agent); ⚠️ tool round trip shows the plugin's iteration error instead of the 599 body |
+| D-skip | No Docker | PATH without docker | ✅ COMPLIANT |
+| D-lint | shellcheck | clean | ✅ COMPLIANT |
+| D-doc | README literals | `agent.baseUrl` 4, `--mode record` 3, `NF_LLM_REPLAY_API_KEY` 3, `pi` ✓, `OPENAI_API_KEY` ✓ | ✅ COMPLIANT |
+| S-cas | Cassette is secret-free | `secrets::committed_example_cassette_contains_no_credentials` | ✅ COMPLIANT |
+| — | Regenerate without keys | `record.sh` ×2, `cmp` | ✅ COMPLIANT |
+| V-yaml | Docker job; never publishes; no secrets | actionlint + grep: 0 `secrets.`/`docker push`/`docker login`/`packages: write`; `timeout-minutes: 20`; no `needs:` | ✅ COMPLIANT |
+| C-docker | PR run green | needs the pushed PR | ⏳ PENDING |
+
+### Correctness (static)
+
+| Requirement | Status | Notes |
+|-------------|--------|-------|
+| Container image | ✅ | multi-stage, `--locked`, distroless static nonroot, env/EXPOSE/labels/ENTRYPOINT per spec; `.dockerignore` allowlist |
+| Example pipeline | ✅ | 3 agents, config only `agent.baseUrl`, no `apiKey` |
+| Offline e2e script | ✅ | spec text updated: log check is `outcome="miss"` (dated deviation) |
+| Recording helper | ✅ | default fake upstream, `UPSTREAM` override, key never echoed; replaces cassette only on success |
+| CI docker job | ✅ | parallel to lint/test, no secrets, no push |
+
+### Coherence (design)
+
+| Decision | Followed? | Notes |
+|----------|-----------|-------|
+| Image `rust:1.100.0-alpine` → `distroless/static-debian12:nonroot` | ✅ | 15.7 MB (lab: 10.5 MB probe) |
+| e2e inside the `docker` job, prefetch only networked step | ✅ | |
+| Example cassette from the deterministic fake | ✅ | `examples/fake_upstream.rs` reuses the test fake via `#[path]` |
+| Record in container mounts the directory + `--user` | ✅ | documented in README |
+| Deviations | ⚠️ documented | design.md / tasks.md "Deviation (2026-11-26, PR E)" |
+
+### Issues
+
+**CRITICAL**: None.
+
+**WARNING**:
+- W-1: C-docker not yet observed (requires the PR run; plugin registry availability is the only network dependency).
+- W-2: a miss on the second request of a tool round trip surfaces in Nextflow as "maximum number of tool-call iterations (20)" rather than the 599 body (nf-agent plugin behaviour, outside this crate); the replay log still names the request.
+
+**SUGGESTION**:
+- S-1: no GHA layer cache for the image build (~90 s cold locally); revisit if the job exceeds ~5 min (open question in design).
+- S-2: README is in the example dir only; a crate-level README pointer could be added when the crate is published.
+
+### Verdict
+
+PASS WITH WARNINGS — all local checks green incl. Docker build, size/user gates and the offline Nextflow e2e; C-docker awaits the PR run.
