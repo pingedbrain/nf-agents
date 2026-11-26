@@ -1,0 +1,11 @@
+Explore workflows lineage metadata
+Usage: nextflow lineage <sub-command> [options]
+
+Commands:
+  check 	Checks the integrity of an lineage file path
+  diff  	Show differences between two lineage descriptions
+  find  	Find lineage metadata descriptions matching with a query
+  list  	List the executions with lineage enabled
+  render	Render the lineage graph for a workflow output
+  view  	Print the description of a Lineage ID (lid)
+

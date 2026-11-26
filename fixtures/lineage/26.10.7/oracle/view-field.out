@@ -1,0 +1,12 @@
+[
+  {
+    "type": "String",
+    "name": "greeting",
+    "value": "hello"
+  },
+  {
+    "type": "String",
+    "name": "input",
+    "value": "file:///nf-agents-fixture/pipeline/data/seed.txt"
+  }
+]

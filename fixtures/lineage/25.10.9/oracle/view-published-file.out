@@ -1,0 +1,21 @@
+{
+  "version": "lineage/v1beta1",
+  "kind": "FileOutput",
+  "spec": {
+    "path": "/nf-agents-fixture/results-hello/summary.txt",
+    "checksum": {
+      "value": "35a84d5801ca0b80672f8b6ca4c7f6b0",
+      "algorithm": "nextflow",
+      "mode": "standard"
+    },
+    "source": "lid://81503e4abf998cc487bcd8089010daf7/summary.txt",
+    "workflowRun": "lid://0ca6fd07711e8cff8a64ff8bf5149796",
+    "taskRun": null,
+    "size": 9,
+    "createdAt": "2026-11-26T21:22:38.140133857Z",
+    "modifiedAt": "2026-11-26T21:22:38.141164183Z",
+    "labels": [
+      "summary"
+    ]
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "version": "lineage/v1beta1",
+  "kind": "WorkflowRun",
+  "workflow": {
+    "scriptFiles": [
+      {
+        "path": "file:///nf-agents-fixture/pipeline/main.nf",
+        "checksum": {
+          "value": "d17730edd408c50cc763d8e84b814768",
+          "algorithm": "nextflow",
+          "mode": "standard"
+        }
+      }
+    ],
+    "repository": null,
+    "commitId": null
+  },
+  "sessionId": "352d67e5-a82b-4607-8fa6-501e93179425",
+  "name": "lonely_ritchie",
+  "params": [
+    {
+      "type": "String",
+      "name": "greeting",
+      "value": "hello"
+    },
+    {
+      "type": "String",
+      "name": "input",
+      "value": "file:///nf-agents-fixture/pipeline/data/seed.txt"
+    }
+  ],
+  "config": {
+    "lineage": {
+      "enabled": true
+    },
+    "env": {},
+    "session": {},
+    "params": {
+      "greeting": "hello"
+    },
+    "process": {},
+    "executor": {},
+    "runName": "lonely_ritchie",
+    "outputDir": "results-hello",
+    "workDir": "work",
+    "poolSize": 2.0
+  }
+}

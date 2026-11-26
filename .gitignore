@@ -3,6 +3,9 @@
 **/target/
 **/*.rs.bk
 
+# Python
+__pycache__/
+
 # Node
 node_modules/
 dist/
@@ -18,6 +21,8 @@ work/
 results/
 .nf-test/
 .nf-test.log
+# Committed lineage fixtures keep their task output files (fixtures/README.md)
+!/fixtures/lineage/*/work/
 
 # OpenTofu / Terraform
 .terraform/

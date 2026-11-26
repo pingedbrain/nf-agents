@@ -1,0 +1,10 @@
+{
+  "RUN1": "lid://80bbb7765617f9a381c8f6f7228ff4c8",
+  "RUN2": "lid://e59092c2fed64a78ca0139a03ea713af",
+  "TASK_GENERATE_RUN1": "lid://a63bb4effc06d12aa6c91d1e464218e2",
+  "TASK_GENERATE_RUN2": "lid://5c3e2528a9c820b43f2caca585c1b1cd",
+  "TASK_SUMMARIZE_RUN1": "lid://399a6e15a42cabdaafd23acc2eae70ac",
+  "TASK_SUMMARIZE_RUN2": "lid://e255b0fc8682422516f33145d313aab2",
+  "TASK_TRANSFORM_RUN1": "lid://bbd8ae1c317c9c61de26188b1d0e2452",
+  "TASK_TRANSFORM_RUN2": "lid://99132ce7e3c6202e3938dadf1a3f0cb6"
+}

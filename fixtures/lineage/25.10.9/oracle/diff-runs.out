@@ -1,0 +1,37 @@
+diff --git 0ca6fd07711e8cff8a64ff8bf5149796 9f5b627b98fe65482d62487d873e63f3
+--- 0ca6fd07711e8cff8a64ff8bf5149796
++++ 9f5b627b98fe65482d62487d873e63f3
+@@ -16,13 +16,13 @@
+       "repository": null,
+       "commitId": null
+     },
+-    "sessionId": "d6dd96b8-4235-4397-bd1d-aaf89985f810",
+-    "name": "cheesy_brahmagupta",
++    "sessionId": "a0511b73-d4e4-4df6-85f4-f82f4488b8e0",
++    "name": "romantic_nightingale",
+     "params": [
+       {
+         "type": "String",
+         "name": "greeting",
+-        "value": "hello"
++        "value": "bonjour"
+       },
+       {
+         "type": "String",
+@@ -37,12 +37,12 @@
+       "env": {},
+       "session": {},
+       "params": {
+-        "greeting": "hello"
++        "greeting": "bonjour"
+       },
+       "process": {},
+       "executor": {},
+-      "runName": "cheesy_brahmagupta",
+-      "outputDir": "results-hello",
++      "runName": "romantic_nightingale",
++      "outputDir": "results-bonjour",
+       "workDir": "work",
+       "poolSize": 2.0
+     }
+

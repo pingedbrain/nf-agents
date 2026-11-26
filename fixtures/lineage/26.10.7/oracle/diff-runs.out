@@ -1,0 +1,74 @@
+diff --git d3aad5e9507a67cf4dc011874f1b40f5 53eff9d0e4499741b854d37e0d677ded
+--- d3aad5e9507a67cf4dc011874f1b40f5
++++ 53eff9d0e4499741b854d37e0d677ded
+@@ -16,13 +16,13 @@
+       "repository": null,
+       "commitId": null
+     },
+-    "sessionId": "387602f4-64c2-4762-aa2e-037a8336ca4c",
+-    "name": "tender_booth",
++    "sessionId": "228bf7e7-b09b-4cb5-ad6f-cdad28d834b9",
++    "name": "zen_planck",
+     "params": [
+       {
+         "type": "String",
+         "name": "greeting",
+-        "value": "hello"
++        "value": "bonjour"
+       },
+       {
+         "type": "String",
+@@ -33,31 +33,31 @@
+     "config": {
+       "env": {},
+       "params": {
+-        "greeting": "hello"
++        "greeting": "bonjour"
+       },
+       "lineage": {
+         "enabled": true
+       },
+       "executor": {},
+       "process": {},
+-      "runName": "tender_booth",
+-      "outputDir": "results-hello",
++      "runName": "zen_planck",
++      "outputDir": "results-bonjour",
+       "outputFormat": "text",
+       "workDir": "work",
+       "poolSize": 2.0
+     },
+     "metadata": {
+-      "runName": "tender_booth",
++      "runName": "zen_planck",
+       "scriptId": "2318fdd93ce721f0fc23a386a78c5bde",
+       "scriptFile": "/nf-agents-fixture/pipeline/main.nf",
+       "scriptName": "main.nf",
+       "repository": null,
+       "commitId": null,
+       "revision": null,
+-      "start": "2026-11-26T21:25:23.668405139Z",
++      "start": "2026-11-26T21:25:27.143272222Z",
+       "complete": null,
+       "container": {},
+-      "commandLine": "nextflow run pipeline/main.nf --greeting hello -output-dir results-hello",
++      "commandLine": "nextflow run pipeline/main.nf --greeting bonjour -output-dir results-bonjour",
+       "nextflow": {
+         "version": "26.10.7",
+         "build": 15252.0,
+@@ -67,12 +67,12 @@
+       "projectDir": "/nf-agents-fixture/pipeline",
+       "projectName": "main.nf",
+       "launchDir": "/nf-agents-fixture",
+-      "outputDir": "/nf-agents-fixture/results-hello",
++      "outputDir": "/nf-agents-fixture/results-bonjour",
+       "workDir": "/nf-agents-fixture/work",
+       "homeDir": "/root",
+       "userName": "root",
+       "profile": "standard",
+-      "sessionId": "387602f4-64c2-4762-aa2e-037a8336ca4c",
++      "sessionId": "228bf7e7-b09b-4cb5-ad6f-cdad28d834b9",
+       "resume": false,
+       "stubRun": false,
+       "preview": false,
+

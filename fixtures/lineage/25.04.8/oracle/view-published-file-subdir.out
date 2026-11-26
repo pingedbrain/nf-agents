@@ -1,0 +1,17 @@
+{
+  "version": "lineage/v1beta1",
+  "kind": "FileOutput",
+  "path": "/nf-agents-fixture/results-hello/upper/upper.txt",
+  "checksum": {
+    "value": "ec8e691633c108538bf32225224aaa9f",
+    "algorithm": "nextflow",
+    "mode": "standard"
+  },
+  "source": "lid://ff06df9c1606ca45db0fd908d6f8d38e/upper.txt",
+  "workflowRun": "lid://fe29fb0463803223ebc97b3bc4d03fa6",
+  "taskRun": null,
+  "size": 35,
+  "createdAt": "2026-11-26T21:21:35.455560409Z",
+  "modifiedAt": "2026-11-26T21:21:35.456560402Z",
+  "labels": null
+}

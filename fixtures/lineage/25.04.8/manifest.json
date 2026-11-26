@@ -1,0 +1,70 @@
+{
+  "format": 1,
+  "kind": "core",
+  "nextflow_version": "25.04.8",
+  "image": "nextflow/nextflow:25.04.8@sha256:b035b9fa7243ed09b9896c2b752d9e399f337827932bd45495efb0aed8e1dca1",
+  "recorded_root": "/nf-agents-fixture",
+  "store": ".lineage",
+  "files": [
+    {
+      "path": "results-bonjour/summary.txt",
+      "size": 9,
+      "mtime_ms": 1795728098400,
+      "sha256": "38a0675412d6a74ef81c2d005fa60ae02f9d34e31e4a6b87ced511c88a8f7152"
+    },
+    {
+      "path": "results-bonjour/upper/upper.txt",
+      "size": 41,
+      "mtime_ms": 1795728098315,
+      "sha256": "71da59a1141cd1e6848dc188e4d28e6ab75401bde188998d50140d5c9afdf4de"
+    },
+    {
+      "path": "results-hello/summary.txt",
+      "size": 9,
+      "mtime_ms": 1795728095516,
+      "sha256": "38a0675412d6a74ef81c2d005fa60ae02f9d34e31e4a6b87ced511c88a8f7152"
+    },
+    {
+      "path": "results-hello/upper/upper.txt",
+      "size": 35,
+      "mtime_ms": 1795728095456,
+      "sha256": "f43a34f4dfcdff1b2752c1f81a3c791c601ec2fbad0c68f90e045f600259ba54"
+    },
+    {
+      "path": "work/04/b665d2a5aba697308aa0cb5518ae19/raw.txt",
+      "size": 35,
+      "mtime_ms": 1795728095413,
+      "sha256": "b577537696804d5bc1a3fe0872d33633423f89f2c0a67503a167c4397df99458"
+    },
+    {
+      "path": "work/2f/0dba06e95d3b86c13b741d837ede4c/upper.txt",
+      "size": 41,
+      "mtime_ms": 1795728098315,
+      "sha256": "71da59a1141cd1e6848dc188e4d28e6ab75401bde188998d50140d5c9afdf4de"
+    },
+    {
+      "path": "work/73/ba9a2817cf6d8ec7ed1a5a633f2140/summary.txt",
+      "size": 9,
+      "mtime_ms": 1795728098400,
+      "sha256": "38a0675412d6a74ef81c2d005fa60ae02f9d34e31e4a6b87ced511c88a8f7152"
+    },
+    {
+      "path": "work/9b/dd714ed44ae1e1fbacf196da3bb75f/summary.txt",
+      "size": 9,
+      "mtime_ms": 1795728095516,
+      "sha256": "38a0675412d6a74ef81c2d005fa60ae02f9d34e31e4a6b87ced511c88a8f7152"
+    },
+    {
+      "path": "work/9d/fd51a86753ca374a262e48b4a84c42/raw.txt",
+      "size": 41,
+      "mtime_ms": 1795728098232,
+      "sha256": "08b4cd464dc5411ebde60fd1da0df34ab6e06cc5f78b88754c0cb6a0404bca8c"
+    },
+    {
+      "path": "work/ff/06df9c1606ca45db0fd908d6f8d38e/upper.txt",
+      "size": 35,
+      "mtime_ms": 1795728095456,
+      "sha256": "f43a34f4dfcdff1b2752c1f81a3c791c601ec2fbad0c68f90e045f600259ba54"
+    }
+  ]
+}
