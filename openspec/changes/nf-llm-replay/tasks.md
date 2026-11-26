@@ -1,0 +1,59 @@
+# Tasks: nf-llm-replay
+
+Five PRs (A-E). Estimates are hand-written code + tests
+(excluding openspec/, `Cargo.lock`, `tests/fixtures/`, the example cassette). Each PR ends with
+`cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`,
+`cargo test --workspace --locked`, `cargo deny check`, `cargo machete` green. Check IDs are in
+`specs/*/spec.md`. Strict TDD: every GREEN step follows its named failing test (RED).
+Every `tests/*.rs` / `examples/*.rs` starts with a `//!` line.
+
+## PR A — normalization + cassette model (library only) · ≈ 500 lines
+
+- [x] A.1 Root `Cargo.toml` `[workspace.dependencies]` (design list); `crates/nf-llm-replay/Cargo.toml` (`0.1.0`, `publish = false`, lib + `[[bin]]`, only deps used in A); `src/lib.rs` docs ("pre-alpha", research use) + `src/main.rs` stub returning `Ok(())`.
+- [x] A.2 RED→GREEN `src/normalize.rs`: N-sort, N-ws, N-empty, N-bad (`write_canonical` sorts keys itself; hex via `{b:02x}`).
+- [x] A.3 RED→GREEN default volatile rules: N-vol, N-nested, N-cwd, N-cwd-edge (`<volatile/>` replacement, string values only).
+- [x] A.4 RED→GREEN key recipe: N-query, N-route (`METHOD␠PATH\nCANONICAL`).
+- [x] A.5 Generate `tests/fixtures/captures/*.json` from the 8 lab captures ({method, path, body}; replace lab host paths with `/lab/...`); RED→GREEN `tests/captures.rs`: N-pi, then N-golden (commit computed keys).
+- [x] A.6 RED→GREEN `src/cassette.rs` types + `Cassette::load/get`: K-line, K-ver, K-bad, K-dup, K-extra (1-based line numbers, `status` 100-999, exactly one of body/events).
+
+> Deviation (2026-11-26, PR A): `[workspace.dependencies]` lists only the dependencies a crate
+> already uses (cargo 1.100 warns `unused workspace dependency` for every other entry); each PR adds
+> its own. `Normalizer::new()` takes no arguments until D.5 adds `--volatile-field/--volatile-pattern`
+> (see design.md).
+
+## PR B — replay server + CLI · ≈ 700 lines
+
+- [ ] B.1 RED→GREEN `src/config.rs`: `Cli`/`Mode`/`ApiKey`/`Config::from_cli`; U-dbg.
+- [ ] B.2 `tests/common/mod.rs`: `start(config) -> SocketAddr` (in-process `app()` on `127.0.0.1:0`), `write_cassette(entries)`, counting TCP listener used as dead upstream.
+- [ ] B.3 RED→GREEN `src/proxy.rs` replay path + `ProxyError::IntoResponse`: R-hit, R-same, R-400, R-big (32 MiB limit).
+- [ ] B.4 RED→GREEN miss contract: U-sum, U-hint, R-miss (message names method, path, model, key prefix, record command).
+- [ ] B.5 RED→GREEN R-net (counter stays 0), R-h2c (raw TCP request copied from langchain4j capture), R-conc (64 parallel).
+- [ ] B.6 `src/main.rs` (anyhow, tracing to stderr, `listening on` to stdout, SIGINT/SIGTERM graceful); RED→GREEN `tests/cli.rs`: X-help, X-mode, X-env, X-nocas, X-corrupt, X-listen.
+
+## PR C — record + passthrough · ≈ 760 lines
+
+- [ ] C.1 `deny.toml`: add `CDLA-Permissive-2.0` with comment; `cargo deny check` green after adding reqwest.
+- [ ] C.2 RED→GREEN `src/upstream.rs`: U-hdr, U-auth; `Upstream` (600 s timeout, 10 s connect, no redirects, no compression).
+- [ ] C.3 `tests/common/fake_upstream.rs` (chat JSON only: plain, `json_schema`, tool call `call_1`, tool-result echo; counters, last headers/URI, forced status, echo-key).
+- [ ] C.4 RED→GREEN `Recorder` (`cassette.rs`): K-sorted, K-guard.
+- [ ] C.5 RED→GREEN record path in `proxy.rs` (`tests/record.rs`): W-rt, W-tool, W-fill, W-once, W-err, W-502, W-auth, W-fwd, K-conc.
+- [ ] C.6 RED→GREEN passthrough: P-pass (buffered streaming check moves to D).
+- [ ] C.7 RED→GREEN `tests/secrets.rs` S-scan; `tests/cli.rs` X-nokey, X-noup, X-nolog.
+
+## PR D — SSE streaming + normalization flags · ≈ 420 lines
+
+- [ ] D.1 RED→GREEN `src/sse.rs`: E-split, E-exact, E-tail.
+- [ ] D.2 Fake upstream SSE: chat `stream:true`, `/v1/responses` (5 events), `/v1/messages` (Anthropic event names, CRLF on one event), pause gate.
+- [ ] D.3 RED→GREEN record stores `events`, replay streams one chunk per event (`tests/sse.rs`): E-store, E-resp, E-msg, E-chat.
+- [ ] D.4 RED→GREEN passthrough streams `bytes_stream()`: E-live.
+- [ ] D.5 RED→GREEN `--volatile-field` / `--volatile-pattern` (+ env): N-ptr, N-pat, X-vol.
+
+## PR E — Docker image, offline example, CI · ≈ 380 lines
+
+- [ ] E.1 `examples/fake_upstream.rs` (`#[path]` reuse, `--port`).
+- [ ] E.2 `docs/examples/nf-llm-replay/main.nf` (qa, qa_structured, shouty + `uppercase` process tool), `nextflow.config` (`REPLAY_BASE_URL`, no key), `record.sh`; run it to produce `cassettes/example.jsonl` (twice: identical bytes).
+- [ ] E.3 RED→GREEN `tests/secrets.rs` S-cas (no credentials, no absolute host paths).
+- [ ] E.4 `crates/nf-llm-replay/Dockerfile`, root `.dockerignore`; D-build, D-run, D-user, D-size locally.
+- [ ] E.5 `e2e.sh` (skip logic, plugin prefetch, `--internal` network, asserts 3 outputs + 0 misses, trap cleanup + chown); D-skip, D-e2e, D-lint; manual: delete a cassette line → 599 visible.
+- [ ] E.6 `README.md` (replay, record, `OPENAI_API_KEY` warning, same Nextflow flags for record/replay, Docker record mounts dir + `--user`, pi notes, research-only); D-doc.
+- [ ] E.7 `.github/workflows/ci.yml` `docker` job (`timeout-minutes: 20`, no secrets/push); V-yaml; C-docker on the PR run.

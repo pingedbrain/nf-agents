@@ -1,0 +1,53 @@
+{
+  "method": "POST",
+  "path": "/v1/responses",
+  "body": {
+    "model": "gpt-5-mini",
+    "input": [
+      {
+        "role": "developer",
+        "content": "To uppercase text call the `uppercase` tool, then reply with only the result.\n\n<cwd>\n/lab/agent-capture/runs/26.10.7-pi/work/8b/0355e23e054b60b4d7f49e313568b7\n</cwd>"
+      },
+      {
+        "role": "user",
+        "content": [
+          {
+            "type": "input_text",
+            "text": "make this loud: hello\n\nInput:\n\"make this loud: hello\""
+          }
+        ]
+      }
+    ],
+    "stream": true,
+    "prompt_cache_key": "01a2199b-b6bd-7644-9f77-cc4c64d86232",
+    "store": false,
+    "max_output_tokens": 128000,
+    "tools": [
+      {
+        "type": "function",
+        "name": "uppercase",
+        "description": "uppercase",
+        "parameters": {
+          "additionalProperties": false,
+          "properties": {
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "text"
+          ],
+          "type": "object"
+        },
+        "strict": false
+      }
+    ],
+    "reasoning": {
+      "effort": "medium",
+      "summary": "auto"
+    },
+    "include": [
+      "reasoning.encrypted_content"
+    ]
+  }
+}

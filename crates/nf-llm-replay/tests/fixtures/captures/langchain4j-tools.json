@@ -1,0 +1,38 @@
+{
+  "method": "POST",
+  "path": "/v1/chat/completions",
+  "body": {
+    "model": "gpt-5-mini",
+    "messages": [
+      {
+        "role": "system",
+        "content": "To uppercase text call the `uppercase` tool, then reply with only the result.\n\nBefore each tool call, briefly state your reasoning for the call in one short sentence."
+      },
+      {
+        "role": "user",
+        "content": "make this loud: hello\n\nInput (JSON):\n\"make this loud: hello\""
+      }
+    ],
+    "stream": false,
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "uppercase",
+          "description": "uppercase",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "text": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "text"
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "method": "POST",
+  "path": "/v1/responses",
+  "body": {
+    "model": "gpt-5-mini",
+    "input": [
+      {
+        "role": "developer",
+        "content": "You are a concise scientific assistant.\n\n<cwd>\n/lab/agent-capture/runs/26.10.7-pi/work/3a/3592e5c75e2f24218743feba216041\n</cwd>"
+      },
+      {
+        "role": "user",
+        "content": [
+          {
+            "type": "input_text",
+            "text": "\n    Answer briefly: What is FASTQ format?\n    \n\nInput:\n\"What is FASTQ format?\""
+          }
+        ]
+      }
+    ],
+    "stream": true,
+    "prompt_cache_key": "01a2199b-b63f-7590-920d-3e7f06e1178f",
+    "store": false,
+    "max_output_tokens": 128000,
+    "reasoning": {
+      "effort": "medium",
+      "summary": "auto"
+    },
+    "include": [
+      "reasoning.encrypted_content"
+    ]
+  }
+}

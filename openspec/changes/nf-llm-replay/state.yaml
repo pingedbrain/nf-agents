@@ -1,0 +1,20 @@
+change: nf-llm-replay
+artifact_store: openspec
+mode: auto
+phases:
+  explore: done
+  proposal: done
+  spec: done
+  design: done
+  tasks: done
+  apply: in-progress
+  verify: pending
+  archive: pending
+batches:
+  - {id: A, title: "normalization + cassette model", est_lines: 500, status: applied}
+  - {id: B, title: "replay server + CLI", est_lines: 700, status: pending}
+  - {id: C, title: "record + passthrough", est_lines: 760, status: pending}
+  - {id: D, title: "SSE streaming + normalization flags", est_lines: 420, status: pending}
+  - {id: E, title: "Docker image + offline example + CI docker job", est_lines: 380, status: pending}
+updated: 2026-11-26
+next: sdd-verify (PR A), then sdd-apply (PR B)

@@ -1,0 +1,18 @@
+{
+  "method": "POST",
+  "path": "/v1/chat/completions",
+  "body": {
+    "model": "gpt-5-mini",
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are a concise scientific assistant."
+      },
+      {
+        "role": "user",
+        "content": "\n    Answer briefly: What is FASTQ format?\n    \n\nInput (JSON):\n\"What is FASTQ format?\""
+      }
+    ],
+    "stream": false
+  }
+}

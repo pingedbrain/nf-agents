@@ -1,0 +1,37 @@
+{
+  "method": "POST",
+  "path": "/v1/messages?beta=true",
+  "body": {
+    "model": "claude-sonnet-4-5",
+    "messages": [
+      {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "Answer briefly: What is FASTQ format?\n\nInput:\n\"What is FASTQ format?\"",
+            "cache_control": {
+              "type": "ephemeral"
+            }
+          }
+        ]
+      }
+    ],
+    "max_tokens": 64000,
+    "stream": true,
+    "system": [
+      {
+        "type": "text",
+        "text": "You are a concise scientific assistant.\n\n<cwd>\n/lab/agent-capture/runs/26.10.7-pi-main-anthropic/work/3d/b16170855cc21c30f3e58e0a094f84\n</cwd>",
+        "cache_control": {
+          "type": "ephemeral"
+        }
+      }
+    ],
+    "thinking": {
+      "type": "enabled",
+      "budget_tokens": 8192,
+      "display": "summarized"
+    }
+  }
+}
