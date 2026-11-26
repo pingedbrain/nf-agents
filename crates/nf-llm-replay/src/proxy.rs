@@ -1,6 +1,8 @@
 //! The catch-all request handler and its error responses.
 
+use std::convert::Infallible;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Instant;
 
 use axum::body::{Body, Bytes};
@@ -14,6 +16,7 @@ use serde_json::{Value, json};
 use crate::cassette::{Cassette, Entry, RecordedRequest, RecordedResponse, Recorder, VERSION};
 use crate::config::Mode;
 use crate::normalize::{Normalized, Normalizer};
+use crate::sse::split_events;
 use crate::upstream::Upstream;
 
 /// Shared state of the running proxy.
@@ -269,7 +272,7 @@ async fn answer(
             let reply = upstream
                 .send(method.clone(), path_and_query, headers, body)
                 .await?;
-            Ok(("forwarded", relay(reply).await?))
+            Ok(("forwarded", relay(reply)))
         }
         Backend::Replay(cassette) => {
             let n = normalize(key)?;
@@ -283,15 +286,20 @@ async fn answer(
         Backend::Record(recorder, upstream) => {
             let n = normalize(key)?;
             let cell = recorder.cell(&n.key);
-            let outcome = if cell.initialized() {
-                "hit"
-            } else {
-                "recorded"
-            };
+            // Only the request whose call filled the cell recorded it; the others are hits.
+            let fetched = AtomicBool::new(false);
             let fetch = upstream.send(method.clone(), path_and_query, headers, body.clone());
             let entry = cell
-                .get_or_try_init(|| async { record(recorder, fetch.await?, method, path, n).await })
+                .get_or_try_init(|| async {
+                    fetched.store(true, Ordering::Relaxed);
+                    record(recorder, fetch.await?, method, path, n).await
+                })
                 .await?;
+            let outcome = if fetched.load(Ordering::Relaxed) {
+                "recorded"
+            } else {
+                "hit"
+            };
             Ok((outcome, respond(entry.clone())))
         }
     }
@@ -306,7 +314,7 @@ async fn record(
     n: Normalized,
 ) -> Result<Arc<Entry>, ProxyError> {
     if !reply.status().is_success() {
-        return Err(ProxyError::NotStored(Box::new(relay(reply).await?)));
+        return Err(ProxyError::NotStored(Box::new(relay(reply))));
     }
     let status = reply.status().as_u16();
     let content_type = reply
@@ -316,6 +324,14 @@ async fn record(
         .map(str::to_owned);
     let body = String::from_utf8(reply.bytes().await?.into())
         .map_err(|_| ProxyError::Upstream("upstream response body is not UTF-8".into()))?;
+    let stream = content_type
+        .as_deref()
+        .is_some_and(|c| c.starts_with("text/event-stream"));
+    let (body, events) = if stream {
+        (None, Some(split_events(&body)))
+    } else {
+        (Some(body), None)
+    };
     let canonical = (!n.canonical.is_empty())
         .then(|| RawValue::from_string(n.canonical))
         .transpose()
@@ -331,8 +347,8 @@ async fn record(
         response: RecordedResponse {
             status,
             content_type,
-            body: Some(body),
-            events: None,
+            body,
+            events,
         },
     });
     recorder
@@ -342,8 +358,8 @@ async fn record(
     Ok(entry)
 }
 
-/// The upstream answer as is, minus hop-by-hop headers.
-async fn relay(reply: reqwest::Response) -> Result<Response, ProxyError> {
+/// The upstream answer as is, streamed as it arrives, minus hop-by-hop headers.
+fn relay(reply: reqwest::Response) -> Response {
     let status = reply.status();
     let mut headers = reply.headers().clone();
     for name in [
@@ -354,19 +370,26 @@ async fn relay(reply: reqwest::Response) -> Result<Response, ProxyError> {
         headers.remove(name);
     }
     headers.remove("keep-alive");
-    let mut response = Response::new(Body::from(reply.bytes().await?));
+    let mut response = Response::new(Body::from_stream(reply.bytes_stream()));
     *response.status_mut() = status;
     *response.headers_mut() = headers;
-    Ok(response)
+    response
 }
 
 fn respond(entry: Arc<Entry>) -> Response {
     let recorded = &entry.response;
     let body = match (&recorded.body, &recorded.events) {
-        (Some(body), _) => body.clone(),
-        (None, events) => events.iter().flatten().map(String::as_str).collect(),
+        (Some(body), _) => Body::from(body.clone()),
+        // One chunk per event, no delays.
+        (None, events) => Body::from_stream(futures_util::stream::iter(
+            events
+                .clone()
+                .into_iter()
+                .flatten()
+                .map(Ok::<_, Infallible>),
+        )),
     };
-    let mut response = Response::new(Body::from(body));
+    let mut response = Response::new(body);
     // Cassette statuses are validated to 100-999 on load.
     *response.status_mut() =
         StatusCode::from_u16(recorded.status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);

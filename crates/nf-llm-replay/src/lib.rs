@@ -7,6 +7,7 @@ pub mod cassette;
 pub mod config;
 pub mod normalize;
 mod proxy;
+mod sse;
 mod upstream;
 
 use std::sync::Arc;
@@ -75,7 +76,7 @@ pub fn app(config: &Config) -> Result<Router, StartupError> {
         Mode::Passthrough => Backend::Passthrough(upstream()?),
     };
     let state = AppState {
-        normalizer: Normalizer::new()?,
+        normalizer: Normalizer::new(&config.volatile_fields, &config.volatile_patterns)?,
         backend,
         cassette: config
             .cassette

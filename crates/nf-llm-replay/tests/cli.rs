@@ -36,6 +36,12 @@ fn help_lists_flags_and_env_vars() {
         let env = format!("NF_LLM_REPLAY_{}", flag.to_uppercase());
         assert!(out.contains(&env), "{env}: {out}");
     }
+    for (flag, env) in [
+        ("--volatile-field", "NF_LLM_REPLAY_VOLATILE_FIELDS"),
+        ("--volatile-pattern", "NF_LLM_REPLAY_VOLATILE_PATTERNS"),
+    ] {
+        assert!(out.contains(flag) && out.contains(env), "{flag}: {out}");
+    }
     assert!(
         out.contains("NF_LLM_REPLAY_API_KEY") && !out.contains("--api-key"),
         "{out}"
@@ -99,6 +105,28 @@ fn corrupt_cassette_exits_1_with_line_number() {
     assert_eq!(code, 1);
     assert!(err.contains("line 2"), "{err}");
     assert_eq!(err.trim().lines().count(), 1, "{err}");
+}
+
+#[test]
+fn invalid_volatile_pattern_exits_1_naming_it() {
+    let dir = tempfile::tempdir().unwrap();
+    let cassette = common::write_cassette(dir.path(), &[]);
+    let replay = || {
+        let mut cmd = bin();
+        cmd.arg("--cassette").arg(&cassette).args(["--port", "0"]);
+        cmd
+    };
+    for (code, _, err) in [
+        run(replay().args(["--volatile-pattern", "ok", "--volatile-pattern", "(bad"])),
+        run(replay().env("NF_LLM_REPLAY_VOLATILE_PATTERNS", "ok\n(bad")),
+    ] {
+        assert_eq!(code, 1, "{err}");
+        assert!(err.contains("`(bad`"), "{err}");
+        assert_eq!(err.trim().lines().count(), 1, "{err}");
+    }
+    let (code, _, err) = run(replay().env("NF_LLM_REPLAY_VOLATILE_FIELDS", "user,/a~2"));
+    assert_eq!(code, 1, "{err}");
+    assert!(err.contains("`/a~2`"), "{err}");
 }
 
 #[tokio::test]

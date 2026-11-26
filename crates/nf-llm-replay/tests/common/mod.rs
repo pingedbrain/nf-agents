@@ -64,7 +64,7 @@ pub fn entry(
     ctype: Option<&str>,
     resp: &str,
 ) -> String {
-    let norm = Normalizer::new()
+    let norm = Normalizer::new(&[], &[])
         .unwrap()
         .normalize(method, path, body.as_bytes())
         .unwrap();
@@ -126,7 +126,8 @@ impl Reply {
     }
 }
 
-/// Sends raw request bytes and reads one response (content-length framed, else until EOF).
+/// Sends raw request bytes and reads one response (content-length or chunked framing, else
+/// until EOF).
 pub async fn send_raw(addr: SocketAddr, request: &[u8]) -> Reply {
     let mut stream = TcpStream::connect(addr).await.unwrap();
     stream.write_all(request).await.unwrap();
@@ -156,6 +157,13 @@ pub async fn send_raw(addr: SocketAddr, request: &[u8]) -> Reply {
             }
             body.truncate(len);
         }
+        None if headers.contains(&("transfer-encoding".into(), "chunked".into())) => loop {
+            if let Some(decoded) = dechunk(&body) {
+                body = decoded;
+                break;
+            }
+            read_more(&mut stream, &mut body).await;
+        },
         None => {
             stream.read_to_end(&mut body).await.unwrap();
         }
@@ -165,6 +173,21 @@ pub async fn send_raw(addr: SocketAddr, request: &[u8]) -> Reply {
         status,
         headers,
         body,
+    }
+}
+
+/// The decoded body of a complete chunked message (trailers ignored); `None` while incomplete.
+fn dechunk(mut raw: &[u8]) -> Option<Vec<u8>> {
+    let mut out = Vec::new();
+    loop {
+        let eol = raw.windows(2).position(|w| w == b"\r\n")?;
+        let size = std::str::from_utf8(&raw[..eol]).ok()?.split(';').next()?;
+        let size = usize::from_str_radix(size.trim(), 16).ok()?;
+        if size == 0 {
+            return Some(out);
+        }
+        out.extend_from_slice(raw.get(eol + 2..eol + 2 + size)?);
+        raw = raw.get(eol + 4 + size..)?;
     }
 }
 

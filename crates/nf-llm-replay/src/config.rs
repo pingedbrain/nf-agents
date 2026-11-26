@@ -58,6 +58,12 @@ pub struct Cli {
     /// Address to listen on.
     #[arg(long, env = "NF_LLM_REPLAY_BIND", default_value_t = IpAddr::V4(Ipv4Addr::LOCALHOST))]
     pub bind: IpAddr,
+    /// Extra volatile field: a top-level name or a JSON pointer such as /metadata/user_id.
+    #[arg(long, env = "NF_LLM_REPLAY_VOLATILE_FIELDS", value_delimiter = ',')]
+    pub volatile_field: Vec<String>,
+    /// Extra volatile regular expression, replaced in every string value.
+    #[arg(long, env = "NF_LLM_REPLAY_VOLATILE_PATTERNS", value_delimiter = '\n')]
+    pub volatile_pattern: Vec<String>,
 }
 
 fn parse_upstream(s: &str) -> Result<String, String> {
@@ -81,6 +87,10 @@ pub struct Config {
     pub bind: IpAddr,
     /// Listen port.
     pub port: u16,
+    /// Extra volatile fields (names or JSON pointers).
+    pub volatile_fields: Vec<String>,
+    /// Extra volatile patterns.
+    pub volatile_patterns: Vec<String>,
     /// Upstream key from `NF_LLM_REPLAY_API_KEY`.
     pub api_key: Option<ApiKey>,
 }
@@ -111,6 +121,8 @@ impl Config {
             upstream: cli.upstream,
             bind: cli.bind,
             port: cli.port,
+            volatile_fields: cli.volatile_field,
+            volatile_patterns: cli.volatile_pattern,
             // An empty key would make the cassette secret guard refuse every entry.
             api_key: api_key.filter(|k| !k.is_empty()).map(ApiKey),
         })
@@ -174,6 +186,27 @@ mod tests {
                 .api_key
                 .is_some()
         );
+    }
+
+    #[test]
+    fn volatile_flags_are_repeatable_and_comma_or_newline_separated() {
+        let cli = parse(&[
+            "--cassette",
+            "c",
+            "--volatile-field",
+            "a,/b/c",
+            "--volatile-field",
+            "d",
+            "--volatile-pattern",
+            "x,y",
+            "--volatile-pattern",
+            "p\nq",
+        ]);
+        let config = Config::from_cli(cli.unwrap(), None).unwrap();
+        assert_eq!(config.volatile_fields, ["a", "/b/c", "d"]);
+        assert_eq!(config.volatile_patterns, ["x,y", "p", "q"]);
+        let none = Config::from_cli(parse(&["--cassette", "c"]).unwrap(), None).unwrap();
+        assert!(none.volatile_fields.is_empty() && none.volatile_patterns.is_empty());
     }
 
     #[test]

@@ -83,6 +83,21 @@ without a key; `StartupError::Upstream(#[from] UpstreamError)`. (5) `mod upstrea
 `not_stored`; 502/500 messages are also logged at `warn`. (7) `deny.toml` `[graph] targets` = Linux gnu/musl
 (x86_64, aarch64) + macOS, which removes the `syn` 2/3 duplicate warning coming from Android-only `jni`.
 
+**Deviation (2026-11-26, PR D).** (1) `sse` is a private module with `pub(crate) fn split_events`; it is
+line based per the SSE spec (`\n`, `\r\n`, `\r` line endings mixed freely, a blank line ends an event),
+which covers the three listed terminators. (2) Record still buffers the upstream answer before storing it
+(single-flight shares one entry); `text/event-stream` (prefix match on `content-type`) is stored as `events`,
+everything else as `body`. Replay and record answer `events` with `Body::from_stream` (one chunk per event,
+no delays; hyper may still coalesce writes, so chunking is not asserted). (3) `relay` (passthrough and
+non-2xx in record) streams `bytes_stream()` and is no longer fallible; reqwest gains `stream`.
+(4) `futures-util = { "0.3.34", default-features = false }` (already in the tree via axum); no `bytes` dep
+(axum re-exports `Bytes`). (5) `Normalizer::new(extra_fields, extra_patterns)` as designed; a pointer whose
+last token is an array index removes that element (in range only); `NormalizeError::Field` for an empty
+field or a `~` not followed by `0`/`1`; regex errors are flattened to one line (startup errors print one
+line). `Cli.volatile_field`/`volatile_pattern` (`,` resp. newline `value_delimiter`) → `Config.volatile_fields`
+/`volatile_patterns`. (6) Log outcome `recorded` only for the request whose upstream call filled the cell;
+coalesced waiters log `hit` (C2 suggestion S-8).
+
 ## Data Flow
 
     client ─▶ axum fallback(handle) ─▶ Normalizer::key(method, path, body)

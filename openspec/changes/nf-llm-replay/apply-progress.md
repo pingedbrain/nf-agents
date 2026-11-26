@@ -1,7 +1,7 @@
 # Apply progress: nf-llm-replay
 
-**Mode**: Strict TDD (runner `cargo test --workspace`). Batches: PR A done (6/6 tasks), PR B done (6/6 tasks), PR C1 done (3/3 tasks), PR C2 done (4/4 tasks); PR D, E pending.
-Overall: 19/31 tasks. (PR C was split into C1/C2 on 2026-11-26; task IDs unchanged, see tasks.md.)
+**Mode**: Strict TDD (runner `cargo test --workspace`). Batches: PR A done (6/6 tasks), PR B done (6/6 tasks), PR C1 done (3/3 tasks), PR C2 done (4/4 tasks), PR D done (5/5 tasks); PR E pending.
+Overall: 24/31 tasks. (PR C was split into C1/C2 on 2026-11-26; task IDs unchanged, see tasks.md.)
 
 ## PR A — normalization + cassette model (2026-11-26)
 
@@ -176,6 +176,50 @@ Recorded in design.md ("Deviation (2026-11-26, PR C2)") and tasks.md.
   C2 tasks landed; nothing was moved to a later batch.
 - Record buffers the whole upstream body; SSE answers are stored as `body` until D.3 (spec'd behaviour lands there).
 
+## PR D — SSE streaming + normalization flags (2026-11-26)
+
+### Files changed
+
+| File | Action | What |
+|------|--------|------|
+| `Cargo.toml` | Modified | workspace dep `futures-util 0.3.34` (no default features); reqwest += `stream` |
+| `crates/nf-llm-replay/Cargo.toml` | Modified | `futures-util` |
+| `Cargo.lock` | Modified | generated |
+| `src/sse.rs` | Created | `split_events` (line based: `\n`/`\r\n`/`\r`, blank line ends an event, tail kept); 3 unit tests |
+| `src/proxy.rs` | Modified | record stores `text/event-stream` as `events`; `respond` streams one chunk per event; `relay` streams `bytes_stream()` (infallible now); log outcome `recorded` only for the filling request (S-8) |
+| `src/normalize.rs` | Modified | `Normalizer::new(extra_fields, extra_patterns)`, `VolatileField::{TopLevel, Pointer}` (RFC 6901, object member or in-range array index), `NormalizeError::Field`, one-line regex errors; 2 unit tests |
+| `src/config.rs` | Modified | `--volatile-field` (`NF_LLM_REPLAY_VOLATILE_FIELDS`, comma) / `--volatile-pattern` (`NF_LLM_REPLAY_VOLATILE_PATTERNS`, newline), `Config.volatile_fields/patterns`; 1 unit test |
+| `src/lib.rs` | Modified | `mod sse`; normalizer built from the config flags |
+| `tests/common/fake_upstream.rs` | Modified | SSE answers (`CHAT_EVENTS`, `RESPONSES_EVENTS` ×5, `MESSAGES_EVENTS` with one CRLF event), `sse_events`, `pause` + `resume` gate after event 1 |
+| `tests/common/mod.rs` | Modified | raw client decodes chunked bodies (`dechunk`); `Normalizer::new(&[], &[])` |
+| `tests/sse.rs` | Created | E-resp, E-msg, E-chat, E-store, E-live (reqwest client) |
+| `tests/cli.rs` | Modified | X-help lists the volatile flags + env vars; X-vol (flag and env, pattern and pointer) |
+| `tests/captures.rs` | Modified | `Normalizer::new(&[], &[])` |
+
+### TDD cycle evidence
+
+| Task | Test file | Layer | Safety net | RED | GREEN | Triangulate | Refactor |
+|------|-----------|-------|------------|-----|-------|-------------|----------|
+| D.1 | `src/sse.rs` | Unit | ✅ 60/60 | ✅ E-split, E-exact, E-tail → E0425 (no `split_events`) | ✅ 3/3 | ✅ empty body, leading blank lines, `\r\n` + `\n` mixed terminator, multibyte, comment event, bare tail without newline | ➖ |
+| D.2 | `tests/common/fake_upstream.rs` | helper | ✅ | ➖ helper (exercised by D.3/D.4) | ✅ | ➖ structural | ➖ |
+| D.3 | `tests/sse.rs` | Integration | ✅ 63/63 | ✅ E-store FAILED (`events` missing, `body` set); ⚠️ E-resp/E-msg/E-chat passed before the change (concatenated body was already byte-exact): regression guards | ✅ 5/5 | ✅ 3 endpoints, `?beta=true`, CRLF event, fake hit count unchanged during replay | `respond` clones the events into an owned stream |
+| D.4 | `tests/sse.rs` | Integration | ✅ | ✅ E-live FAILED (timeout: buffered `relay` held headers until the paused upstream finished) | ✅ | ✅ event 1 before resume + full body after + no cassette file; P-pass and W-err still green with chunked relays (raw client dechunks) | ➖ |
+| D.5 | `src/normalize.rs`, `src/config.rs`, `tests/cli.rs` | Unit + CLI | ✅ 68/68 | ✅ N-ptr, N-pat, config flags, X-vol → E0061/E0599/E0609 (no args, no `Field`, no config fields) | ✅ 72/72 | ✅ escaped `~0`/`~1` tokens, array index, missing target, non-object body, bare extra name top-level only; 3 invalid fields; two patterns + defaults; flag vs env, pattern vs pointer. Mutations: TopLevel removal disabled → N-ptr, N-pat, N-vol FAIL; multi-line regex error → N-pat FAIL | ➖ |
+
+### Test summary
+
+- Tests written in PR D: 12 (6 unit, 5 SSE integration, 1 CLI; X-help extended); workspace total 72, all passing.
+- Pure functions: `split_events`, `VolatileField::parse/remove`, `one_line`, `sse_events` (fake), `dechunk` (test client).
+
+### Deviations from design
+
+Recorded in design.md ("Deviation (2026-11-26, PR D)") and tasks.md.
+
+### Issues found
+
+- None blocking. One-chunk-per-event in replay is implemented but not asserted (hyper may coalesce writes).
+- C2 S-7 (non-2xx leader → each coalesced waiter retries upstream) left as is.
+
 ### Remaining
 
-PR D (D.1-D.5), PR E (E.1-E.7).
+PR E (E.1-E.7).
