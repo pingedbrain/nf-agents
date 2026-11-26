@@ -1,0 +1,42 @@
+name: New compute target
+description: Propose an infra/compute/<target> module (for example gcp-batch, azure-batch, kubernetes).
+labels: [compute-target, extension-point, opentofu]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Every compute target is an OpenTofu module under `infra/compute/<target>` that exposes the same outputs: `queue`, `work_dir`, `nextflow_config`, and optionally `head_job`. It must pass the shared contract test (`infra/tests/contract.tftest.hcl`) with mocks, so no cloud account is needed for PR CI.
+  - type: input
+    id: target
+    attributes:
+      label: Target name
+      placeholder: gcp-batch
+    validations:
+      required: true
+  - type: textarea
+    id: mapping
+    attributes:
+      label: Contract mapping
+      description: What `queue`, `work_dir` and `nextflow_config` map to on this platform, and how `head_job` would work if supported.
+    validations:
+      required: true
+  - type: textarea
+    id: nextflow
+    attributes:
+      label: Nextflow executor
+      description: Which Nextflow executor and config scopes this target uses, with links to the docs.
+    validations:
+      required: true
+  - type: textarea
+    id: testing
+    attributes:
+      label: Testing plan
+      description: How `tofu test` mocks the provider, and whether a local emulator exists.
+  - type: checkboxes
+    id: commitments
+    attributes:
+      label: Commitments
+      options:
+        - label: The core modules stay provider-agnostic; provider code lives only under this target.
+          required: true
+        - label: I am willing to maintain this target or help find a maintainer.

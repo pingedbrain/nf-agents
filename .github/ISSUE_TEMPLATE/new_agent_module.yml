@@ -1,0 +1,52 @@
+name: New agent module
+description: Propose a new nf-core-compatible agent module (for example FUSION_REVIEW or CNV_SUMMARY).
+labels: [agent-module, extension-point]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Every agent module ships with typed input/output records (`schema.json`), `meta.yml`, a `SKILL.md`, nf-test tests against `nf-llm-replay`, and evals with a pass threshold. No evals, no merge.
+        Agent modules produce research material only: no clinical claims.
+  - type: input
+    id: name
+    attributes:
+      label: Module name
+      placeholder: FUSION_REVIEW
+    validations:
+      required: true
+  - type: textarea
+    id: task
+    attributes:
+      label: What does the agent do?
+      description: The task, who uses the output, and which step of which pipelines it fits after.
+    validations:
+      required: true
+  - type: textarea
+    id: io
+    attributes:
+      label: Inputs and outputs
+      description: The records it consumes (lineage, reports, files) and the records it emits.
+    validations:
+      required: true
+  - type: textarea
+    id: evals
+    attributes:
+      label: Evaluation plan
+      description: How correctness is measured, where labeled cases come from (public data only, with license), who labels them, and the proposed pass threshold.
+    validations:
+      required: true
+  - type: textarea
+    id: deterministic
+    attributes:
+      label: Deterministic checks
+      description: Checks that do not depend on the model (for example, every tool cited must exist in the lineage).
+  - type: checkboxes
+    id: commitments
+    attributes:
+      label: Commitments
+      options:
+        - label: The module is read-only and does not modify data or infrastructure.
+          required: true
+        - label: Eval cases use public or synthetic data only, never real patient data.
+          required: true
+        - label: I can help label eval cases, or I know a bioinformatician who can.

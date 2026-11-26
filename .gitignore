@@ -1,0 +1,51 @@
+# Rust
+/target/
+**/target/
+**/*.rs.bk
+
+# Node
+node_modules/
+dist/
+.astro/
+npm-debug.log*
+marketing/promo/out/
+
+# Nextflow
+work/
+.nextflow/
+.nextflow.log*
+.nextflow*
+results/
+.nf-test/
+.nf-test.log
+
+# OpenTofu / Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+# Variable files often hold secrets; commit *.tfvars.example instead
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+
+# Secrets and local env
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Editors / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store

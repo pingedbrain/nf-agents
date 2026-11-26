@@ -1,0 +1,56 @@
+name: Bug report
+description: Something in nf-agents does not work as expected.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! Please **do not** attach real patient or genomic data. Use public test profiles or synthetic data.
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - nf-lineage
+        - nf-lineage-mcp
+        - nf-llm-replay
+        - nf-evals
+        - Agent module
+        - Infrastructure (OpenTofu)
+        - Site / docs
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Minimal commands, config, or pipeline that triggers the bug.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: nf-agents version or commit, Nextflow version, OS, executor/cloud.
+      placeholder: |
+        nf-agents: 
+        Nextflow: 
+        OS: 
+        Executor / cloud: 
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Redact secrets and sample identifiers.
+      render: text
