@@ -49,3 +49,6 @@ terraform.rc
 .vscode/
 *.swp
 .DS_Store
+
+# Local agent tooling state (absolute paths)
+.atl/

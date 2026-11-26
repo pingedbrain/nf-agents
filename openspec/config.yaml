@@ -1,0 +1,51 @@
+schema: spec-driven
+
+context: |
+  Tech stack: Rust 2024 Cargo workspace (crates/), Nextflow + nf-test, OpenTofu, Astro/Starlight (site)
+  Architecture: contracts-first (schemas/traits), read-only tools, cloud-agnostic core, lineage v1beta1 (tolerant parsing)
+  Testing: cargo test --workspace (no cards/API keys; Docker only in PR suite)
+  Style: cargo fmt --all -- --check; cargo clippy --all-targets -- -D warnings
+  Public text (code, commits, PRs, docs) in English
+
+strict_tdd: true
+
+testing:
+  strict_tdd: true
+  detected: 2026-11-26
+  note: repo has no Cargo workspace yet; capabilities are the planned stack
+  runner:
+    command: cargo test --workspace
+    framework: cargo test (built-in)
+  layers:
+    unit: {available: true, tool: cargo test}
+    integration: {available: true, tool: cargo test (tests/ dirs, Docker for services)}
+    e2e: {available: false, tool: nf-test (later stage)}
+  coverage: {available: false, command: null}
+  quality:
+    linter: {available: true, command: "cargo clippy --all-targets -- -D warnings"}
+    type_checker: {available: true, command: "cargo check --workspace"}
+    formatter: {available: true, command: "cargo fmt --all -- --check"}
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+    - Identify affected crates
+  specs:
+    - Use Given/When/Then format for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+    - Every acceptance criterion maps to a test
+  design:
+    - Contracts (schemas/traits) before implementations
+    - Document decisions with rationale; keep core cloud-agnostic
+  tasks:
+    - Group by phase (infrastructure, implementation, testing)
+    - Hierarchical numbering; one small PR per task, tests in same PR
+  apply:
+    - Strict TDD, test first, run cargo test --workspace
+    - Unknown lineage fields tolerated, never panic
+    - Read-only by default
+  verify:
+    - Run cargo fmt --check, clippy -D warnings, cargo test --workspace
+    - Compare implementation against every spec scenario
+  archive:
+    - Warn before merging destructive deltas

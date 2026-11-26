@@ -1,0 +1,14 @@
+change: workspace-skeleton
+artifact_store: openspec
+mode: auto
+phases:
+  explore: skipped
+  proposal: done
+  spec: done
+  design: done
+  tasks: done
+  apply: done
+  verify: done
+  archive: pending
+updated: 2026-11-26
+next: archive (after C-run on PR)
