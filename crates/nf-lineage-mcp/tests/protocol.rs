@@ -8,7 +8,10 @@
 
 mod common;
 
-use common::{call, call_json, core_versions, ids, oracle_lines, start, try_call};
+use common::{
+    call, call_json, core_versions, ids, materialize, oracle_lines, start, start_with, try_call,
+};
+use nf_lineage::CheckOptions;
 use serde_json::{Value, json};
 
 const CAP: usize = 32_768;
@@ -30,7 +33,10 @@ async fn server_info_and_tool_catalogue() {
     let tools = client.list_all_tools().await.unwrap();
     let mut names: Vec<&str> = tools.iter().map(|t| t.name.as_ref()).collect();
     names.sort_unstable();
-    assert_eq!(names, ["find", "list_runs", "view"]);
+    assert_eq!(
+        names,
+        ["check", "diff", "find", "list_runs", "provenance", "view"]
+    );
     for tool in &tools {
         assert!(tool.description.as_ref().is_some_and(|d| d.len() > 40));
         let a = tool.annotations.as_ref().unwrap();
@@ -167,6 +173,7 @@ async fn find_matches_oracle() {
 async fn errors_are_tool_results_with_hints() {
     let client = start(LATEST, CAP).await;
     let missing = format!("lid://{}", "0".repeat(32));
+    let task = ids(LATEST)["TASK_GENERATE_RUN1"].clone();
     let cases = [
         ("view", json!({"lid": "foo"}), "invalid_lid", "foo"),
         (
@@ -188,6 +195,12 @@ async fn errors_are_tool_results_with_hints() {
             json!({"since": "yesterday"}),
             "invalid_argument",
             "yesterday",
+        ),
+        (
+            "check",
+            json!({"lid": task}),
+            "unexpected_kind",
+            task.as_str(),
         ),
     ];
     for (tool, args, class, named) in cases {
@@ -240,4 +253,84 @@ async fn truncation_notice() {
     assert!(texts[1].starts_with("[truncated]") && texts[1].contains("#fragment"));
     assert!(total(&texts) <= cap);
     client.cancel().await.unwrap();
+}
+
+#[tokio::test]
+async fn diff_runs_shows_only_greeting() {
+    for version in core_versions() {
+        let client = start(&version, CAP).await;
+        let ids = ids(&version);
+        let args = json!({"lid_a": ids["RUN1"], "lid_b": ids["RUN2"]});
+        let diff = call_json(&client, "diff", args).await;
+        assert_eq!(
+            diff["changes"],
+            json!([{"path": "params.greeting", "a": "hello", "b": "bonjour"}]),
+            "{version}: {diff}"
+        );
+        client.cancel().await.unwrap();
+    }
+}
+
+#[tokio::test]
+async fn diff_raw_has_cli_header() {
+    let client = start(LATEST, CAP).await;
+    let ids = ids(LATEST);
+    let args = json!({"lid_a": ids["RUN1"], "lid_b": ids["RUN2"], "mode": "raw"});
+    let (is_error, texts) = call(&client, "diff", args).await;
+    assert!(!is_error && texts.len() == 1, "{texts:?}");
+    assert!(texts[0].starts_with("diff --git "), "{}", texts[0]);
+    assert!(texts[0].contains("greeting"));
+    let args = json!({"lid_a": ids["RUN1"], "lid_b": ids["RUN2"], "mode": "fancy"});
+    let (is_error, texts) = call(&client, "diff", args).await;
+    assert!(is_error && texts[0].contains("fancy"), "{texts:?}");
+    client.cancel().await.unwrap();
+}
+
+#[tokio::test]
+async fn check_outcomes() {
+    for version in core_versions() {
+        let summary = format!("{}/summary.txt", ids(&version)["RUN1"]);
+        let data = materialize(&version);
+        let empty = tempfile::tempdir().unwrap();
+        for (dir, status) in [(data.path(), "valid"), (empty.path(), "file_missing")] {
+            let check = CheckOptions {
+                path_map: vec![("/nf-agents-fixture".into(), dir.to_owned())],
+                ..CheckOptions::default()
+            };
+            let client = start_with(&version, CAP, check).await;
+            let report = call_json(&client, "check", json!({"lid": summary})).await;
+            assert_eq!(report["status"], status, "{version}: {report}");
+            assert_eq!(
+                report["path"],
+                "/nf-agents-fixture/results-hello/summary.txt"
+            );
+            client.cancel().await.unwrap();
+        }
+    }
+}
+
+#[tokio::test]
+async fn provenance_reaches_pipeline_input() {
+    for version in core_versions() {
+        let client = start(&version, CAP).await;
+        let file = format!("{}/summary.txt", ids(&version)["RUN1"]);
+        let p = call_json(&client, "provenance", json!({"lid": file})).await;
+        assert_eq!(p["target"], file.as_str());
+        let nodes = p["nodes"].as_array().unwrap();
+        let tasks: Vec<&str> = nodes
+            .iter()
+            .filter(|n| n["kind"] == "TaskRun")
+            .map(|n| n["name"].as_str().unwrap())
+            .collect();
+        assert_eq!(tasks, ["SUMMARIZE", "TRANSFORM", "GENERATE"], "{version}");
+        let external_seed = nodes
+            .iter()
+            .flat_map(|n| n["inputs"].as_array().unwrap())
+            .any(|i| {
+                i["type"] == "external"
+                    && i["path"].as_str().is_some_and(|p| p.ends_with("seed.txt"))
+            });
+        assert!(external_seed, "{version}: {p}");
+        client.cancel().await.unwrap();
+    }
 }

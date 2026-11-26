@@ -155,6 +155,15 @@ Reality checked against the merged `nf-lineage` 0.1.0 API and the fixtures:
 - **Unknown fields.** rmcp rejects them before the tool runs, as `isError: true` with its own text (`failed to deserialize parameters: unknown field ...`), so that text carries no `invalid_argument:` prefix. The class is documented; the test asserts `isError` and the field name.
 - **Oracle formats.** Nextflow 25.04 prints `find` results as a JSON array, later versions one LID per line; the test accepts both.
 
+## Deviations (2026-11-26, PR B)
+
+- **PR split.** The Dockerfile, the CI `docker` job, the README and the packaging check move to PR C (see `tasks.md`); PR B ships the six tools, the binary and the stdio end-to-end test.
+- **`config.rs` belongs to the binary**, not the library (`mod config;` in `main.rs`), so `clap` stays out of the library API. The unit test keeps its name, `config::tests::rejects_invalid_flags`, and runs in the binary's test target.
+- **`--path-map`** rejects an empty FROM or TO and a missing `=`; values are taken verbatim.
+- **Startup failures** are written to stderr with `writeln!` instead of `tracing`, so the reason shows even when `NF_LINEAGE_MCP_LOG` turns logging off. `tool_error` logs every failed call with `tracing::warn!` (class and message).
+- **`tokio` features** stay `macros` + `rt-multi-thread`; rmcp's `transport-io` feature brings stdio.
+- **Tests.** `check_outcomes` runs on every core version; `unopenable_store_fails_fast` also asserts that a usage error exits 2 with empty stdout; `diff_raw_has_cli_header` also asserts that an unknown `mode` is an `isError` result naming the value.
+
 ## Open Questions
 
 - [ ] `anthropic/maxResultSizeChars` tool `_meta` to raise Claude Code's 50k-char threshold — not needed while the cap is 32 KiB.

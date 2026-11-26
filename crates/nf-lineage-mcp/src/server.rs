@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-use nf_lineage::{FindQuery, Lid, LineageError, LineageStore, Record, RunSummary};
+use nf_lineage::{CheckOptions, FindQuery, Lid, LineageError, LineageStore, Record, RunSummary};
 use rmcp::handler::server::router::tool::ToolRouter;
 use rmcp::handler::server::wrapper::Parameters;
 use rmcp::model::{CallToolResult, Implementation, ServerCapabilities, ServerConfig};
@@ -11,7 +11,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::respond::{ToolError, finish_json};
+use crate::respond::{ToolError, finish_json, finish_text, tool_error};
 
 /// Operator settings of a [`LineageServer`]; no tool parameter can change them.
 #[derive(Debug, Clone)]
@@ -20,6 +20,8 @@ pub struct Settings {
     pub store_label: String,
     /// Upper bound of a tool result's text, in bytes (results above it are truncated).
     pub max_response_bytes: usize,
+    /// Options of the `check` tool, e.g. the `path_map` from recorded data paths to local dirs.
+    pub check: CheckOptions,
 }
 
 /// The MCP server over a lineage store. Read-only: no tool writes, deletes or creates anything.
@@ -66,6 +68,31 @@ pub struct FindArgs {
     /// keys), e.g. `workflowRun=lid://<hash>` or `params.greeting=hello`.
     #[serde(default)]
     pub terms: Vec<String>,
+}
+
+/// Parameters of `diff`.
+#[derive(Debug, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct DiffArgs {
+    /// First lineage ID (run, task or file), e.g. the older run.
+    pub lid_a: String,
+    /// Second lineage ID, of the same kind as `lid_a`.
+    pub lid_b: String,
+    /// `semantic` (default): JSON list of changed fields, volatile fields ignored; `raw`: the
+    /// unified text diff of the two records, like `nextflow lineage diff`.
+    #[serde(default)]
+    pub mode: DiffMode,
+}
+
+/// Output of `diff`.
+#[derive(Debug, Default, Clone, Copy, Deserialize, JsonSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum DiffMode {
+    /// Changed fields as JSON.
+    #[default]
+    Semantic,
+    /// CLI-style unified text diff.
+    Raw,
 }
 
 impl LineageServer {
@@ -127,6 +154,10 @@ impl LineageServer {
         }
         Ok(rows)
     }
+}
+
+fn lid_pair(args: &DiffArgs) -> Result<(Lid, Lid), LineageError> {
+    Ok((Lid::parse(&args.lid_a)?, Lid::parse(&args.lid_b)?))
 }
 
 /// One `list_runs` row: `{timestamp, run_name, session_id, lid, pipeline}`.
@@ -227,6 +258,82 @@ impl LineageServer {
         let hint = "add type, labels, name or key=value terms";
         finish_json(self.search(args).await, self.cap(), hint)
     }
+
+    #[tool(
+        description = "What changed between two runs or two tasks: params, code, containers and tool versions, inputs and outputs; volatile fields (session IDs, run names, timestamps, work dirs) are ignored. Returns JSON {a, b, changes: [{path, a, b}]}, e.g. [{\"path\":\"params.greeting\",\"a\":\"hello\",\"b\":\"bonjour\"}]. mode=raw returns the CLI-style unified text diff instead.",
+        annotations(
+            read_only_hint = true,
+            idempotent_hint = true,
+            destructive_hint = false,
+            open_world_hint = false
+        )
+    )]
+    async fn diff(
+        &self,
+        Parameters(args): Parameters<DiffArgs>,
+    ) -> Result<CallToolResult, ErrorData> {
+        let (store, cap) = (&*self.store, self.cap());
+        let hint = "diff two tasks instead of two runs, or use mode=semantic";
+        match (lid_pair(&args), args.mode) {
+            (Err(e), _) => Ok(tool_error(&e.into())),
+            (Ok((a, b)), DiffMode::Semantic) => finish_json(
+                nf_lineage::diff(store, &a, &b)
+                    .await
+                    .map_err(ToolError::from),
+                cap,
+                hint,
+            ),
+            (Ok((a, b)), DiffMode::Raw) => {
+                let text = nf_lineage::diff_raw(store, &a, &b).await;
+                Ok(finish_text(text.map_err(ToolError::from), cap, hint))
+            }
+        }
+    }
+
+    #[tool(
+        description = "Verify a data file against its lineage record (FileOutput LID, e.g. lid://<hash>/summary.txt): recomputes the recorded checksum from the file on disk or object storage. Returns JSON {lid, path, status, expected, actual} with status valid, mismatch, file_missing or no_checksum.",
+        annotations(
+            read_only_hint = true,
+            idempotent_hint = true,
+            destructive_hint = false,
+            open_world_hint = false
+        )
+    )]
+    async fn check(
+        &self,
+        Parameters(args): Parameters<LidArgs>,
+    ) -> Result<CallToolResult, ErrorData> {
+        let result = match Lid::parse(&args.lid) {
+            Ok(lid) => nf_lineage::check(&*self.store, &lid, &self.settings.check).await,
+            Err(e) => Err(e),
+        };
+        finish_json(
+            result.map_err(ToolError::from),
+            self.cap(),
+            "check one file at a time",
+        )
+    }
+
+    #[tool(
+        description = "Trace how a data file was produced (FileOutput LID, e.g. lid://<hash>/summary.txt): the tasks and inputs back to the pipeline inputs, breadth-first. Returns JSON {target, nodes: [{lid, kind, name, inputs: [{type: lineage|external|value, ...}]}]}.",
+        annotations(
+            read_only_hint = true,
+            idempotent_hint = true,
+            destructive_hint = false,
+            open_world_hint = false
+        )
+    )]
+    async fn provenance(
+        &self,
+        Parameters(args): Parameters<LidArgs>,
+    ) -> Result<CallToolResult, ErrorData> {
+        let result = match Lid::parse(&args.lid) {
+            Ok(lid) => nf_lineage::provenance(&*self.store, &lid).await,
+            Err(e) => Err(e),
+        };
+        let hint = "trace an intermediate file (find type=FileOutput) to get a smaller graph";
+        finish_json(result.map_err(ToolError::from), self.cap(), hint)
+    }
 }
 
 #[tool_handler(router = self.tool_router)]
@@ -236,7 +343,9 @@ impl ServerHandler for LineageServer {
             "Query the Nextflow data lineage store at {store}. This server is read-only: \
              nothing is ever modified. Tools: list_runs (start here: runs newest first, with their LIDs), find \
              (records by type/labels/name/key=value terms), view (one record, or one field with \
-             #fragment). Lineage IDs look like lid://<hash>[/<path>][#<field>]. Results above \
+             #fragment), diff (what changed between two runs or tasks), check (verify a data \
+             file against its recorded checksum), provenance (the tasks and inputs a file came \
+             from). Lineage IDs look like lid://<hash>[/<path>][#<field>]. Results above \
              {cap} bytes are truncated with a final [truncated] note: narrow the request.",
             store = self.settings.store_label,
             cap = self.cap(),
