@@ -63,3 +63,4 @@ echo tampered >> results-hello/summary.txt
 cap check-tampered lineage check "$RUN1/summary.txt"
 replace results-bonjour/summary.txt
 cap check-mtime-only lineage check "$RUN2/summary.txt"
+python3 "$TOOLS/shape.py" "$OUT" > "$OUT/shape.txt"

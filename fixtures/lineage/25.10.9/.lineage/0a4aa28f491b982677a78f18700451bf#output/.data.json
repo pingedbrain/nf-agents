@@ -1,0 +1,1 @@
+{"version":"lineage/v1beta1","kind":"TaskOutput","spec":{"taskRun":"lid://0a4aa28f491b982677a78f18700451bf","workflowRun":"lid://f76a46a7275784cbc8e19fd6078dfd4b","createdAt":"2026-11-26T21:41:38.090765844Z","output":[{"type":"path","name":null,"value":"lid://0a4aa28f491b982677a78f18700451bf/summary.txt"},{"type":"val","name":null,"value":"done"}],"labels":null}}

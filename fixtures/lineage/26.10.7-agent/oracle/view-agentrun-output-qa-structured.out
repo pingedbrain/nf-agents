@@ -1,0 +1,10 @@
+[
+  {
+    "type": "Record",
+    "name": "a",
+    "value": {
+      "answer": "stub-ok",
+      "confidence": 0.5
+    }
+  }
+]

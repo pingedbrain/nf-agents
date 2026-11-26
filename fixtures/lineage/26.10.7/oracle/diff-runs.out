@@ -1,14 +1,14 @@
-diff --git d3aad5e9507a67cf4dc011874f1b40f5 53eff9d0e4499741b854d37e0d677ded
---- d3aad5e9507a67cf4dc011874f1b40f5
-+++ 53eff9d0e4499741b854d37e0d677ded
+diff --git ad34808575cc59cad2b2a70be796f645 f93fffc5f64069cd3b083b95b366096f
+--- ad34808575cc59cad2b2a70be796f645
++++ f93fffc5f64069cd3b083b95b366096f
 @@ -16,13 +16,13 @@
        "repository": null,
        "commitId": null
      },
--    "sessionId": "387602f4-64c2-4762-aa2e-037a8336ca4c",
--    "name": "tender_booth",
-+    "sessionId": "228bf7e7-b09b-4cb5-ad6f-cdad28d834b9",
-+    "name": "zen_planck",
+-    "sessionId": "75ac772a-ab55-48f5-b10a-1be0f134a11e",
+-    "name": "compassionate_planck",
++    "sessionId": "9fec1cec-ba1a-4265-bd9b-573d4b77c0de",
++    "name": "friendly_ride",
      "params": [
        {
          "type": "String",
@@ -30,25 +30,25 @@ diff --git d3aad5e9507a67cf4dc011874f1b40f5 53eff9d0e4499741b854d37e0d677ded
        },
        "executor": {},
        "process": {},
--      "runName": "tender_booth",
+-      "runName": "compassionate_planck",
 -      "outputDir": "results-hello",
-+      "runName": "zen_planck",
++      "runName": "friendly_ride",
 +      "outputDir": "results-bonjour",
        "outputFormat": "text",
        "workDir": "work",
        "poolSize": 2.0
      },
      "metadata": {
--      "runName": "tender_booth",
-+      "runName": "zen_planck",
+-      "runName": "compassionate_planck",
++      "runName": "friendly_ride",
        "scriptId": "2318fdd93ce721f0fc23a386a78c5bde",
        "scriptFile": "/nf-agents-fixture/pipeline/main.nf",
        "scriptName": "main.nf",
        "repository": null,
        "commitId": null,
        "revision": null,
--      "start": "2026-11-26T21:25:23.668405139Z",
-+      "start": "2026-11-26T21:25:27.143272222Z",
+-      "start": "2026-11-26T21:44:13.852961958Z",
++      "start": "2026-11-26T21:44:17.394930281Z",
        "complete": null,
        "container": {},
 -      "commandLine": "nextflow run pipeline/main.nf --greeting hello -output-dir results-hello",
@@ -66,8 +66,8 @@ diff --git d3aad5e9507a67cf4dc011874f1b40f5 53eff9d0e4499741b854d37e0d677ded
        "homeDir": "/root",
        "userName": "root",
        "profile": "standard",
--      "sessionId": "387602f4-64c2-4762-aa2e-037a8336ca4c",
-+      "sessionId": "228bf7e7-b09b-4cb5-ad6f-cdad28d834b9",
+-      "sessionId": "75ac772a-ab55-48f5-b10a-1be0f134a11e",
++      "sessionId": "9fec1cec-ba1a-4265-bd9b-573d4b77c0de",
        "resume": false,
        "stubRun": false,
        "preview": false,

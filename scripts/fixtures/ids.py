@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Map the fixture runs and tasks to their LIDs (stdlib, Python >= 3.9).
 
-Usage: ids.py STORE OUT_JSON  -- writes OUT_JSON and prints KEY=LID lines for the shell.
-RUN1 is the run with `greeting=hello`, RUN2 the one with `greeting=bonjour`;
+Usage: ids.py [--agent] STORE OUT_JSON  -- writes OUT_JSON and prints KEY=LID lines for the shell.
+Core: RUN1 is the run with `greeting=hello`, RUN2 the one with `greeting=bonjour`;
 TASK_<PROCESS>_RUN<n> is the TaskRun of that process in run n.
+Agent (--agent): RUN1 is the only run, AGENT_<NAME> the AgentRun of agent <name>.
 """
 
 import json
@@ -39,13 +40,30 @@ def ids(store):
     return dict(sorted(out.items()))
 
 
+def agent_ids(store):
+    out = {}
+    for lid, kind, f in records(store):
+        name = f.get("name")
+        key = "RUN1" if kind == "WorkflowRun" else f"AGENT_{name.upper()}" if kind == "AgentRun" and \
+            isinstance(name, str) and re.fullmatch(r"[a-z][a-z0-9_]*", name) else None
+        if key in out or (kind == "AgentRun" and key is None):
+            raise ValueError(f"{lid}: unexpected or duplicate {kind} {name!r}")
+        if key:
+            out[key] = lid
+    if "RUN1" not in out:
+        raise ValueError("no WorkflowRun record")
+    return dict(sorted(out.items()))
+
+
 def main(argv=None):
     args = sys.argv[1:] if argv is None else argv
+    agent = args[:1] == ["--agent"]
+    args = args[1:] if agent else args
     if len(args) != 2:
-        sys.exit("usage: ids.py STORE OUT_JSON")
+        sys.exit("usage: ids.py [--agent] STORE OUT_JSON")
     store, dest = args
     try:
-        found = ids(store)
+        found = agent_ids(store) if agent else ids(store)
     except (OSError, ValueError) as e:
         sys.exit(f"ids: {e}")
     with open(dest, "w") as fh:

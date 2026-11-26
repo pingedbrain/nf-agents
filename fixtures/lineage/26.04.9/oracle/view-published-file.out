@@ -4,16 +4,16 @@
   "spec": {
     "path": "/nf-agents-fixture/results-hello/summary.txt",
     "checksum": {
-      "value": "73aa66f038ae4820805adecb4e255d89",
+      "value": "281aef04bc6c4c6c37365ab72f12688d",
       "algorithm": "nextflow",
       "mode": "standard"
     },
-    "source": "lid://399a6e15a42cabdaafd23acc2eae70ac/summary.txt",
-    "workflowRun": "lid://80bbb7765617f9a381c8f6f7228ff4c8",
+    "source": "lid://1995c2a79a80d686ec5aff7c659c7c39/summary.txt",
+    "workflowRun": "lid://31cd129f93a7451ba93fdfbba27a019a",
     "taskRun": null,
     "size": 9,
-    "createdAt": "2026-11-26T21:23:56.927649263Z",
-    "modifiedAt": "2026-11-26T21:23:56.929094886Z",
+    "createdAt": "2026-11-26T21:42:55.943258164Z",
+    "modifiedAt": "2026-11-26T21:42:55.944532921Z",
     "labels": [
       "summary"
     ]

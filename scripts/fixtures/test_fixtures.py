@@ -8,13 +8,18 @@ import os
 import shutil
 import subprocess
 import tempfile
+import threading
 import unittest
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 import check
 import export
 import ids
+import llm_stub
 import restore_mtimes
+import shape
 
 HERE = Path(__file__).resolve().parent
 ROOT = "/nf-agents-fixture"
@@ -65,18 +70,34 @@ def live_tree(base, envelope="spec"):
     return root
 
 
-def version_dir(base):
-    """A valid exported core version dir with a complete (dummy) oracle."""
+def agent_tree(base):
+    """A live agent run tree: one WorkflowRun, AgentRuns with tools / outputSchema, no files."""
+    root = base / "root"
+    store = root / ".lineage"
+    store.mkdir(parents=True)
+    (root / "nextflow.config").write_text("lineage.enabled = true\n")
+    put(store, R1, rec("WorkflowRun", "spec", name="run_a", params=[], config={"poolSize": 2}))
+    for lid, name, extra in ((T1, "qa", {}), (T2, "qa_structured", {"outputSchema": {"type": "object"}}),
+                             ("e" * 32, "shouty", {"tools": ["uppercase"]})):
+        put(store, lid, rec("AgentRun", "spec", name=name, runner="langchain4j", workflowRun="lid://" + R1,
+                            **{"tools": None, "outputSchema": None, **extra}))
+    return root
+
+
+def version_dir(base, kind="core"):
+    """A valid exported version dir with a complete (dummy) oracle and shape.txt."""
     out = base / "v"
-    export.export(live_tree(base), out, kind="core", version="26.10.7", image="img", recorded_root=ROOT)
+    tree, cases = (live_tree, check.CORE_CASES) if kind == "core" else (agent_tree, check.AGENT_CASES)
+    export.export(tree(base), out, kind=kind, version="26.10.7", image="img", recorded_root=ROOT)
     oracle = out / "oracle"
     oracle.mkdir()
-    for case in check.CORE_CASES:
+    for case in cases:
         (oracle / f"{case}.args").write_text('["lineage", "list"]\n')
         (oracle / f"{case}.out").write_text("")
         (oracle / f"{case}.err").write_text("")
         (oracle / f"{case}.exit").write_text("0\n")
     (oracle / "ids.json").write_text(json.dumps({"RUN1": "lid://" + R1, "RUN2": "lid://" + R2}))
+    (out / "shape.txt").write_text(shape.shape(out))
     return out
 
 
@@ -160,6 +181,12 @@ class IdsTests(Tmp):
                 self.assertEqual(ids.ids(root / ".lineage"), want)
 
 
+    def test_agent_ids(self):
+        want = {"AGENT_QA": "lid://" + T1, "AGENT_QA_STRUCTURED": "lid://" + T2,
+                "AGENT_SHOUTY": "lid://" + "e" * 32, "RUN1": "lid://" + R1}
+        self.assertEqual(ids.agent_ids(agent_tree(self.base) / ".lineage"), want)
+
+
 class CheckTests(Tmp):
     def setUp(self):
         super().setUp()
@@ -211,6 +238,32 @@ class CheckTests(Tmp):
         errs = check.check_version_dir(self.d, forbid=["someuser"])
         self.assertTrue(any("someuser" in e for e in errs), errs)
 
+    def test_host_path_shapes_only(self):
+        (self.d / "nextflow.config").write_text('agent { runner = "langchain4j" } // runner\n')
+        self.assertEqual(check.check_version_dir(self.d, forbid=["/home/runner"]), [])
+        for leak in ("/home/runner/work/x", "/__w/nf-agents", "/github/workspace/x", "/Users/dev/x"):
+            with self.subTest(leak=leak):
+                (self.d / "nextflow.config").write_text(leak + "\n")
+                self.assertFails("nextflow.config: contains host marker")
+
+    def test_missing_shape_fails(self):
+        (self.d / "shape.txt").unlink()
+        self.assertFails("missing shape.txt")
+
+    def test_stale_shape_fails(self):
+        (self.d / "oracle/list.out").write_text("changed\n")
+        self.assertFails("shape.txt is stale")
+
+    def test_agent_cases(self):
+        d = version_dir(self.base / "agent", kind="agent")
+        self.assertEqual(check.check_version_dir(d), [])
+        (d / "oracle/view-agentrun-shouty.out").unlink()
+        errs = check.check_version_dir(d)
+        self.assertTrue(any("oracle/view-agentrun-shouty.out: missing" in e for e in errs), errs)
+        shutil.rmtree(d / f".lineage/{'e' * 32}")
+        errs = check.check_version_dir(d)
+        self.assertTrue(any("AgentRun with tools" in e for e in errs), errs)
+
     def test_missing_case_file_fails(self):
         (self.d / "oracle/list.err").unlink()
         self.assertFails("oracle/list.err: missing")
@@ -224,6 +277,82 @@ class CheckTests(Tmp):
         root.mkdir()
         shutil.move(str(self.d), str(root / "26.10.7"))
         self.assertEqual(check.main([str(root)]), 0)
+
+
+class ShapeTests(Tmp):
+    def test_volatile_tokens_masked(self):
+        a = ("2026-11-26 21:25:24 UTC\ttender_booth\t387602f4-64c2-4762-aa2e-037a8336ca4c\t"
+             "lid://d3aad5e9507a67cf4dc011874f1b40f5 work/3c/fe0a1b2c3d4e5f60718293a4b5c6d7 "
+             "2026-11-26T21:25:23.668405139Z")
+        b = ("2026-11-27 08:01:02 UTC\tzen_planck  \t228bf7e7-b09b-4cb5-ad6f-cdad28d834b9\t"
+             "lid://53eff9d0e4499741b854d37e0d677ded work/9a/00112233445566778899aabbccddee "
+             "2026-11-27T08:01:01.1Z")
+        self.assertEqual(shape.mask(a, ["tender_booth"]), shape.mask(b, ["zen_planck"]))
+        self.assertNotEqual(shape.mask("exit 1", []), shape.mask("exit 2", []))
+
+    def test_new_field_changes_shape(self):
+        d = version_dir(self.base)
+        before = shape.shape(d)
+        p = d / ".lineage" / R1 / ".data.json"
+        r = json.loads(p.read_text())
+        r["spec"]["foo"] = "x"
+        p.write_text(json.dumps(r))
+        after = shape.shape(d)
+        self.assertNotEqual(before, after)
+        self.assertIn("record WorkflowRun spec.foo str", after)
+
+    def test_find_order_ignored(self):
+        d = version_dir(self.base)
+        lines = ["lid://" + R1 + "/a.txt", "lid://" + R2 + "/b.txt"]
+        shapes = []
+        for case in ("find-fileoutput", "find-fileoutput", "list", "list"):
+            (d / f"oracle/{case}.out").write_text("\n".join(lines) + "\n")
+            shapes.append(shape.shape(d))
+            lines.reverse()
+        self.assertEqual(shapes[0], shapes[1])
+        self.assertNotEqual(shapes[2], shapes[3])
+        # 25.04 prints a JSON array: only the last element lacks the trailing comma
+        arrays = [f'[\n  "lid://{x}/{x[0]}.txt",\n  "lid://{y}/{y[0]}.txt"\n]\n' for x, y in ((R1, R2), (R2, R1))]
+        for i, text in enumerate(arrays):
+            (d / "oracle/find-fileoutput.out").write_text(text)
+            shapes[i] = shape.shape(d)
+        self.assertEqual(shapes[0], shapes[1])
+
+
+class StubTests(unittest.TestCase):
+    def setUp(self):
+        self.srv = llm_stub.server(0)
+        threading.Thread(target=self.srv.serve_forever, daemon=True).start()
+        self.url = f"http://127.0.0.1:{self.srv.server_address[1]}"
+
+    def tearDown(self):
+        self.srv.shutdown()
+        self.srv.server_close()
+
+    def post(self, path, body):
+        req = urllib.request.Request(self.url + path, json.dumps(body).encode(),
+                                     {"content-type": "application/json"})
+        with urllib.request.urlopen(req, timeout=5) as r:
+            return json.load(r)
+
+    def test_chat_completion_json_schema(self):
+        schema = {"type": "object", "required": ["answer", "confidence", "tags"],
+                  "properties": {"answer": {"type": "string"}, "confidence": {"type": "number"},
+                                 "tags": {"type": "array", "items": {"type": "string"}}}}
+        body = {"model": "m", "messages": [], "stream": False,
+                "response_format": {"type": "json_schema", "json_schema": {"name": "Output", "schema": schema}}}
+        content = json.loads(self.post("/v1/chat/completions", body)["choices"][0]["message"]["content"])
+        self.assertIsInstance(content["answer"], str)
+        self.assertIsInstance(content["confidence"], float)
+        self.assertTrue(all(isinstance(t, str) for t in content["tags"]))
+        plain = self.post("/v1/chat/completions", {"model": "m", "messages": []})
+        self.assertEqual(plain["choices"][0]["message"]["content"], llm_stub.TEXT)
+
+    def test_unknown_path_501(self):
+        with self.assertRaises(urllib.error.HTTPError) as cm:
+            self.post("/v1/responses", {})
+        self.assertEqual(cm.exception.code, 501)
+        self.assertIn("/v1/responses", json.load(cm.exception)["error"]["message"])
 
 
 class RestoreTests(Tmp):

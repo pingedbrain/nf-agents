@@ -35,20 +35,20 @@ GREEN is preceded by a failing command. Python is 3.9-compatible stdlib only. No
 ## PR B — shape, agent store, fixtures workflow (≈ 510 lines)
 
 ### Phase 5: Shape
-- [ ] 5.1 RED `ShapeTests.{test_volatile_tokens_masked,test_new_field_changes_shape,test_find_order_ignored}` → GREEN `scripts/fixtures/shape.py`.
-- [ ] 5.2 `check.py` requires `shape.txt` (RED test `CheckTests.test_missing_shape_fails`); `run-core.sh` writes it.
+- [x] 5.1 RED `ShapeTests.{test_volatile_tokens_masked,test_new_field_changes_shape,test_find_order_ignored}` → GREEN `scripts/fixtures/shape.py`.
+- [x] 5.2 `check.py` requires `shape.txt` (RED test `CheckTests.test_missing_shape_fails`); `run-core.sh` writes it.
 
 ### Phase 6: Agent store
-- [ ] 6.1 RED `StubTests.{test_chat_completion_json_schema,test_unknown_path_501}` → GREEN `scripts/fixtures/llm_stub.py`.
-- [ ] 6.2 Port `fixtures/pipelines/agent/{main.nf,nextflow.config}` (langchain4j, `baseUrl` 127.0.0.1, pin `nf-agent@0.2.0`; resolve design open question).
-- [ ] 6.3 `scripts/fixtures/run-agent.sh` + agent case list in `check.py` (`kind: agent`, RED test `CheckTests.test_agent_cases`); wire into `gen-fixtures.sh` when 26.10.7 is requested.
+- [x] 6.1 RED `StubTests.{test_chat_completion_json_schema,test_unknown_path_501}` → GREEN `scripts/fixtures/llm_stub.py`.
+- [x] 6.2 Port `fixtures/pipelines/agent/{main.nf,nextflow.config}` (langchain4j, `baseUrl` 127.0.0.1, pin `nf-agent@0.2.0`; resolve design open question).
+- [x] 6.3 `scripts/fixtures/run-agent.sh` + agent case list in `check.py` (`kind: agent`, RED test `CheckTests.test_agent_cases`); wire into `gen-fixtures.sh` when 26.10.7 is requested.
 
 ### Phase 7: Regenerate + determinism
-- [ ] 7.1 G-gen all → commit 5 stores incl. `26.10.7-agent`; F-check, G-verify GREEN.
-- [ ] 7.2 G-shape: second G-gen leaves every `shape.txt` unchanged; discard the other diffs.
-- [ ] 7.3 G-edge locally (non-blocking; note result in PR body).
+- [x] 7.1 G-gen all → commit 5 stores incl. `26.10.7-agent`; F-check, G-verify GREEN.
+- [x] 7.2 G-shape: second G-gen leaves every `shape.txt` unchanged; discard the other diffs.
+- [x] 7.3 G-edge locally (non-blocking; note result in PR body).
 
 ### Phase 8: Workflow + docs
-- [ ] 8.1 `.github/workflows/fixtures.yml` (dispatch `force`/`edge`, weekly cron, top `contents: read`, job-level write, concurrency, drift gate on `shape.txt`, `gh` PR create/edit, edge job `continue-on-error`). V-fx-yaml (+ `actionlint` if available).
-- [ ] 8.2 README: agent store, workflow, bot-PR CI caveat, repo setting.
-- [ ] 8.3 Gates as 4.4; after merge (orchestrator): C-fx-run with `force: false` → "no format drift".
+- [x] 8.1 `.github/workflows/fixtures.yml` (dispatch `force`/`edge`, weekly cron, top `contents: read`, job-level write, concurrency, drift gate on `shape.txt`, `gh` PR create/edit, edge job `continue-on-error`). V-fx-yaml (+ `actionlint` if available).
+- [x] 8.2 README: agent store, workflow, bot-PR CI caveat, repo setting.
+- [x] 8.3 Gates as 4.4 (done); after merge (orchestrator, pending): C-fx-run with `force: false` → "no format drift".
