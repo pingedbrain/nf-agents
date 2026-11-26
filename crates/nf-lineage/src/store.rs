@@ -42,7 +42,7 @@ pub struct RunSummary {
 /// A lineage store (Nextflow's `.lineage` directory) on any `object_store` backend.
 #[derive(Debug, Clone)]
 pub struct ObjectLineageStore {
-    store: Arc<dyn ObjectStore>,
+    pub(crate) store: Arc<dyn ObjectStore>,
     prefix: Path,
 }
 

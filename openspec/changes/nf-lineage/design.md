@@ -224,3 +224,22 @@ No migration. PRs land A → B → C after `lineage-fixtures`. `publish = false`
   directly, so RUSTSEC-2026-0542/0543 are not detected and the explicit ignores print
   `advisory-not-detected` warnings (exit 0). Kept on purpose for older cargo-deny releases that
   report all. `webpki-root-certs` (CDLA-Permissive-2.0) is a crate-scoped license exception.
+
+## Deviations (2026-11-26, apply PR B2)
+
+- **`diff_raw` → PR C1** (tasks.md escape hatch, PR B2 ≈ 905 lines with it). `similar` moves with it.
+- **`check`**: the checksum is inspected before the file (a record without a checksum is
+  `NoChecksum` even if the file is gone; the CLI fails with "Target path … does not exist" there).
+  `file://` paths hash the decoded local path (what Nextflow's `Path.toString()` gives); other
+  `<scheme>://` (`gs`, `az`, `http`, …) and `s3://bucket` without a key are `Unsupported`.
+  `path_map` prefixes match whole path components (`Path::strip_prefix`). S3 data files reuse
+  `ObjectLineageStore::open_with_options("s3://<bucket>", storage_options)` (its object store field
+  became `pub(crate)`); a FileOutput without `path` is `InvalidFormat`. The murmur3 read over a byte
+  slice cannot fail; its `io::Result` is `unwrap_or_default`. Directory outputs are hashed like files
+  (Nextflow hashes directories differently): follow-up if a pipeline records directory FileOutputs.
+- **Semantic projection** walks `spec()` JSON with whitespace-separated dot-path tables (like
+  `PROPERTIES`) instead of typed fields; `null` equals absent; a duplicate list label (or missing
+  `name`/`path`) is keyed `#<index>`. Run level: one `find(workflowRun=lid://<hash>)` then `get` of
+  each hit, keeping TaskRun/AgentRun; `outputs.<name>` from `lid://<hash>#output` (absent → none).
+- **Tests**: `tests/common::fixture_copy` (temp copy + manifest mtimes) is shared with C1's contract
+  suite; `tests/common` carries `#![allow(dead_code)]` because each test crate uses a subset.

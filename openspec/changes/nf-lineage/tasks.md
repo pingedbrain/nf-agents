@@ -36,14 +36,17 @@ the `chrono`/`humantime` advisories and the cloud licenses) arrives in B1.
 
 ## PR B2 — check + diff · est. ≈ 650 lines
 
-- [ ] B2.1 [B.1 rest] `Cargo.toml`: murmur3 0.5, similar 2; dev tempfile. `deny.toml` only if `cargo deny check` reports something new.
-- [ ] B2.2 [B.5] RED `src/check.rs` `golden_vectors` (`/lineage/results/summary.txt`,9,1795726937562 → `c47bf938e54f24686b01873ab8d1ba53`; `/nf-agents-fixture/results-hello/summary.txt`,9,1795726427044 → `87105ea50d9e8dca5da368e47d34d9bc`; `""`,0,0 → `d618a97df21bbd4bb61c79cdeca965b4`; `/data/ünïcode 🧬.txt`,35,-1500 → `9ad8de60441a469eb4b8c0e1bca74c1a`); `tests/check.rs` `fixture_outcomes`.
-- [ ] B2.3 [B.6] GREEN `check`, `CheckOptions`, `CheckReport`, `CheckStatus`, `nextflow_standard_checksum`, local stat + `path_map`, S3 stat via `list_with_delimiter`, `UnsupportedChecksum`/`Unsupported`.
-- [ ] B2.4 [B.7] RED `tests/diff.rs` `minimal_runs_differ_only_in_greeting` (core versions), task-pair and kind-mismatch cases; unit projection test.
-- [ ] B2.5 [B.8] GREEN `src/diff.rs`: `diff_records`, `diff`, `diff_raw` (`similar`, CLI header).
+- [x] B2.1 [B.1 rest] `Cargo.toml`: murmur3 0.5, similar 2 (→ C1 with `diff_raw`); dev tempfile. `deny.toml` only if `cargo deny check` reports something new.
+- [x] B2.2 [B.5] RED `src/check.rs` `golden_vectors` (`/lineage/results/summary.txt`,9,1795726937562 → `c47bf938e54f24686b01873ab8d1ba53`; `/nf-agents-fixture/results-hello/summary.txt`,9,1795726427044 → `87105ea50d9e8dca5da368e47d34d9bc`; `""`,0,0 → `d618a97df21bbd4bb61c79cdeca965b4`; `/data/ünïcode 🧬.txt`,35,-1500 → `9ad8de60441a469eb4b8c0e1bca74c1a`); `tests/check.rs` `fixture_outcomes`.
+- [x] B2.3 [B.6] GREEN `check`, `CheckOptions`, `CheckReport`, `CheckStatus`, `nextflow_standard_checksum`, local stat + `path_map`, S3 stat via `list_with_delimiter`, `UnsupportedChecksum`/`Unsupported`.
+- [x] B2.4 [B.7] RED `tests/diff.rs` `minimal_runs_differ_only_in_greeting` (core versions), task-pair and kind-mismatch cases; unit projection test.
+- [x] B2.5 [B.8] GREEN `src/diff.rs`: `diff_records`, `diff` (`diff_raw` → C1.0).
 - Escape hatch: if > 800, move `diff_raw` (+ its test) to C1.
+- **Deviation (2026-11-26, apply PR B2):** escape hatch applied. With `diff_raw` B2 came to ≈ 905 hand-written lines; without it ≈ 870. `diff_raw` (`similar 2`, CLI `diff --git` header, unified diff of the pretty-printed records, test `raw_diff_has_cli_header_and_record_lines`) moves to C1.0 next to `contract_diff`, which checks it against the oracle anyway.
 
-## PR C1 — view, provenance, CLI contract suite · est. ≈ 600 lines
+## PR C1 — view, provenance, CLI contract suite · est. ≈ 640 lines
+
+- [ ] C1.0 [B2.5 part] RED `tests/diff.rs` `raw_diff_has_cli_header_and_record_lines`; GREEN `diff_raw` (`similar 2` dep, CLI header `diff --git k1 k2`/`--- k1`/`+++ k2`, `TextDiff::from_lines(..).unified_diff()`). Reuse `tests/common::fixture_copy` (temp copy + manifest mtime restore) in C1.3.
 
 - [ ] C1.1 [C.1] RED `tests/provenance.rs` `published_file_reaches_pipeline_input`; GREEN `src/provenance.rs`.
 - [ ] C1.2 [C.2] GREEN `src/view.rs` (fragment validation, `#output` redirect, navigate) driven by C1.3 view cases.
