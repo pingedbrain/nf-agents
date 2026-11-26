@@ -70,12 +70,13 @@ Unit tests live in `crates/nf-lineage/src/<module>.rs` (`<module>::tests::<name>
 `FindQuery::parse_args` MUST follow `nextflow lineage find`: `k=v` (no `=` → `InvalidQuery` "Parameter <arg> doesn't contain '=' separator"); URL-decode key and value (`+`→space, `%XX`; malformed → `InvalidQuery`); `label`→`labels`; repeated keys accumulate; each dot segment of a key MUST be a model property (else `InvalidQuery` "Property '<seg>' doesn't exist in the lineage model."). `FindQuery::new(pairs)` MUST apply alias and validation without decoding. `matches(record)` MUST: treat key `type` as the record kind (case-sensitive); navigate dot paths flattening arrays (falsy items dropped, single result unwrapped); never match falsy values (null, false, 0, "", empty array/object); match arrays when they contain all expected values; match scalars only with one expected value by string equality; stringify numbers as integers for `size`/`maxIterations` and as Java `Double.toString` elsewhere.
 
 #### Scenario: CLI behaviour table (T `query::tests::matches_cli_semantics_table`)
-- GIVEN the 26.10.7 records and the 40 queries recorded from the CLI (e.g. `params.value=12.0`, `size=0`, `labels=summary labels=other`, `input.value.path=…`)
+- GIVEN the 26.10.7 records and the 37 non-error queries recorded from the CLI (e.g. `params.value=12.0`, `size=0`, `labels=summary labels=other`, `input.value.path=…`), stored with host paths scrubbed in `crates/nf-lineage/tests/data/find_cli.json`
 - THEN `matches` selects exactly the CLI's LID set
 
 #### Scenario: CLI errors (T `query::tests::parse_args_errors_match_cli_messages`)
 - GIVEN `type`, `foo=bar`, `config.runName=x`, `name=%zz`
-- THEN `InvalidQuery` whose message equals the CLI text after `Error searching for <arg>. `
+- THEN `InvalidQuery` whose message equals the CLI text after `Error searching for <arg>. `, up to (excluding) any ` -- Did you mean one of these?  <names>` suffix
+- *Deviation (2026-11-26, apply PR B1):* the CLI's Levenshtein suggestion suffix (Groovy `closest`) is not ported in 0.1; messages match up to that suffix.
 
 ### Requirement: Store contract
 

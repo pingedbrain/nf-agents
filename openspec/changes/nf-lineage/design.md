@@ -202,3 +202,25 @@ No migration. PRs land A → B → C after `lineage-fixtures`. `publish = false`
   e.g. `config.runName` → `name`): match the CLI text up to that suffix or port `closest`.
   Java `URLDecoder` errors: `URLDecoder: Illegal hex characters in escape (%) pattern - Error at
   index 0 in: "zz"`, `URLDecoder: Incomplete trailing escape (%) pattern`.
+
+## Deviations (2026-11-26, apply PR B1)
+
+- **Re-split**: the remaining work (≈ 1,700 lines) is batched as B1 (FindQuery + store), B2 (check +
+  diff), C1 (view, provenance, contract suite + CI `contract`), C2 (MiniStack + CI `integration`,
+  CONTRIBUTING, 0.1.0 metadata). `deny.toml` changes land in B1 with `object_store`.
+- **FindQuery**: the `-- Did you mean one of these?` suffix is not ported (spec scenario reworded).
+  `navigate` walks the record's `spec()` JSON, so unknown (`extra`) fields are navigable where the
+  JVM model would return null; harmless because every key segment must be a model property. Object
+  and nested-array values never equal a query value (Groovy would compare `[a, b]` / `[k:v]`).
+  Java's `Integer.parseInt` sign quirk in `URLDecoder` (`%+1`) is rejected instead of accepted.
+  The CLI table lives in `tests/data/find_cli.json` (generated from the lab `findexp` store and
+  recorded output, host paths scrubbed, `config`/`metadata`/`script` dropped).
+- **Store**: `.history` lines are split like Groovy `tokenize('\t')` (empty tokens dropped) and
+  must yield 4 tokens with a valid LID. A `.data.json` under a key that is not a valid LID makes
+  `find` fail with `InvalidFormat`. Option keys are lowercased (as `parse_url_opts` does); any
+  option for a local store is `Unsupported`. A one-letter URL scheme is treated as a Windows drive
+  (local path). The doctest uses `futures::executor::block_on` (no tokio needed).
+- **deny.toml**: cargo-deny 0.22.1 only reports unmaintained crates the workspace depends on
+  directly, so RUSTSEC-2026-0542/0543 are not detected and the explicit ignores print
+  `advisory-not-detected` warnings (exit 0). Kept on purpose for older cargo-deny releases that
+  report all. `webpki-root-certs` (CDLA-Permissive-2.0) is a crate-scoped license exception.

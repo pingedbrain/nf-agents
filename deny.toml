@@ -3,6 +3,13 @@
 [advisories]
 # Known vulnerabilities are always errors; yanked crates too.
 yanked = "deny"
+ignore = [
+    # Informational "unmaintained" notices for object_store's transitive deps (no fix exists;
+    # object_store pins them). cargo-deny 0.22 only reports unmaintained crates the workspace
+    # depends on directly, older releases report all: keep the ignores explicit for both.
+    { id = "RUSTSEC-2026-0542", reason = "humantime unmaintained; transitive via object_store, no patched version" },
+    { id = "RUSTSEC-2026-0543", reason = "chrono unmaintained; transitive via object_store, no patched version" },
+]
 
 [licenses]
 # Permissive licenses compatible with Apache-2.0 only (no GPL/LGPL/AGPL/SSPL).
@@ -17,6 +24,8 @@ allow = [
     "Zlib",
 ]
 confidence-threshold = 0.8
+# Mozilla's CA root data (data license, permissive); only this crate, via object_store/reqwest.
+exceptions = [{ crate = "webpki-root-certs", allow = ["CDLA-Permissive-2.0"] }]
 # Not every allowed license is in use yet.
 unused-allowed-license = "allow"
 

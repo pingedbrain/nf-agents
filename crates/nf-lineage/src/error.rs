@@ -63,4 +63,16 @@ pub enum LineageError {
     /// The operation is not supported for this input (scheme, option, ...).
     #[error("unsupported: {0}")]
     Unsupported(String),
+    /// The object store failed (network, permissions, ...).
+    #[error("storage error: {0}")]
+    Storage(#[from] object_store::Error),
+    /// A local file could not be read.
+    #[error("cannot read {path}: {source}")]
+    Io {
+        /// The local path.
+        path: String,
+        /// The I/O error.
+        #[source]
+        source: std::io::Error,
+    },
 }
