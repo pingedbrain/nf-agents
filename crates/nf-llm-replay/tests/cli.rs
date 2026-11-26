@@ -147,3 +147,90 @@ async fn port_0_prints_listening_address_and_serves() {
     let log = String::from_utf8(output.stderr).unwrap();
     assert!(log.contains("/v1/models") && log.contains("hit"), "{log}");
 }
+
+#[test]
+fn record_without_api_key_exits_1() {
+    let dir = tempfile::tempdir().unwrap();
+    let cassette = dir.path().join("rec.jsonl");
+    for key in [None, Some("")] {
+        let mut cmd = bin();
+        cmd.args([
+            "--mode",
+            "record",
+            "--upstream",
+            "http://127.0.0.1:9",
+            "--port",
+            "0",
+        ])
+        .arg("--cassette")
+        .arg(&cassette);
+        if let Some(key) = key {
+            cmd.env("NF_LLM_REPLAY_API_KEY", key);
+        }
+        let (code, out, err) = run(&mut cmd);
+        assert_eq!(code, 1, "{key:?}: {err}");
+        assert!(!out.contains("listening"), "{out}");
+        assert!(err.contains("NF_LLM_REPLAY_API_KEY"), "{err}");
+        assert_eq!(err.trim().lines().count(), 1, "{err}");
+        assert!(!cassette.exists(), "no cassette without a key");
+    }
+}
+
+#[test]
+fn record_without_upstream_exits_2() {
+    for mode in ["record", "passthrough"] {
+        let (code, _, err) = run(bin().env("NF_LLM_REPLAY_API_KEY", "k").args([
+            "--mode",
+            mode,
+            "--cassette",
+            "c.jsonl",
+        ]));
+        assert_eq!(code, 2, "{mode}: {err}");
+        assert!(err.contains("--upstream"), "{err}");
+    }
+}
+
+#[tokio::test]
+async fn api_key_never_appears_in_output() {
+    let (up, fake) = common::fake_upstream::spawn().await;
+    let dir = tempfile::tempdir().unwrap();
+    let mut child = bin()
+        .env("NF_LLM_REPLAY_API_KEY", common::KEY)
+        .env("RUST_LOG", "trace")
+        .args(["--mode", "record", "--port", "0", "--upstream", &up])
+        .arg("--cassette")
+        .arg(dir.path().join("rec.jsonl"))
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    let mut stdout = BufReader::new(child.stdout.take().unwrap());
+    let mut line = String::new();
+    stdout.read_line(&mut line).unwrap();
+    let addr = line
+        .trim()
+        .strip_prefix("listening on ")
+        .unwrap()
+        .parse()
+        .unwrap();
+
+    let body = br#"{"model":"m","messages":[{"role":"user","content":"q"}]}"#;
+    let reply = common::post_with(addr, "/v1/chat/completions", "x-api-key: dummy\r\n", body).await;
+    assert_eq!(reply.status, 200);
+    assert_eq!(fake.hits.load(std::sync::atomic::Ordering::SeqCst), 1);
+
+    let pid = child.id().to_string();
+    assert!(
+        Command::new("kill")
+            .args(["-TERM", &pid])
+            .status()
+            .unwrap()
+            .success()
+    );
+    let output = child.wait_with_output().unwrap();
+    let mut all = line;
+    std::io::Read::read_to_string(&mut stdout, &mut all).unwrap();
+    all += &String::from_utf8(output.stderr).unwrap();
+    assert!(all.contains("TRACE") && all.contains("recorded"), "{all}");
+    assert!(!all.contains(common::KEY), "key leaked:\n{all}");
+}

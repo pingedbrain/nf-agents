@@ -7,17 +7,18 @@ pub mod cassette;
 pub mod config;
 pub mod normalize;
 mod proxy;
-pub mod upstream;
+mod upstream;
 
 use std::sync::Arc;
 
 use axum::Router;
 use axum::extract::DefaultBodyLimit;
 
-use crate::cassette::{Cassette, CassetteError};
+use crate::cassette::{Cassette, CassetteError, Recorder};
 use crate::config::{Config, ConfigError, Mode};
 use crate::normalize::{NormalizeError, Normalizer};
 use crate::proxy::{AppState, Backend};
+use crate::upstream::{Upstream, UpstreamError};
 
 /// Largest accepted request body.
 const BODY_LIMIT: usize = 32 * 1024 * 1024;
@@ -34,22 +35,44 @@ pub enum StartupError {
     /// A volatile pattern does not compile.
     #[error(transparent)]
     Normalize(#[from] NormalizeError),
-    /// Mode not available in this build yet.
-    #[error("mode {0:?} is not implemented yet")]
-    Unsupported(Mode),
+    /// Record and passthrough need `NF_LLM_REPLAY_API_KEY` (non-empty).
+    #[error("NF_LLM_REPLAY_API_KEY must be set (non-empty) in {0:?} mode")]
+    MissingApiKey(Mode),
+    /// The upstream client cannot be built.
+    #[error(transparent)]
+    Upstream(#[from] UpstreamError),
 }
 
 /// Builds the proxy router; loads and validates the cassette first.
 pub fn app(config: &Config) -> Result<Router, StartupError> {
-    let backend = match config.mode {
-        Mode::Replay => {
-            let path = config
-                .cassette
-                .as_deref()
-                .ok_or(ConfigError::MissingCassette(config.mode))?;
-            Backend::Replay(Arc::new(Cassette::load(path)?))
+    let mode = config.mode;
+    let cassette = || {
+        config
+            .cassette
+            .clone()
+            .ok_or(ConfigError::MissingCassette(mode))
+    };
+    let key = || {
+        config
+            .api_key
+            .clone()
+            .ok_or(StartupError::MissingApiKey(mode))
+    };
+    let upstream = || -> Result<Upstream, StartupError> {
+        let base = config
+            .upstream
+            .as_deref()
+            .ok_or(ConfigError::MissingUpstream(mode))?;
+        Ok(Upstream::new(base, key()?)?)
+    };
+    let backend = match mode {
+        Mode::Replay => Backend::Replay(Cassette::load(&cassette()?)?),
+        // Upstream first: a missing key must fail before the cassette file is created.
+        Mode::Record => {
+            let upstream = upstream()?;
+            Backend::Record(Recorder::open(cassette()?, key()?)?, upstream)
         }
-        mode => return Err(StartupError::Unsupported(mode)),
+        Mode::Passthrough => Backend::Passthrough(upstream()?),
     };
     let state = AppState {
         normalizer: Normalizer::new()?,

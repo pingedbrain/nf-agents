@@ -3,6 +3,8 @@
 // Each test binary uses a subset of these; helpers outside #[test] fns may unwrap.
 #![allow(dead_code, clippy::unwrap_used, clippy::indexing_slicing)]
 
+pub mod fake_upstream;
+
 use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -29,6 +31,23 @@ pub async fn start(config: Config) -> SocketAddr {
 pub fn config(args: &[&str]) -> Config {
     let cli = Cli::try_parse_from(std::iter::once("nf-llm-replay").chain(args.iter().copied()));
     Config::from_cli(cli.unwrap(), None).unwrap()
+}
+
+/// The upstream key the record/passthrough helpers set.
+pub const KEY: &str = "sk-test-SECRET-123";
+
+/// Starts `--mode <mode>` for `cassette` against `upstream`, with [`KEY`] as the env key.
+pub async fn proxy(mode: &str, cassette: &Path, upstream: &str) -> SocketAddr {
+    let args = [
+        "--mode",
+        mode,
+        "--cassette",
+        cassette.to_str().unwrap(),
+        "--upstream",
+        upstream,
+    ];
+    let cli = Cli::try_parse_from(std::iter::once("nf-llm-replay").chain(args)).unwrap();
+    start(Config::from_cli(cli, Some(KEY.into())).unwrap()).await
 }
 
 /// Starts a replay server for `cassette`.
@@ -158,8 +177,13 @@ async fn read_more(stream: &mut TcpStream, buf: &mut Vec<u8>) {
 
 /// `POST path` with a JSON body.
 pub async fn post(addr: SocketAddr, path: &str, body: &[u8]) -> Reply {
+    post_with(addr, path, "", body).await
+}
+
+/// `POST path` with extra header lines (each ending in `\r\n`) and a JSON body.
+pub async fn post_with(addr: SocketAddr, path: &str, headers: &str, body: &[u8]) -> Reply {
     let mut req = format!(
-        "POST {path} HTTP/1.1\r\nHost: test\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n",
+        "POST {path} HTTP/1.1\r\nHost: test\r\n{headers}Content-Type: application/json\r\nContent-Length: {}\r\n\r\n",
         body.len()
     )
     .into_bytes();

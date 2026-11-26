@@ -5,14 +5,16 @@ use std::time::Instant;
 
 use axum::body::{Body, Bytes};
 use axum::extract::State;
-use axum::http::{HeaderValue, Method, StatusCode, Uri, header};
+use axum::http::{HeaderMap, HeaderValue, Method, StatusCode, Uri, header};
 use axum::response::{IntoResponse, Response};
 use serde::Serialize;
+use serde_json::value::RawValue;
 use serde_json::{Value, json};
 
-use crate::cassette::{Cassette, Entry};
+use crate::cassette::{Cassette, Entry, RecordedRequest, RecordedResponse, Recorder, VERSION};
 use crate::config::Mode;
-use crate::normalize::Normalizer;
+use crate::normalize::{Normalized, Normalizer};
+use crate::upstream::Upstream;
 
 /// Shared state of the running proxy.
 pub(crate) struct AppState {
@@ -24,15 +26,19 @@ pub(crate) struct AppState {
     pub(crate) upstream: Option<String>,
 }
 
-/// Where answers come from (record and passthrough land with the upstream client).
+/// Where answers come from.
 pub(crate) enum Backend {
-    Replay(Arc<Cassette>),
+    Replay(Cassette),
+    Record(Recorder, Upstream),
+    Passthrough(Upstream),
 }
 
 impl Backend {
     fn mode(&self) -> Mode {
         match self {
             Self::Replay(_) => Mode::Replay,
+            Self::Record(..) => Mode::Record,
+            Self::Passthrough(_) => Mode::Passthrough,
         }
     }
 }
@@ -44,6 +50,38 @@ pub(crate) enum ProxyError {
     BadRequest(String),
     /// 599: replay has no entry for the key.
     Miss(Box<MissBody>),
+    /// 502: the upstream cannot be reached or answered badly.
+    Upstream(String),
+    /// 500: the entry cannot be stored.
+    Cassette(String),
+    /// A non-2xx upstream answer, returned unchanged and not recorded.
+    NotStored(Box<Response>),
+}
+
+impl ProxyError {
+    fn outcome(&self) -> &'static str {
+        match self {
+            Self::BadRequest(_) => "bad_request",
+            Self::Miss(_) => "miss",
+            Self::Upstream(_) => "upstream_error",
+            Self::Cassette(_) => "cassette_error",
+            Self::NotStored(_) => "not_stored",
+        }
+    }
+}
+
+impl From<reqwest::Error> for ProxyError {
+    fn from(e: reqwest::Error) -> Self {
+        // The URL may carry the client's query (and its credential): never shown.
+        let e = e.without_url();
+        let mut message = format!("upstream request failed: {e}");
+        let mut source = std::error::Error::source(&e);
+        while let Some(cause) = source {
+            message += &format!(": {cause}");
+            source = cause.source();
+        }
+        Self::Upstream(message)
+    }
 }
 
 /// What a replay miss reports, so the missing request can be found and recorded.
@@ -162,6 +200,15 @@ impl IntoResponse for ProxyError {
                 StatusCode::from_u16(599).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
                 json!(miss),
             ),
+            Self::Upstream(message) => (
+                StatusCode::BAD_GATEWAY,
+                json!({"type": "nf_llm_replay_upstream_error", "message": message}),
+            ),
+            Self::Cassette(message) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                json!({"type": "nf_llm_replay_cassette_error", "message": message}),
+            ),
+            Self::NotStored(response) => return *response,
         };
         let body = json!({ "error": error }).to_string();
         (status, [(header::CONTENT_TYPE, "application/json")], body).into_response()
@@ -173,33 +220,24 @@ pub(crate) async fn handle(
     State(state): State<Arc<AppState>>,
     method: Method,
     uri: Uri,
+    headers: HeaderMap,
     body: Bytes,
 ) -> Response {
     let started = Instant::now();
-    let path = uri.path();
-    let (key, result) = match state.normalizer.normalize(method.as_str(), path, &body) {
-        Ok(n) => {
-            let result = match &state.backend {
-                Backend::Replay(cassette) => cassette.get(&n.key).map(respond).ok_or_else(|| {
-                    let miss = MissBody::new(&state, n.key.clone(), method.as_str(), path, &body);
-                    tracing::warn!("{}", miss.message);
-                    ProxyError::Miss(Box::new(miss))
-                }),
-            };
-            (n.key, result)
+    let mut key = String::new();
+    let (outcome, response) = match answer(&state, &method, &uri, &headers, body, &mut key).await {
+        Ok(answered) => answered,
+        Err(e) => {
+            if let ProxyError::Upstream(m) | ProxyError::Cassette(m) = &e {
+                tracing::warn!("{m}");
+            }
+            (e.outcome(), e.into_response())
         }
-        Err(e) => (String::new(), Err(ProxyError::BadRequest(e.to_string()))),
     };
-    let outcome = match &result {
-        Ok(_) => "hit",
-        Err(ProxyError::BadRequest(_)) => "bad_request",
-        Err(ProxyError::Miss(_)) => "miss",
-    };
-    let response = result.unwrap_or_else(IntoResponse::into_response);
     tracing::info!(
         mode = ?state.backend.mode(),
         %method,
-        path,
+        path = uri.path(),
         key = key.get(..12).unwrap_or_default(),
         outcome,
         status = response.status().as_u16(),
@@ -207,6 +245,119 @@ pub(crate) async fn handle(
         "request"
     );
     response
+}
+
+/// The response and its log outcome; `key` is set once the request is normalized.
+async fn answer(
+    state: &AppState,
+    method: &Method,
+    uri: &Uri,
+    headers: &HeaderMap,
+    body: Bytes,
+    key: &mut String,
+) -> Result<(&'static str, Response), ProxyError> {
+    let path = uri.path();
+    let path_and_query = uri.path_and_query().map_or(path, |pq| pq.as_str());
+    let normalize = |key: &mut String| {
+        let n = state.normalizer.normalize(method.as_str(), path, &body);
+        let n = n.map_err(|e| ProxyError::BadRequest(e.to_string()))?;
+        key.clone_from(&n.key);
+        Ok::<_, ProxyError>(n)
+    };
+    match &state.backend {
+        Backend::Passthrough(upstream) => {
+            let reply = upstream
+                .send(method.clone(), path_and_query, headers, body)
+                .await?;
+            Ok(("forwarded", relay(reply).await?))
+        }
+        Backend::Replay(cassette) => {
+            let n = normalize(key)?;
+            let entry = cassette.get(&n.key).ok_or_else(|| {
+                let miss = MissBody::new(state, n.key, method.as_str(), path, &body);
+                tracing::warn!("{}", miss.message);
+                ProxyError::Miss(Box::new(miss))
+            })?;
+            Ok(("hit", respond(entry)))
+        }
+        Backend::Record(recorder, upstream) => {
+            let n = normalize(key)?;
+            let cell = recorder.cell(&n.key);
+            let outcome = if cell.initialized() {
+                "hit"
+            } else {
+                "recorded"
+            };
+            let fetch = upstream.send(method.clone(), path_and_query, headers, body.clone());
+            let entry = cell
+                .get_or_try_init(|| async { record(recorder, fetch.await?, method, path, n).await })
+                .await?;
+            Ok((outcome, respond(entry.clone())))
+        }
+    }
+}
+
+/// Stores a 2xx upstream answer; anything else is handed back unchanged.
+async fn record(
+    recorder: &Recorder,
+    reply: reqwest::Response,
+    method: &Method,
+    path: &str,
+    n: Normalized,
+) -> Result<Arc<Entry>, ProxyError> {
+    if !reply.status().is_success() {
+        return Err(ProxyError::NotStored(Box::new(relay(reply).await?)));
+    }
+    let status = reply.status().as_u16();
+    let content_type = reply
+        .headers()
+        .get(header::CONTENT_TYPE)
+        .and_then(|v| v.to_str().ok())
+        .map(str::to_owned);
+    let body = String::from_utf8(reply.bytes().await?.into())
+        .map_err(|_| ProxyError::Upstream("upstream response body is not UTF-8".into()))?;
+    let canonical = (!n.canonical.is_empty())
+        .then(|| RawValue::from_string(n.canonical))
+        .transpose()
+        .map_err(|e| ProxyError::Cassette(e.to_string()))?;
+    let entry = Arc::new(Entry {
+        v: VERSION,
+        key: n.key,
+        request: RecordedRequest {
+            method: method.to_string(),
+            path: path.into(),
+            body: canonical,
+        },
+        response: RecordedResponse {
+            status,
+            content_type,
+            body: Some(body),
+            events: None,
+        },
+    });
+    recorder
+        .persist(entry.clone())
+        .await
+        .map_err(|e| ProxyError::Cassette(e.to_string()))?;
+    Ok(entry)
+}
+
+/// The upstream answer as is, minus hop-by-hop headers.
+async fn relay(reply: reqwest::Response) -> Result<Response, ProxyError> {
+    let status = reply.status();
+    let mut headers = reply.headers().clone();
+    for name in [
+        header::CONNECTION,
+        header::TRANSFER_ENCODING,
+        header::CONTENT_LENGTH,
+    ] {
+        headers.remove(name);
+    }
+    headers.remove("keep-alive");
+    let mut response = Response::new(Body::from(reply.bytes().await?));
+    *response.status_mut() = status;
+    *response.headers_mut() = headers;
+    Ok(response)
 }
 
 fn respond(entry: Arc<Entry>) -> Response {

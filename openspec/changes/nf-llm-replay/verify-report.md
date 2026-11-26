@@ -327,3 +327,117 @@ against missing types (E0425/E0433/E0599), confirmed by execution before GREEN. 
 
 **PASS WITH WARNINGS** — PR C1 is complete, all gates green, 3/5 scoped scenarios fully compliant and
 2 partial by design (their integration halves are C2 tasks).
+
+## PR C2 — record + passthrough wiring (2026-11-26)
+
+**Mode**: Strict TDD. Scope: C.3, C.5, C.6, C.7 (+ C1 follow-ups W-4, W-5, S-5).
+
+### Completeness
+
+| Metric | Value |
+|--------|-------|
+| Tasks in scope | 4 (C.3, C.5, C.6, C.7) |
+| Complete | 4 |
+| Overall | 19/31 (PR D, E pending) |
+
+### Build and tests (executed in the worktree)
+
+| Command | Result |
+|---------|--------|
+| `cargo fmt --all -- --check` | ✅ exit 0 |
+| `cargo clippy --workspace --all-targets --locked -- -D warnings` | ✅ exit 0 |
+| `cargo test --workspace --locked` | ✅ 60 passed, 0 failed, 0 ignored (28 lib, 2 captures, 9 cli, 11 record, 8 replay, 1 secrets, 1 nf-lineage) |
+| `cargo deny check` | ✅ advisories/bans/licenses/sources ok, **no warnings** (W-4 fixed by `[graph] targets`) |
+| `cargo machete` | ✅ no unused dependencies |
+| record + cli + secrets re-run ×3 | ✅ stable (no flakes; W-once uses a 200 ms fake delay) |
+
+Coverage: ➖ no coverage tool configured.
+
+### Mutation spot checks
+
+| Mutation | Caught by |
+|----------|-----------|
+| Bypass `OnceCell` coalescing (check `cell.get()`, else fetch directly) | W-once FAILED (fake hits > 1) |
+| Store `path_and_query` instead of `path` in the entry | S-scan FAILED (`sk-client`, `key=` in cassette) |
+| `tracing::debug!` the exposed key in `main` | X-nolog FAILED |
+
+### TDD compliance
+
+| Task | RED | GREEN | Triangulate | Notes |
+|------|-----|-------|-------------|-------|
+| config (MissingUpstream, empty key) | ✅ new unit test FAILED first | ✅ | ✅ 2 modes, empty/non-empty key | existing passthrough test updated: spec requires `--upstream` |
+| C.3 | ➖ helper | ✅ exercised by 13 tests | ➖ | |
+| C.5 | ✅ 10 tests FAILED (`Unsupported`) | ✅ 11/11 | ✅ | + echoed-key 500 test |
+| C.6 | ✅ FAILED with C.5 | ✅ | ✅ JSON + non-JSON | |
+| C.7 | ⚠️ passed on first run | ✅ | ✅ | acceptance tests of C.5 behaviour; mutation-checked above |
+
+4/4 tasks have TDD evidence in apply-progress.md.
+
+### Test layer distribution (C2)
+
+Unit 1 (`config.rs`); integration 12 (`tests/record.rs` 11, `tests/secrets.rs` 1, in-process server + in-process fake upstream); CLI/process 3 (`tests/cli.rs`). No E2E in this batch.
+
+### Spec compliance matrix (PR C2 checks)
+
+| Check | Scenario | Test | Result |
+|-------|----------|------|--------|
+| W-rt | Round trip | `record::record_then_replay_round_trip_chat_completions` | ✅ COMPLIANT (plain + `json_schema`; fake hit count unchanged during replay) |
+| W-tool | Round trip | `record::multi_turn_tool_round_trip_replays_offline` | ✅ COMPLIANT |
+| W-once | Coalescing and fill | `record::concurrent_identical_requests_call_upstream_once` | ✅ COMPLIANT (16 concurrent + 1 repeat, 1 upstream hit, 17 equal) |
+| W-fill | Coalescing and fill | `record::existing_key_is_served_without_upstream_call` | ✅ COMPLIANT |
+| W-err | Upstream failure | `record::non_2xx_upstream_response_is_returned_but_not_recorded` | ✅ COMPLIANT |
+| W-502 | Upstream failure | `record::unreachable_upstream_returns_502_json` | ✅ COMPLIANT |
+| W-auth | Injection | `record::env_key_is_injected_and_client_credentials_are_stripped` | ✅ COMPLIANT |
+| W-fwd | Injection | `record::query_string_and_provider_headers_are_forwarded` | ✅ COMPLIANT |
+| P-pass | No cassette I/O | `record::passthrough_forwards_without_touching_the_cassette` | ⚠️ PARTIAL by design (incremental SSE half is E-live, D.4) |
+| K-conc | Parallel recording | `record::record_concurrent_distinct_requests_produce_valid_sorted_cassette` | ✅ COMPLIANT |
+| K-guard (integration) | Echoed key | `record::echoed_key_returns_500_and_is_not_recorded` | ✅ COMPLIANT (unit half in C1) |
+| S-scan | Secret scan | `secrets::recorded_cassette_contains_no_credentials` | ✅ COMPLIANT |
+| X-nokey | CLI errors | `cli::record_without_api_key_exits_1` | ✅ COMPLIANT (unset and empty; no file created) |
+| X-noup | CLI errors | `cli::record_without_upstream_exits_2` | ✅ COMPLIANT (record and passthrough) |
+| X-nolog | Secret never printed | `cli::api_key_never_appears_in_output` | ✅ COMPLIANT (`RUST_LOG=trace`, stdout + stderr) |
+
+**Compliance summary**: 14/15 compliant, 1 partial by design.
+
+### Correctness (static)
+
+| Requirement | Status | Notes |
+|------------|--------|-------|
+| Record: load/create, known keys offline, forward path + query + original bytes | ✅ | `Recorder::open` after key check; `send(path_and_query, body)` |
+| Single-flight per key | ✅ | `OnceCell::get_or_try_init`; unpolled `fetch` future is dropped when the cell is filled |
+| Only 2xx stored; others returned unchanged | ✅ | `NotStored(Box<Response>)`, headers minus hop-by-hop |
+| Client gets what replay returns | ✅ | record answers via the same `respond(entry)` as replay |
+| 502 upstream / non-UTF-8, 500 write/secret | ✅ | `From<reqwest::Error>` strips URL; source chain included |
+| Passthrough: same header rules, no cassette I/O, non-JSON forwarded | ✅ | no normalization; body buffered until D.4 |
+| Key only from env, required, never printed | ✅ | empty = missing; sensitive header values |
+| `--upstream` required for record/passthrough (exit 2) | ✅ | `ConfigError::MissingUpstream` |
+| No panics on external input | ✅ | no unwrap/expect/indexing outside tests |
+
+### Coherence (design)
+
+| Decision | Followed? | Notes |
+|----------|-----------|-------|
+| Catch-all handler, `Backend` per mode | ✅ | inner `Arc`s dropped (deviation note) |
+| Fill missing, per-key single-flight | ✅ | |
+| Non-2xx returned, not stored | ✅ | |
+| Inject env key, strip client credentials | ✅ | |
+| `ProxyError` variants 400/599/502/500 | ⚠️ Deviated | + `NotStored`; documented in design.md (PR C2) |
+| SSE stored as `events` | ➖ | PR D (D.3); record stores `body` meanwhile |
+| `mod upstream` private (S-5) | ✅ | |
+
+### Issues
+
+**CRITICAL**: None.
+
+**WARNING**:
+- W-6: Batch size ≈ 910 inserted lines vs ≈ 650 estimated (~800 budget); ≈ 630 are tests + fake upstream, expanded by rustfmt. All tasks landed green; nothing deferred.
+
+**SUGGESTION**:
+- S-7: If a coalesced leader gets a non-2xx, each waiting duplicate retries the upstream in turn (tokio `OnceCell` semantics). Acceptable (errors are not cached); revisit only if 429 storms matter.
+- S-8: The log outcome `recorded` is also used for coalesced followers that did not call upstream; cosmetic.
+
+Resolved from C1: W-4 (`[graph] targets`), W-5 (empty key = missing), S-5 (`upstream` private).
+
+### Verdict
+
+**PASS WITH WARNINGS** — PR C2 is complete; all gates green; 14/15 scoped scenarios compliant, 1 partial by design (E-live half in PR D). Only warning is the batch size.

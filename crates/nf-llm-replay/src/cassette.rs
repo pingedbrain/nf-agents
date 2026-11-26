@@ -12,7 +12,7 @@ use tokio::sync::{Mutex, OnceCell};
 use crate::config::ApiKey;
 
 /// The only cassette format version this build reads and writes.
-const VERSION: u32 = 1;
+pub(crate) const VERSION: u32 = 1;
 
 /// One cassette line. Field order is the on-disk order; unknown fields are ignored.
 #[derive(Debug, Serialize, Deserialize)]
