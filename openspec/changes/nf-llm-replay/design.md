@@ -42,6 +42,19 @@ sha2, tempfile, thiserror`; later PRs add the rest of the list below with the sa
 below and adds `VolatileField` + `NormalizeError::Field`. Writing those now would be untested code
 (N-ptr/N-pat are PR D). (3) `CassetteError::Secret` arrives with `Recorder` in PR C.
 
+**Deviation (2026-11-26, PR B).** (1) `Config.upstream` is `Option<String>`, checked by a clap value
+parser (`http::Uri` with `http`/`https` scheme and a host); reqwest is not in the tree until PR C, which
+may switch it to `reqwest::Url`. (2) No `lib::serve`: `main` calls `app()` (loads the cassette) *before*
+binding, so startup errors exit 1 without a `listening on` line; tests use `axum::serve` directly.
+(3) `Backend` has only `Replay` and `ProxyError` only `BadRequest`/`Miss`; record/passthrough return
+`StartupError::Unsupported(mode)` until PR C. (4) Replay of `events` entries concatenates them into one
+body until D.3 streams one chunk per event. (5) `volatile_fields/patterns` flags and `Config` fields
+arrive with D.5. (6) `tracing` uses `default-features = false, features = ["std"]` (the `attributes`
+feature pulls `syn` 2 next to `syn` 3 → `cargo deny` duplicate warning); tokio features so far:
+`rt-multi-thread, macros, net, signal` (+ dev `io-util, time`). (7) Dev-deps: no `assert_cmd`, no HTTP
+client (std `Command`; raw HTTP/1.1 client in `tests/common`). (8) SIGTERM handling uses
+`tokio::signal::unix` (Linux/Docker are the only targets).
+
 ## Data Flow
 
     client ─▶ axum fallback(handle) ─▶ Normalizer::key(method, path, body)

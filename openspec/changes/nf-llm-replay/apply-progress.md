@@ -1,7 +1,7 @@
 # Apply progress: nf-llm-replay
 
-**Mode**: Strict TDD (runner `cargo test --workspace`). Batches: PR A done (6/6 tasks); PR B-E pending.
-Overall: 6/31 tasks.
+**Mode**: Strict TDD (runner `cargo test --workspace`). Batches: PR A done (6/6 tasks), PR B done (6/6 tasks); PR C-E pending.
+Overall: 12/31 tasks.
 
 ## PR A — normalization + cassette model (2026-11-26)
 
@@ -51,6 +51,51 @@ Recorded in design.md ("Deviation (2026-11-26, PR A)") and tasks.md:
 - Clippy's `allow-*-in-tests` does not cover helper fns in integration test files; `tests/captures.rs` has a file-level `#![allow(clippy::unwrap_used, clippy::indexing_slicing)]` with a comment. PR B-D test files will need the same.
 - The 8 captures contain no two requests with the same normalized body, so N-pi builds the second request by rewriting the work dir and `prompt_cache_key` of a real capture.
 
+## PR B — replay server + CLI (2026-11-26)
+
+### Files changed
+
+| File | Action | What |
+|------|--------|------|
+| `Cargo.toml` | Modified | workspace deps: axum 0.8.9, clap 4.6 (`derive, env`), tokio 1.54 (`rt-multi-thread, macros, net, signal`), tracing 0.1.44 (no default features, `std`), tracing-subscriber 0.3.23 (`fmt, env-filter`) |
+| `crates/nf-llm-replay/Cargo.toml` | Modified | those deps; dev tokio `io-util, time` |
+| `src/config.rs` | Created | `Mode`, `ApiKey` (`Debug` = `***`, `expose`), `Cli` (flags + env, `--upstream` http(s) value parser), `Config::from_cli`, `ConfigError::MissingCassette`; 3 unit tests |
+| `src/proxy.rs` | Created | `AppState`, `Backend::Replay`, catch-all `handle` (one `info` line per request, `warn` on miss), `respond`, `ProxyError::{BadRequest, Miss}` + `IntoResponse`, `MissBody`/`MissRequest`, `summarize`, `message_text`, `default_upstream`; 2 unit tests |
+| `src/lib.rs` | Modified | `mod proxy`, `StartupError`, `app(&Config)` (loads cassette, 32 MiB `DefaultBodyLimit`, fallback handler) |
+| `src/main.rs` | Rewritten | clap parse (usage errors exit 2), tracing to stderr (`RUST_LOG`, default `info`), `app()` before bind, `listening on <addr>` on stdout, graceful SIGINT/SIGTERM, startup errors one line + exit 1 |
+| `tests/common/mod.rs` | Created | `start`, `config`, `replay`, `entry`, `write_cassette`, raw HTTP/1.1 `send_raw`/`post` + `Reply`, `counting_upstream` |
+| `tests/replay.rs` | Created | R-hit, R-same, R-400, R-big, R-miss, R-net, R-h2c, R-conc |
+| `tests/cli.rs` | Created | X-help, X-mode, X-env, X-nocas, X-corrupt, X-listen (+ SIGTERM exit 0, request logged) |
+
+### TDD cycle evidence
+
+| Task | Test file | Layer | Safety net | RED | GREEN | Triangulate | Refactor |
+|------|-----------|-------|------------|-----|-------|-------------|----------|
+| B.1 | `src/config.rs` | Unit | ✅ 18/18 | ✅ U-dbg + defaults + upstream parser → E0425/E0433 (no `Cli`/`Config`/`Mode`) | ✅ 3/3 | ✅ http and https accepted; `ftp://`, no scheme, `http://`, garbage, bad mode rejected; passthrough needs no cassette, replay does | ➖ |
+| B.2 | `tests/common/mod.rs` | helper | ✅ | ➖ helper module (exercised by B.3-B.6) | ✅ | ➖ structural | simplified `send_raw` read loop before first use |
+| B.3 | `tests/replay.rs` | Integration | ✅ 21/21 | ✅ R-hit, R-same, R-400, R-big → E0425 (no `app`) | ✅ 4/4 | ✅ second entry (GET, 203, no content-type, query ignored); 3 invalid bodies; R-big re-checked: removing `DefaultBodyLimit` makes it FAIL | ➖ |
+| B.4 | `src/proxy.rs`, `tests/replay.rs` | Unit + Integration | ✅ 25/25 | ✅ U-sum, U-hint, R-miss → E0425 (no `summarize`/`default_upstream`/`MissRequest`) | ✅ 20 lib + 5 replay | ✅ chat, `input` string, `input` items, Anthropic text blocks, 1000× multibyte truncation, empty/array/wrong-typed bodies; explicit `--upstream` overrides path hint | `type` moved into `MissBody` (`serde(rename)`) to drop JSON indexing flagged by clippy |
+| B.5 | `tests/replay.rs` | Integration | ✅ 30/30 | ⚠️ R-net, R-h2c, R-conc passed on first run: acceptance tests of behaviour already built in B.3 (catch-all handler; hyper ignores `Upgrade: h2c`) | ✅ 8/8 | ✅ R-net proves the counter works (1 manual connection) and that hit + 2 misses add 0; R-conc 64 requests over 3 keys | ➖ |
+| B.6 | `tests/cli.rs` | CLI (process) | ✅ 33/33 | ✅ 6/6 FAILED against the stub `main` | ✅ 6/6 | ✅ X-mode via flag and via env; missing file vs corrupt line 2; X-listen also checks SIGTERM → exit 0 and the request log line | `tracing` without `attributes` (removes duplicate `syn`) |
+
+### Test summary
+
+- Tests written in PR B: 19 (5 unit, 8 replay integration, 6 CLI); workspace total 37, all passing.
+- Pure functions: `summarize`, `message_text`, `default_upstream`, `parse_upstream`, `Config::from_cli`.
+
+### Deviations from design
+
+Recorded in design.md ("Deviation (2026-11-26, PR B)") and tasks.md: `upstream` as validated
+`String`; no `lib::serve` (bind after `app()`); `Backend` replay-only and `StartupError::Unsupported`
+until PR C; events concatenated until D.3; volatile flags in D.5; `tracing` default features off;
+no `assert_cmd` / HTTP client dev-deps.
+
+### Issues found
+
+- Size: ≈ 1,190 hand-written lines vs ≈ 700 estimated (≈ 590 are tests/helpers; rustfmt expands the
+  table-like test fixtures). PR C (≈ 760 est.) will likely overshoot similarly.
+- `json!` on a derived `Serialize` struct is infallible for these field types; no panic path on input.
+
 ### Remaining
 
-PR B (B.1-B.6), PR C (C.1-C.7), PR D (D.1-D.5), PR E (E.1-E.7).
+PR C (C.1-C.7), PR D (D.1-D.5), PR E (E.1-E.7).
