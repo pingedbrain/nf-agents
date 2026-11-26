@@ -7,8 +7,8 @@ phases:
   spec: done
   design: done
   tasks: done
-  apply: in-progress   # PR A done (A.1–A.7); PR B1 done (FindQuery + store); PR B2 done (check + diff; diff_raw → C1)
-  verify: in-progress  # PR A, B1, B2 verified
+  apply: in-progress   # PR A done (A.1–A.7); PR B1 done (FindQuery + store); PR B2 done (check + diff; diff_raw → C1); PR C1 done (diff_raw, view, provenance, contract suite + CI job)
+  verify: in-progress  # PR A, B1, B2, C1 verified
   archive: pending
 depends_on:
   - lineage-fixtures   # fixtures/lineage/<ver>/ must be merged before PR A
@@ -16,7 +16,7 @@ pr_batches:
   - {id: A, scope: "types + parser (FindQuery moved to B)", est_lines: 790, actual_lines: 940}
   - {id: B1, scope: "FindQuery + LineageStore + ObjectLineageStore + deny.toml", est_lines: 650, actual_lines: 906}
   - {id: B2, scope: "check + semantic diff (diff_raw moved to C1)", est_lines: 650, actual_lines: 870}
-  - {id: C1, scope: "diff_raw + view + provenance + CLI contract suite + CI contract job", est_lines: 640}
+  - {id: C1, scope: "diff_raw + view + provenance + CLI contract suite + CI contract job", est_lines: 640, actual_lines: 787}
   - {id: C2, scope: "MiniStack test + CI integration job + CONTRIBUTING + 0.1.0 metadata/README + cargo package", est_lines: 450}
 updated: 2026-11-26
-next: sdd-apply (PR C1)
+next: sdd-apply (PR C2)

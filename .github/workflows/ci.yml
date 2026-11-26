@@ -45,3 +45,15 @@ jobs:
       # Offline fixture checks (no Docker, no network): helper unit tests + committed stores.
       - run: python3 -I -m unittest discover -s scripts/fixtures -p 'test_*.py'
       - run: python3 -I scripts/fixtures/check.py fixtures/lineage
+
+  # Named status check for `nextflow lineage` parity against the committed fixtures/lineage oracles
+  # (no Docker, no network beyond crates.io, no secrets). `test` runs the same suite.
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - run: rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test -p nf-lineage --test contract --locked

@@ -231,3 +231,86 @@ fixture loops are guarded (`files.len() == 10` asserted for core fixtures, `vers
 ## Verdict
 
 PASS WITH WARNINGS — B2 green on every gate; `diff_raw` deferred to C1.0; slightly over budget.
+
+---
+
+# Verification Report: nf-lineage — PR C1
+
+**Mode**: Strict TDD. **Scope**: C1.0–C1.4 (`diff_raw`, `view`, `provenance`, CLI contract suite,
+CI `contract` job). **Date**: 2026-11-26.
+
+## Completeness
+
+| Metric | Value |
+|--------|-------|
+| PR C1 tasks in scope | 5 (C1.0–C1.4) |
+| Complete | 5 |
+| Remaining (later PRs) | C2.1–C2.5 |
+
+## Execution
+
+| Check | Result |
+|-------|--------|
+| `cargo fmt --all -- --check` | ✅ |
+| `cargo clippy --workspace --all-targets --locked -- -D warnings` | ✅ |
+| `cargo clippy -p nf-lineage --no-default-features --all-targets -- -D warnings` | ✅ |
+| `cargo test --workspace --locked` | ✅ 39 passed (20 unit, 1 check, 5 contract, 3 diff, 2 fixtures_parse, 3 provenance, 3 store, 1 view, 1 doctest), 0 failed, 0 skipped |
+| `cargo test -p nf-lineage --test contract --locked` (C-contract) | ✅ 5 passed |
+| `cargo test -p nf-lineage --no-default-features` | ✅ 36 passed |
+| `cargo deny check` | ✅ advisories, bans, licenses, sources ok |
+| `cargo machete` | ✅ |
+| V-grep (`Path::from(`, `set_var`, `process::exit` in `src/`) | ✅ 0 hits; no `unwrap`/`expect`/`panic!`/indexing in `view.rs`, `provenance.rs`, `diff_raw` |
+| V-yaml: `ci.yml` parses, jobs `lint`/`test`/`contract`, `contract` runs `cargo test -p nf-lineage --test contract --locked`, `grep -c 'secrets\.'` = 0 | ✅ |
+| Coverage | ➖ not available |
+
+## Spec compliance (PR C1 scenarios)
+
+| Requirement | Scenario | Test | Result |
+|-------------|----------|------|--------|
+| Diff | Raw parity (`diff-runs`, `diff-tasks`, 4 core versions) | `contract::contract_diff` | ✅ (trailing `,` trimmed — spec reworded, see deviation) |
+| Diff | `diff_raw` header + unified diff | `diff::raw_diff_has_cli_header_and_record_lines` | ✅ |
+| View and provenance | Reaches pipeline input | `provenance::published_file_reaches_pipeline_input` (4 core versions) | ✅ |
+| View and provenance | Non-FileOutput → `UnexpectedKind`; no revisiting | `provenance::task_file_stops_at_its_task_and_runs_are_rejected`, `provenance::cycles_are_visited_once` | ✅ |
+| View and provenance | View parity (every `view-*` case, 5 versions incl. agent; errors → `NotFound`/`InvalidLid`) | `contract::contract_view` | ✅ |
+| View and provenance | Fragment validation (`InvalidQuery`), `#output` → `[]`, `null`, `#type` | `view::fragments_validate_redirect_and_navigate` | ✅ |
+| CLI contract | All versions: list / find / check | `contract::contract_list`, `contract_find`, `contract_check` | ✅ |
+| ci-pipeline: Contract job | Oracle mismatch fails naming version and case | mutation probe (broken `label` alias → `<version> find-fileoutput-label: …` on 4 versions) + V-yaml | ✅ |
+
+8/8 in-scope scenarios compliant.
+
+## TDD compliance
+
+Evidence rows C1.0–C1.4 in apply-progress.md; test files exist and pass now. RED observed as
+compile failures (`diff_raw`, `provenance`/`Provenance`/`ProvenanceInput`, `view` missing). One
+GREEN failure was a wrong test assertion (fixed in the test, noted); one was a real parity gap
+(`contract_diff`, trailing comma) resolved by a documented comparison rule. Triangulation: view
+edge cases and a provenance cycle in InMemory stores beyond the fixture chains. Mutation probes:
+9 probes (view redirect, envelope, `[]` mapping, fragment validation, find alias, check mtime
+reproduction, list columns, diff key, provenance visited set/dedupe) each made a test fail.
+Assertion audit: case loops are guarded (`cases()` asserts a non-empty set per prefix; every case
+ends in a match arm that records a failure); no tautologies. Layers: integration over fixtures
+(`contract`, `provenance`, `diff`) and over InMemory stores (`view`, provenance cycle).
+
+## Coherence (design)
+
+| Decision | Followed? | Notes |
+|----------|-----------|-------|
+| Raw diff with `similar 2`, CLI header | ✅ | `TextDiff::from_lines(..).unified_diff()`, keys = LID without `lid://` |
+| Raw diff input | ⚠️ Decided | canonical `to_json()` for every version, not stored bytes (CLI re-encodes too); trait unchanged |
+| `view`/`provenance`/`diff_raw` signatures (MCP-facing) | ✅ | exactly as design.md Interfaces |
+| `provenance`: library, BFS over `get`, visited set | ✅ | |
+| `contract` job duplicates `test` as a named check | ✅ | |
+
+## Issues
+
+- **CRITICAL**: none.
+- **WARNING**: ≈ 787 hand-written lines, at the edge of the ~800 budget (contract suite 314).
+- **SUGGESTION**: `provenance` fails on a dangling reference (`NotFound`) instead of returning a
+  partial graph; revisit if agents hit incomplete stores.
+- **SUGGESTION**: `diff_raw` text for 25.04/25.10 stores differs from that CLI in layout (`spec`
+  envelope, indentation, extra `null` fields); documented, the changed-value lines match.
+
+## Verdict
+
+PASS WITH WARNINGS — every C1 gate green; CLI parity for list/view/find/diff/check proven on all
+fixture versions; within budget.

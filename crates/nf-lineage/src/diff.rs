@@ -83,6 +83,24 @@ pub async fn diff(
     })
 }
 
+/// `nextflow lineage diff`: a `diff --git k1 k2` / `--- k1` / `+++ k2` header (keys are the LIDs
+/// without `lid://`) and a unified diff (3 context lines) of the pretty-printed records, in the
+/// canonical `{"version", "kind", "spec"}` envelope for every Nextflow version.
+///
+/// # Errors
+/// [`LineageError::NotFound`] for a missing record, and store errors.
+pub async fn diff_raw(store: &dyn LineageStore, a: &Lid, b: &Lid) -> Result<String, LineageError> {
+    // Serializing a `Value` cannot fail.
+    let pretty = |r: &Record| serde_json::to_string_pretty(&r.to_json()).unwrap_or_default() + "\n";
+    let (ta, tb) = (pretty(&store.get(a).await?), pretty(&store.get(b).await?));
+    let key = |lid: &Lid| lid.to_string().trim_start_matches("lid://").to_owned();
+    let (ka, kb) = (key(a), key(b));
+    let hunks = similar::TextDiff::from_lines(&ta, &tb)
+        .unified_diff()
+        .to_string();
+    Ok(format!("diff --git {ka} {kb}\n--- {ka}\n+++ {kb}\n{hunks}"))
+}
+
 fn compare(a: &Projection, b: &Projection) -> Vec<Change> {
     let keys: BTreeSet<&String> = a.keys().chain(b.keys()).collect();
     keys.into_iter()
