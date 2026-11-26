@@ -2,10 +2,14 @@
 
 use std::collections::{BTreeMap, HashMap};
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, PoisonError};
 
 use serde::{Deserialize, Serialize};
 use serde_json::value::RawValue;
+use tokio::io::AsyncWriteExt;
+use tokio::sync::{Mutex, OnceCell};
+
+use crate::config::ApiKey;
 
 /// The only cassette format version this build reads and writes.
 const VERSION: u32 = 1;
@@ -78,6 +82,17 @@ pub enum CassetteError {
         /// 1-based line of the second occurrence.
         second: usize,
     },
+    /// The cassette cannot be rewritten.
+    #[error("cannot write cassette `{}`: {source}", path.display())]
+    Write {
+        /// Cassette path.
+        path: PathBuf,
+        /// Underlying error.
+        source: std::io::Error,
+    },
+    /// The entry would store the upstream key (e.g. the provider echoed it).
+    #[error("refusing to record an entry that contains the NF_LLM_REPLAY_API_KEY value")]
+    Secret,
 }
 
 /// An immutable, validated cassette (replay mode).
@@ -120,6 +135,94 @@ impl Cassette {
     }
 }
 
+/// One recording slot per key: concurrent requests for the same key share one upstream call.
+pub type Cell = Arc<OnceCell<Arc<Entry>>>;
+
+/// A cassette being recorded: known keys answer from the file, new entries are persisted sorted.
+#[derive(Debug)]
+pub struct Recorder {
+    path: PathBuf,
+    secret: ApiKey,
+    saved: Mutex<BTreeMap<String, Arc<Entry>>>,
+    cells: std::sync::Mutex<HashMap<String, Cell>>,
+}
+
+impl Recorder {
+    /// Loads `path` (creating an empty file if absent, so an unwritable location fails at startup).
+    pub fn open(path: PathBuf, secret: ApiKey) -> Result<Self, CassetteError> {
+        std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&path)
+            .map_err(|source| CassetteError::Write {
+                path: path.clone(),
+                source,
+            })?;
+        let entries = Cassette::load(&path)?.entries;
+        let cells = entries
+            .iter()
+            .map(|(key, entry)| {
+                (
+                    key.clone(),
+                    Arc::new(OnceCell::new_with(Some(entry.clone()))),
+                )
+            })
+            .collect();
+        Ok(Self {
+            path,
+            secret,
+            saved: Mutex::new(entries),
+            cells: std::sync::Mutex::new(cells),
+        })
+    }
+
+    /// The slot for `key`; already filled when the cassette has it.
+    pub fn cell(&self, key: &str) -> Cell {
+        // The map stays consistent even if a holder panicked, so a poisoned lock is still usable.
+        let mut cells = self.cells.lock().unwrap_or_else(PoisonError::into_inner);
+        cells.entry(key.to_owned()).or_default().clone()
+    }
+
+    /// Adds `entry` and rewrites the whole cassette sorted by key (temp sibling + rename).
+    /// Refuses entries containing the upstream key; on error nothing is kept.
+    pub async fn persist(&self, entry: Arc<Entry>) -> Result<(), CassetteError> {
+        let line = serde_json::to_string(&*entry).map_err(|e| self.write_error(e.into()))?;
+        if line.contains(self.secret.expose()) {
+            return Err(CassetteError::Secret);
+        }
+        let key = entry.key.clone();
+        let mut saved = self.saved.lock().await;
+        saved.insert(key.clone(), entry);
+        // ponytail: whole-file rewrite per entry (O(n²) per session); fine for KB-MB cassettes.
+        if let Err(e) = write_sorted(&self.path, &saved).await {
+            saved.remove(&key);
+            return Err(self.write_error(e));
+        }
+        Ok(())
+    }
+
+    fn write_error(&self, source: std::io::Error) -> CassetteError {
+        CassetteError::Write {
+            path: self.path.clone(),
+            source,
+        }
+    }
+}
+
+async fn write_sorted(path: &Path, entries: &BTreeMap<String, Arc<Entry>>) -> std::io::Result<()> {
+    let mut text = String::new();
+    for entry in entries.values() {
+        text += &serde_json::to_string(&**entry)?;
+        text.push('\n');
+    }
+    let mut tmp = path.as_os_str().to_owned();
+    tmp.push(".tmp");
+    let mut file = tokio::fs::File::create(&tmp).await?;
+    file.write_all(text.as_bytes()).await?;
+    file.sync_all().await?;
+    tokio::fs::rename(&tmp, path).await
+}
+
 fn parse_line(text: &str) -> Result<Entry, String> {
     let entry: Entry = serde_json::from_str(text).map_err(|e| e.to_string())?;
     if entry.v != VERSION {
@@ -141,6 +244,7 @@ fn parse_line(text: &str) -> Result<Entry, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::config::ApiKey;
     use serde_json::value::RawValue;
 
     const JSON: &str = r#"{"v":1,"key":"aa","request":{"method":"POST","path":"/v1/chat/completions","body":{"model":"m"}},"response":{"status":200,"content_type":"application/json","body":"{\"id\":\"x\"}\n"}}"#;
@@ -245,5 +349,109 @@ mod tests {
         assert_eq!(entry.response.body.as_deref(), Some("{\"id\":\"x\"}\n"));
         assert_eq!(cassette.get("bb").unwrap().request.path, "/v1/responses");
         assert!(cassette.get("cc").is_none());
+    }
+
+    const KEY: &str = "sk-test-SECRET-123";
+
+    fn entry(key: &str, body: &str) -> Arc<Entry> {
+        Arc::new(Entry {
+            v: 1,
+            key: key.into(),
+            request: RecordedRequest {
+                method: "POST".into(),
+                path: "/v1/chat/completions".into(),
+                body: None,
+            },
+            response: RecordedResponse {
+                status: 200,
+                content_type: Some("application/json".into()),
+                body: Some(body.into()),
+                events: None,
+            },
+        })
+    }
+
+    fn recorder(dir: &Path) -> Recorder {
+        Recorder::open(dir.join("c.jsonl"), ApiKey(KEY.into())).unwrap()
+    }
+
+    #[tokio::test]
+    async fn insert_rewrites_file_sorted_by_key_without_temp_leftovers() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("c.jsonl");
+        std::fs::write(&path, format!("{SSE}\n")).unwrap();
+        let rec = recorder(dir.path());
+        for key in ["cc", "aa", "dd"] {
+            rec.persist(entry(key, key)).await.unwrap();
+        }
+        let text = std::fs::read_to_string(&path).unwrap();
+        let keys: Vec<String> = text
+            .lines()
+            .map(|l| serde_json::from_str::<Entry>(l).unwrap().key)
+            .collect();
+        assert_eq!(keys, ["aa", "bb", "cc", "dd"]);
+        assert!(text.ends_with('\n') && text.contains(SSE));
+        let files: Vec<_> = std::fs::read_dir(dir.path()).unwrap().collect();
+        assert_eq!(files.len(), 1, "{files:?}");
+        assert_eq!(Cassette::load(&path).unwrap().get("cc").unwrap().key, "cc");
+
+        // A failed write keeps nothing and says where.
+        let root = dir.path().to_path_buf();
+        drop(dir);
+        let err = rec.persist(entry("ee", "x")).await.unwrap_err();
+        assert!(matches!(err, CassetteError::Write { .. }), "{err:?}");
+        assert!(err.to_string().contains("c.jsonl"), "{err}");
+        std::fs::create_dir(&root).unwrap();
+        rec.persist(entry("ff", "x")).await.unwrap();
+        let text = std::fs::read_to_string(&path).unwrap();
+        std::fs::remove_dir_all(&root).unwrap();
+        assert_eq!(text.lines().count(), 5);
+        assert!(!text.contains(r#""key":"ee""#), "{text}");
+    }
+
+    #[tokio::test]
+    async fn entry_containing_the_api_key_is_refused() {
+        let dir = tempfile::tempdir().unwrap();
+        let rec = recorder(dir.path());
+        let path = dir.path().join("c.jsonl");
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), "");
+
+        let echoed = entry("aa", &format!("{{\"echo\":\"Bearer {KEY}\"}}"));
+        let err = rec.persist(echoed).await.unwrap_err();
+        assert!(matches!(err, CassetteError::Secret), "{err:?}");
+        assert!(!err.to_string().contains(KEY), "{err}");
+
+        let mut in_request = entry("bb", "ok");
+        Arc::get_mut(&mut in_request).unwrap().request.body =
+            Some(RawValue::from_string(format!("{{\"k\":\"{KEY}\"}}")).unwrap());
+        assert!(matches!(
+            rec.persist(in_request).await,
+            Err(CassetteError::Secret)
+        ));
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), "");
+
+        rec.persist(entry("cc", "sk-test-other")).await.unwrap();
+        assert_eq!(std::fs::read_to_string(&path).unwrap().lines().count(), 1);
+    }
+
+    #[tokio::test]
+    async fn cells_are_shared_per_key_and_prefilled_from_the_file() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("c.jsonl"), JSON).unwrap();
+        let rec = recorder(dir.path());
+        assert_eq!(rec.cell("aa").get().unwrap().response.status, 200);
+        let new = rec.cell("zz");
+        assert!(new.get().is_none());
+        assert!(Arc::ptr_eq(&new, &rec.cell("zz")));
+        new.get_or_init(|| async { entry("zz", "x") }).await;
+        assert_eq!(rec.cell("zz").get().unwrap().key, "zz");
+
+        let corrupt = dir.path().join("bad.jsonl");
+        std::fs::write(&corrupt, "{").unwrap();
+        let err = Recorder::open(corrupt, ApiKey(KEY.into())).unwrap_err();
+        assert!(
+            matches!(err, CassetteError::Line { line: 1, .. }),
+            "{err:?}"
+        );
     }
 }

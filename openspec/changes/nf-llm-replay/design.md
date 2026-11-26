@@ -55,6 +55,19 @@ feature pulls `syn` 2 next to `syn` 3 → `cargo deny` duplicate warning); tokio
 client (std `Command`; raw HTTP/1.1 client in `tests/common`). (8) SIGTERM handling uses
 `tokio::signal::unix` (Linux/Docker are the only targets).
 
+**Deviation (2026-11-26, PR C1).** (1) `Upstream::new(base: &str, key: ApiKey) -> Result<Self, UpstreamError>`
+(`UpstreamError::{Key, Client}`): the key and `Bearer <key>` are built once as sensitive `HeaderValue`s,
+so an invalid key fails at startup, not per request; `forward_headers` is therefore a method.
+(2) `send(method: Method, ..) -> Result<reqwest::Response, reqwest::Error>` with `Error::without_url`
+(the client's query may carry its own credential); C2 maps it to `ProxyError::Upstream` (502).
+(3) `Config.upstream` stays a validated `String`; the target is `base.trim_end_matches('/') + path_and_query`.
+(4) `pub mod upstream` until C2 uses it from `proxy.rs`; `ApiKey`'s field is `pub(crate)`.
+(5) `CassetteError::Write { path, source }` (write errors, incl. `Recorder::open` creating an absent file)
+next to `Secret`; `pub type Cell = Arc<OnceCell<Arc<Entry>>>`, pre-filled from the file. (6) reqwest
+features `rustls, http2` (`stream` lands with D.4); tokio adds `sync, fs, io-util`. (7) An empty API key
+would make the secret guard refuse every entry: C2's config check (X-nokey) MUST treat empty as missing.
+(8) `cargo deny` warns about `syn` 2+3: `syn` 2 comes only via Android-only `jni` (rustls-platform-verifier).
+
 ## Data Flow
 
     client ─▶ axum fallback(handle) ─▶ Normalizer::key(method, path, body)

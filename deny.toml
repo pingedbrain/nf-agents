@@ -12,6 +12,8 @@ allow = [
     "MIT",
     "BSD-2-Clause",
     "BSD-3-Clause",
+    # webpki-root-certs (Mozilla CA bundle data, via reqwest rustls); permissive data license.
+    "CDLA-Permissive-2.0",
     "ISC",
     "Unicode-3.0",
     "Zlib",

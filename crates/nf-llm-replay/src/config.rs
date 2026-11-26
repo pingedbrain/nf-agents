@@ -19,7 +19,7 @@ pub enum Mode {
 
 /// The upstream provider key; never printed (`Debug` shows `***`).
 #[derive(Clone)]
-pub struct ApiKey(String);
+pub struct ApiKey(pub(crate) String);
 
 impl ApiKey {
     /// The secret value, for the upstream request only.

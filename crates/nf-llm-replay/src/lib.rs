@@ -7,6 +7,7 @@ pub mod cassette;
 pub mod config;
 pub mod normalize;
 mod proxy;
+pub mod upstream;
 
 use std::sync::Arc;
 
