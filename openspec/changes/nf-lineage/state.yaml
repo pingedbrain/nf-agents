@@ -1,0 +1,20 @@
+change: nf-lineage
+artifact_store: openspec
+mode: auto
+phases:
+  explore: done
+  proposal: done
+  spec: done
+  design: done
+  tasks: done
+  apply: in-progress   # PR A done (A.1–A.7); A.8–A.9 moved to PR B
+  verify: in-progress  # PR A verified
+  archive: pending
+depends_on:
+  - lineage-fixtures   # fixtures/lineage/<ver>/ must be merged before PR A
+pr_batches:
+  - {id: A, scope: "types + parser (FindQuery moved to B)", est_lines: 790, actual_lines: 940}
+  - {id: B, scope: "LineageStore over object_store + check + diff", est_lines: 775}
+  - {id: C, scope: "view + provenance + contract + MiniStack + CI + release metadata", est_lines: 690}
+updated: 2026-11-26
+next: sdd-apply (PR B, starting with A.8–A.9)
