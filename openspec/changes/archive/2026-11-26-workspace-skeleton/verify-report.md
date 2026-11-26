@@ -12,10 +12,10 @@
 | Metric | Value |
 |--------|-------|
 | Tasks total | 17 |
-| Tasks complete | 16 |
-| Tasks incomplete | 1 |
+| Tasks complete | 17 |
+| Tasks incomplete | 0 |
 
-- [ ] 4.3 C-run: `lint` and `test` green on the PR. Can only run after the orchestrator opens the PR.
+- [x] 4.3 C-run: `lint` and `test` green on the PR. Done: PR https://github.com/pingedbrain/nf-agents/pull/1, CI run 45892532356, both jobs success.
 
 ---
 
@@ -113,12 +113,12 @@ History: ~/.claude/security-history/nf-agents.jsonl
 | nf-lineage stub | Stub is pre-release | T-1 | ✅ COMPLIANT |
 | nf-lineage stub | No dependencies | V-meta, C-machete | ✅ COMPLIANT |
 | nf-lineage stub | Pre-alpha stated | grep + V-meta | ✅ COMPLIANT |
-| Triggers and concurrency | PR opened | YAML triggers + actionlint; C-run pending | ⚠️ PARTIAL |
+| Triggers and concurrency | PR opened | YAML triggers + actionlint; CI run 45892532356 on PR #1 | ✅ COMPLIANT |
 | Triggers and concurrency | Rapid pushes | V-yaml | ✅ COMPLIANT |
-| Least privilege, no secrets | Fork PR | V-yaml (0 secrets, read-only); C-run pending | ⚠️ PARTIAL |
-| Lint job | All clean | same 4 commands pass locally; C-run pending | ⚠️ PARTIAL |
+| Least privilege, no secrets | Fork PR | V-yaml (0 secrets, read-only); CI run 45892532356 `lint` + `test` success | ✅ COMPLIANT |
+| Lint job | All clean | same 4 commands pass locally; CI run 45892532356 `lint` success | ✅ COMPLIANT |
 | Lint job | Unused dependency | machete probe | ✅ COMPLIANT |
-| Test job | Failing test | failing-test probe + V-yaml; C-run pending | ⚠️ PARTIAL |
+| Test job | Failing test | failing-test probe + V-yaml; CI run 45892532356 `test` success | ✅ COMPLIANT |
 | Toolchain source and action pinning | Action refs | V-yaml | ✅ COMPLIANT |
 | Supply-chain policy | Clean tree | C-deny | ✅ COMPLIANT |
 | Supply-chain policy | Policy content | V-deny + wildcard probe | ✅ COMPLIANT |
@@ -127,7 +127,7 @@ History: ~/.claude/security-history/nf-agents.jsonl
 | Required content | Links resolve | V-links | ✅ COMPLIANT |
 | Commands stay in sync with CI | CI flag changes | sync check (CI `run: cargo …` lines ⊂ CONTRIBUTING) | ✅ COMPLIANT |
 
-**Compliance summary**: 21/25 compliant, 4 partial, all waiting only on C-run (the PR's own CI run).
+**Compliance summary**: 25/25 compliant (C-run satisfied by CI run 45892532356 on PR #1).
 
 ---
 
@@ -164,18 +164,17 @@ History: ~/.claude/security-history/nf-agents.jsonl
 
 **CRITICAL**: None.
 
-**WARNING**:
-1. C-run not yet observed: 4 ci-pipeline scenarios (PR opened, Fork PR, All clean, Failing test) need the PR's own CI run (task 4.3).
+**WARNING**: None. (The earlier C-run warning is resolved: CI run 45892532356 on PR #1 passed `lint` and `test`.)
 
 **SUGGESTION**:
 1. `.github/pull_request_template.md` lists `cargo clippy --all-targets -- -D warnings` and `cargo test --workspace` (no `--workspace`/`--locked`); align it with CI/CONTRIBUTING in a follow-up.
 2. SHA-pin actions + Dependabot (`github-actions` and toolchain bumps) before the first release (open question in design).
-3. `proposal.md` still describes the `stable` channel / `rustup update stable` risk; it is historical, but archive could note the decision change.
+3. `proposal.md` describes the original `stable` channel decision; a note now records the change to the exact `1.100.0` pin (see design.md).
 
 ---
 
 ### Verdict
 
-**PASS WITH WARNINGS**: every local check and probe passes; only the PR's own CI run (C-run) remains.
+**PASS**: every local check, probe and the PR's CI run (`lint`, `test`) pass.
 
 Diff budget: 9 files, +187 lines excluding `openspec/` and `Cargo.lock` (≤ 800).

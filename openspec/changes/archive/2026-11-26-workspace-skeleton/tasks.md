@@ -29,4 +29,4 @@ Single PR, est. ≈300 changed lines (budget ≤ 800). Check IDs (T-, C-, V-) ar
 
 - [x] 4.1 Run full local gate: C-fmt, C-clippy, C-test, C-deny, C-machete all exit 0.
 - [x] 4.2 Check diff size: `git diff --stat` (incl. untracked) ≤ 800 lines.
-- [ ] 4.3 After PR opens (orchestrator): C-run — `lint` and `test` green on the PR.
+- [x] 4.3 After PR opens (orchestrator): C-run — `lint` and `test` green on the PR (PR https://github.com/pingedbrain/nf-agents/pull/1, CI run 45892532356: `lint` success, `test` success).

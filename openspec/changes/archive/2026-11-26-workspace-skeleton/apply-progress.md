@@ -1,6 +1,6 @@
 # Apply progress: workspace-skeleton
 
-**Mode**: Strict TDD (runner `cargo test --workspace`). Batch 1 (only batch). 16/17 tasks done; 4.3 (C-run on the PR) belongs to the orchestrator after the PR opens.
+**Mode**: Strict TDD (runner `cargo test --workspace`). Batch 1 (only batch). 17/17 tasks done. 4.3 (C-run) completed by the orchestrator after the PR opened: PR https://github.com/pingedbrain/nf-agents/pull/1, CI run 45892532356, `lint` and `test` both success.
 
 ## Files changed
 
@@ -38,6 +38,7 @@
 | 3.2/3.3 | (from 3.1) | V-doc, CI-command sync and V-links all pass | — | — |
 | 4.1 | — | C-fmt, C-clippy (both forms), C-test, C-deny, C-machete all exit 0 | — | — |
 | 4.2 | — | diff (excl. openspec/, Cargo.lock): 9 files, +187 lines ≤ 800 | — | — |
+| 4.3 | — | CI run 45892532356 on PR #1: `lint` success, `test` success (C-run) | — | — |
 
 Triangulation skipped for config tasks: purely structural, single possible output; probes above serve as the negative cases.
 

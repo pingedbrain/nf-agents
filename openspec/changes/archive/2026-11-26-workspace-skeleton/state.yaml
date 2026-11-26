@@ -9,6 +9,6 @@ phases:
   tasks: done
   apply: done
   verify: done
-  archive: pending
+  archive: done
 updated: 2026-11-26
-next: archive (after C-run on PR)
+next: none (archived 2026-11-26)

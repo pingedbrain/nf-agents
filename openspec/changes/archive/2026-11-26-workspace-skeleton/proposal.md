@@ -30,6 +30,8 @@ No Rust code or CI exists yet. Every later stage-1 PR needs a Cargo workspace, s
 ### Modified Capabilities
 None.
 
+> **Decision update (2026-11-26)**: the toolchain is pinned to the exact release `1.100.0` in `rust-toolchain.toml`, not the floating `stable` channel. The `stable` drift risk below is mitigated by the pin; toolchain bumps happen via normal PRs. See design.md (Decisions table and open questions).
+
 ## Approach
 
 Minimal files, no dependencies. Lints declared once in the workspace and inherited with `[lints] workspace = true`; tests exempted via `clippy.toml` keys (verified on clippy 1.94). CI installs tools with `taiki-e/install-action` and runs the same commands contributors run locally.
