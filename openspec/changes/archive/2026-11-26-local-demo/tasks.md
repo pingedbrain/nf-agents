@@ -49,12 +49,12 @@ Phase 3: wiring + verification
 
 ## PR B — README + docs/demo.md · est. ≈ 220 lines
 
-- [ ] B.1 Measure DM-time, stating the machine for each:
+- [x] B.1 Measure DM-time, stating the machine for each:
   - warm (second run);
   - cold from source (`docker builder prune -af`, `docker rmi` the demo, Rust and Nextflow images);
   - cold with published images if available (else write "pending release");
   - the CI step time.
-- [ ] B.2 `docs/demo.md`:
+- [x] B.2 `docs/demo.md`:
   - what happens (diagram from design);
   - full transcript from A.12;
   - timings table;
@@ -63,5 +63,7 @@ Phase 3: wiring + verification
   - cleanup;
   - troubleshooting (Apple Silicon emulation, WSL2, plugin download, 599 drift);
   - research-use banner.
-- [ ] B.3 `README.md` `## Try it in 5 minutes`: prerequisites, `demo/run.sh`, abridged output, Claude Code lines, honest timings, `MCP_IMAGE` fast path, link to `docs/demo.md`.
-- [ ] B.4 DM-doc greps; every spec scenario mapped to a passing check; diff ≤ 800.
+- [x] B.3 `README.md` `## Try it in 5 minutes`: prerequisites, `demo/run.sh`, abridged output, Claude Code lines, honest timings, `MCP_IMAGE` fast path, link to `docs/demo.md`.
+- [x] B.4 DM-doc greps; every spec scenario mapped to a passing check; diff ≤ 800.
+
+> Deviation (2026-11-26, PR B): B.1 did not run `docker builder prune -af` (it wipes the whole host build cache). `docs/demo.md` reports warm (24 s), `:ci` overrides (21 s) and first run building both images (180 s, base images cached); fully cold, published images, the CI step, Apple Silicon and WSL2 are stated as not measured or pending.

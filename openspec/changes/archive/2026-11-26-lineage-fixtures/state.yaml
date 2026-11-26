@@ -8,7 +8,7 @@ phases:
   design: done
   tasks: done
   apply: done (PR A, PR B)
-  verify: PR A pass-with-warnings; PR B see verify-report.md
-  archive: pending
+  verify: pass-with-warnings  # PR A + PR B
+  archive: done
 updated: 2026-11-26
-next: sdd-verify (PR B), then orchestrator commit + PR; after merge C-fx-run
+next: post-merge C-fx-run (workflow_dispatch, force false)

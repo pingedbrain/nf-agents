@@ -1,10 +1,10 @@
-# Verification report: local-demo (PR A scope)
+# Verification report: local-demo (PR A + PR B)
 
 Mode: Strict TDD. Date: 2026-11-26.
 
 ## Completeness
 
-PR A: 12/13 done; A.13 (C-demo on the PR's CI run) needs the PR. PR B (B.1–B.4) not in scope.
+PR A: 12/13 done; A.13 (C-demo on a CI run) is a post-merge follow-up. PR B: 4/4 done.
 
 ## Execution
 
@@ -34,15 +34,29 @@ PR A: 12/13 done; A.13 (C-demo on the PR's CI run) needs the PR. PR B (B.1–B.4
 | Re-recording | Deterministic regeneration | DM-record | COMPLIANT |
 | MCP tour | Happy path / unexpected diff / tool error / answer shape / edit guard / server gone | 6 `TourTests` + DM-run | COMPLIANT |
 | Claude Code hand-off | Printed | DM-run stdout; CI step greps it | COMPLIANT |
-| Honesty and docs | Docs (DM-doc, DM-time) | PR B | OUT OF SCOPE |
+| Honesty and docs | Docs (DM-doc, DM-time) | DM-doc grep; timings table in `docs/demo.md` | COMPLIANT |
 | ci-pipeline | C-demo / C-demo-unit / V-yaml | steps added; actionlint; local runs | COMPLIANT (CI run pending) |
+
+## Verification: PR B scope (2026-11-26)
+
+| Command | Result |
+|---------|--------|
+| `cargo fmt --all -- --check`, `cargo clippy … -D warnings`, `cargo test --workspace --locked` | ok (0 failed) |
+| `cargo deny check`, `cargo machete` | ok |
+| DM-unit (`unittest`), DM-sh (`shellcheck demo/run.sh`) | ok |
+| DM-run (fresh, default images) | exit 0, 24 s; transcript in `docs/demo.md` |
+| DM-doc (README and `docs/demo.md`: `demo/run.sh`, `claude mcp add`, `research use`, `synthetic`, `MCP_IMAGE`, `DEMO_RECORD=1`, warm 24 s) | all present in both files |
+| DM-time | warm 24 s, `:ci` overrides 21 s, first build 180 s; fully cold, published images, CI step, Apple Silicon, WSL2 stated as not measured or pending |
+| Public-content grep over the tree | empty; `.atl/` not tracked |
+
+Honesty and docs: COMPLIANT. `docs/demo.md` states the committed cassette was recorded from the deterministic fake upstream (resolves the PR A suggestion).
 
 ## Issues
 
 - CRITICAL: none.
-- WARNING: C-demo is only proven locally until the PR's CI run; DM-doc/DM-time belong to PR B.
-- SUGGESTION: `docs/demo.md` (PR B) must state the committed cassette was recorded from the deterministic fake upstream.
+- WARNING: C-demo is only proven locally until a CI run of the `Local demo` step (A.13); the CI step time is still "pending" in `docs/demo.md`. Fully cold timing not measured (would need a host-wide build cache prune).
+- SUGGESTION: fill the CI step time into `docs/demo.md` after the first CI run.
 
 ## Verdict
 
-PASS WITH WARNINGS (PR A scope).
+PASS WITH WARNINGS (PR A + PR B).
