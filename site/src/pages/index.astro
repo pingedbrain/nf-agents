@@ -1,19 +1,55 @@
 ---
 import Landing from '../layouts/Landing.astro';
+import SiteHeader from '../components/SiteHeader.astro';
 import SiteFooter from '../components/SiteFooter.astro';
+import Hero from '../components/Hero.astro';
+import BuiltFor from '../components/BuiltFor.astro';
+import QuickStart from '../components/QuickStart.astro';
+import HowItWorks from '../components/HowItWorks.astro';
+import Clouds from '../components/Clouds.astro';
+import Principles from '../components/Principles.astro';
+import Modules from '../components/Modules.astro';
+import Bench from '../components/Bench.astro';
+import Audience from '../components/Audience.astro';
+import Explorer from '../components/Explorer.astro';
+import '../styles/landing.css';
+
+const base = import.meta.env.BASE_URL;
 ---
 
-<Landing title="nf-agents" description="nf-agents: agent modules and tools for Nextflow pipelines.">
-  <main>
-    <h1>nf-agents</h1>
-    <p>Agent modules and tools for Nextflow pipelines. Coming soon.</p>
-    <p><a href={`${import.meta.env.BASE_URL}docs/`}>Read the docs</a></p>
+<Landing title="nf-agents" description="nf-agents: AI agents inside Nextflow pipelines, with evals and lineage. Pre-alpha research software.">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <SiteHeader />
+  <main id="main">
+    <Hero />
+    <BuiltFor />
+    <QuickStart />
+    <HowItWorks />
+    <Clouds />
+    <Principles />
+    <Modules />
+    <Bench />
+    <Audience />
+    <Explorer />
   </main>
+  <nav class="wrap footer-nav" aria-label="Footer">
+    <div>
+      <ul>
+        <li class="group-label">Project</li>
+        <li><a href={`${base}docs/`}>Docs</a></li>
+        <li><a href="#modules">Modules</a></li>
+        <li><a href="#bench">Benchmark</a></li>
+      </ul>
+    </div>
+    <div>
+      <ul>
+        <li class="group-label">Community</li>
+        <li><a href="https://github.com/pingedbrain/nf-agents">GitHub</a></li>
+        <li><a href="https://github.com/pingedbrain/nf-agents/issues">Issues</a></li>
+        <li><a href="https://github.com/pingedbrain/nf-agents/blob/main/CONTRIBUTING.md">Contributing</a></li>
+        <li><a href="https://github.com/pingedbrain/nf-agents/blob/main/SECURITY.md">Security policy</a></li>
+      </ul>
+    </div>
+  </nav>
   <SiteFooter />
 </Landing>
-
-<style>
-  main {
-    padding: 2rem 16px;
-  }
-</style>

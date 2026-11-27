@@ -1,0 +1,77 @@
+---
+import { milestones, SCORE_PENDING } from '../data/milestones';
+---
+
+<section id="bench" class="section wrap" aria-labelledby="bench-title">
+  <div class="split">
+    <div class="copy">
+      <p class="eyebrow">NF-AgentBench</p>
+      <h2 id="bench-title">A public benchmark of agents on pipeline tasks</h2>
+      <p class="muted">
+        Labelled cases for QC review, methods writing and failed-run diagnosis. Every model is scored
+        the same way, with a runner planned on nf-evals. The benchmark is planned
+        for {milestones.benchmark.version}.
+      </p>
+    </div>
+    <div class="board" aria-label="Leaderboard status">
+      <p class="board-label">Leaderboard</p>
+      <p class="board-title">Planned for {milestones.benchmark.version}</p>
+      <p class="muted">
+        Proprietary and open-weight models, with cost per case and variance across repeated runs.
+        Scores: <span class="pending">{SCORE_PENDING}</span>.
+      </p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .section {
+    padding-block: 72px;
+  }
+  .split {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 40px;
+    align-items: center;
+  }
+  .split > * {
+    flex: 1 1 320px;
+    min-width: 0;
+  }
+  .copy {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .copy h2 {
+    margin: 0;
+    font-family: 'Space Grotesk Variable', system-ui, sans-serif;
+    font-size: clamp(1.75rem, 4vw, 2.375rem);
+    line-height: 1.1;
+  }
+  .board {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 12px;
+    padding: 32px;
+    background: var(--nf-surface);
+    border: 1px dashed var(--nf-muted);
+    border-radius: 14px;
+  }
+  .board-label {
+    margin: 0;
+    font-family: 'JetBrains Mono Variable', ui-monospace, monospace;
+    font-size: 0.8125rem;
+    color: var(--nf-muted);
+  }
+  .board-title {
+    margin: 0;
+    font-family: 'Space Grotesk Variable', system-ui, sans-serif;
+    font-size: 1.5rem;
+  }
+  .pending {
+    font-family: 'JetBrains Mono Variable', ui-monospace, monospace;
+    color: var(--nf-ink);
+  }
+</style>

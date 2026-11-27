@@ -1,0 +1,85 @@
+---
+import Terminal from './Terminal.astro';
+---
+
+<section id="start" class="section wrap" aria-labelledby="start-title">
+  <div class="section-head">
+    <h2 id="start-title">Try it in 5 minutes</h2>
+    <p class="muted">
+      You need Docker (running) and bash. No API keys, no Rust toolchain and no Nextflow install.
+      The demo replays recorded model answers, so no model is called.
+    </p>
+  </div>
+
+  <div class="split">
+    <div class="stack">
+      <p class="step-label">1. Run the demo</p>
+      <pre class="command" tabindex="0"><code>git clone https://github.com/pingedbrain/nf-agents.git && cd nf-agents && demo/run.sh</code></pre>
+      <p class="muted small">
+        The script runs one pipeline with an agent step twice, with <code>--greeting hello</code>
+        and then <code>--greeting bonjour</code>. It then asks the lineage server what changed.
+        The first run builds both images (about 3 minutes); later runs take about 24 seconds.
+      </p>
+      <p class="step-label">2. Ask Claude Code about the runs</p>
+      <pre class="command" tabindex="0"><code>claude mcp add --transport stdio nf-lineage -- docker run -i --rm --network none -v "$PWD/demo/.run:/demo:ro" nf-lineage-mcp:demo --store /demo/.lineage</code></pre>
+      <p class="muted small">
+        The server is read-only and has no network access. Ask "What changed between my last two
+        runs?" The full transcript and troubleshooting are in <a href={`${import.meta.env.BASE_URL}docs/`}>the docs</a>.
+      </p>
+    </div>
+
+    <Terminal title="demo/run.sh output, abridged" note="synthetic data, research use only">
+{`1. list_runs: run A agitated_raman (lid://b39e82b0…), run B agitated_gilbert (lid://2385fd14…)
+2. diff A -> B: params.greeting: "hello" → "bonjour" (nothing else changed)
+3. AI step QC_NOTE: model openai/gpt-5-mini, answer "no" (confidence 0.9) to "any lowercase letters?"
+4. provenance of run B summary.txt: SUMMARIZE ← TRANSFORM ← GENERATE ← seed.txt
+5. check run A summary.txt: Valid (/demo/results-hello/summary.txt)
+6. check again after appending a line to it: Mismatch (the file no longer matches its lineage)
+tour passed: 6/6 answers as expected`}
+    </Terminal>
+  </div>
+</section>
+
+<style>
+  .split {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 32px;
+    align-items: flex-start;
+  }
+  .split > * {
+    flex: 1 1 320px;
+    min-width: 0;
+  }
+  .stack {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .step-label {
+    margin: 8px 0 0;
+    font-weight: 600;
+  }
+  .command {
+    margin: 0;
+    padding: 16px 18px;
+    background: #121614;
+    color: #dde3df;
+    border-radius: 10px;
+    overflow-x: auto;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  .command code {
+    font-family: 'JetBrains Mono Variable', ui-monospace, monospace;
+  }
+  .small {
+    font-size: 0.9375rem;
+  }
+  .stack code {
+    font-family: 'JetBrains Mono Variable', ui-monospace, monospace;
+    font-size: 0.875em;
+  }
+</style>

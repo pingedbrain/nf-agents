@@ -1,0 +1,49 @@
+---
+const builtOn = ['Nextflow', 'nf-core', 'nf-test', 'MCP', 'OpenTofu', 'Claude Code', 'Rig (v0.2)'];
+---
+
+<section class="built-for" aria-label="Built on and compute targets">
+  <div class="wrap row">
+    <p class="label">Built on</p>
+    <ul class="names">
+      {builtOn.map((name) => <li>{name}</li>)}
+    </ul>
+    <p class="label">Compute targets</p>
+    <ul class="names">
+      <li>Local Docker (demo)</li>
+      <li>AWS (v0.4)</li>
+      <li>Google Cloud, Azure, Kubernetes (v0.6)</li>
+    </ul>
+  </div>
+</section>
+
+<style>
+  .built-for {
+    background: var(--nf-surface);
+    border-block: 1px solid var(--nf-line);
+  }
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 24px;
+    padding-block: 20px;
+  }
+  .label {
+    margin: 0;
+    font-family: 'JetBrains Mono Variable', ui-monospace, monospace;
+    font-size: 0.75rem;
+    color: var(--nf-muted);
+    letter-spacing: 0.04em;
+  }
+  .names {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.9375rem;
+    color: var(--nf-ink);
+  }
+</style>

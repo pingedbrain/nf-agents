@@ -1,0 +1,50 @@
+---
+interface Props {
+  title: string;
+  note?: string;
+}
+
+const { title, note } = Astro.props;
+---
+
+<figure class="terminal">
+  <figcaption class="terminal-bar">
+    <span>{title}</span>
+    {note && <span>{note}</span>}
+  </figcaption>
+  <pre tabindex="0"><code><slot /></code></pre>
+</figure>
+
+<style>
+  .terminal {
+    margin: 0;
+    background: #121614;
+    color: #dde3df;
+    border-radius: 12px;
+    overflow: hidden;
+    min-width: 0;
+  }
+  .terminal-bar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 4px 16px;
+    padding: 10px 16px;
+    border-bottom: 1px solid #2a302d;
+    color: #9aa39e;
+    font-family: 'JetBrains Mono Variable', ui-monospace, monospace;
+    font-size: 0.75rem;
+  }
+  pre {
+    margin: 0;
+    padding: 18px 20px;
+    overflow-x: auto;
+    font-size: 0.8125rem;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  code {
+    font-family: 'JetBrains Mono Variable', ui-monospace, monospace;
+  }
+</style>

@@ -1,0 +1,74 @@
+---
+import { milestones } from '../data/milestones';
+---
+
+<section id="how" class="section wrap" aria-labelledby="how-title">
+  <div class="section-head">
+    <h2 id="how-title">Three layers, one contract each</h2>
+    <p class="muted">
+      Use one layer or all three. Each has a stable interface, so others can add modules, storage
+      backends and compute targets without changing the core.
+    </p>
+  </div>
+
+  <div class="grid-3">
+    <article class="card">
+      <p class="eyebrow">01 · Rust</p>
+      <h3>Lineage and tooling</h3>
+      <p class="muted">
+        Read Nextflow's lineage store from local disk, S3, GCS or Azure. Diff and check runs, trace
+        outputs back to their inputs, and expose it to agents as read-only MCP tools. Model answers
+        are recorded once and replayed in tests.
+      </p>
+      <p class="tags">nf-lineage · nf-lineage-mcp · nf-llm-replay</p>
+      <p><span class="badge badge-accent">{milestones.foundations.version}, {milestones.foundations.status}</span></p>
+    </article>
+
+    <article class="card">
+      <p class="eyebrow">02 · Nextflow</p>
+      <h3>Agent modules</h3>
+      <p class="muted">
+        nf-core-compatible processes such as RUN_METHODS and QC_REVIEW. Each one has typed JSON input
+        and output schemas, and ships with evals and a pass threshold.
+      </p>
+      <p class="tags">meta.yml · JSON Schema · A2A</p>
+      <p><span class="badge">{milestones.agents.version}, {milestones.agents.status}</span></p>
+    </article>
+
+    <article class="card">
+      <p class="eyebrow">03 · OpenTofu</p>
+      <h3>Infrastructure</h3>
+      <p class="muted">
+        One compute contract per target, in the user's own cloud account. AWS is the first target.
+        A secure profile maps controls to NIST SP 800-171 and generates evidence for each release.
+      </p>
+      <p class="tags">infra/compute/&lt;target&gt; · infra/profiles/secure</p>
+      <p><span class="badge">{milestones.infrastructure.version}, {milestones.infrastructure.status}</span></p>
+    </article>
+  </div>
+</section>
+
+<style>
+  .card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+    padding: 24px;
+    background: var(--nf-surface);
+    border: 1px solid var(--nf-line);
+    border-radius: 14px;
+  }
+  .card h3 {
+    margin: 0;
+    font-family: 'Space Grotesk Variable', system-ui, sans-serif;
+    font-size: 1.5rem;
+  }
+  .tags {
+    margin: 0;
+    font-family: 'JetBrains Mono Variable', ui-monospace, monospace;
+    font-size: 0.8125rem;
+    color: var(--nf-muted);
+    line-height: 1.7;
+  }
+</style>
