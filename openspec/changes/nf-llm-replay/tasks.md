@@ -23,12 +23,18 @@ Every `tests/*.rs` / `examples/*.rs` starts with a `//!` line.
 
 ## PR B — replay server + CLI · ≈ 700 lines
 
-- [ ] B.1 RED→GREEN `src/config.rs`: `Cli`/`Mode`/`ApiKey`/`Config::from_cli`; U-dbg.
-- [ ] B.2 `tests/common/mod.rs`: `start(config) -> SocketAddr` (in-process `app()` on `127.0.0.1:0`), `write_cassette(entries)`, counting TCP listener used as dead upstream.
-- [ ] B.3 RED→GREEN `src/proxy.rs` replay path + `ProxyError::IntoResponse`: R-hit, R-same, R-400, R-big (32 MiB limit).
-- [ ] B.4 RED→GREEN miss contract: U-sum, U-hint, R-miss (message names method, path, model, key prefix, record command).
-- [ ] B.5 RED→GREEN R-net (counter stays 0), R-h2c (raw TCP request copied from langchain4j capture), R-conc (64 parallel).
-- [ ] B.6 `src/main.rs` (anyhow, tracing to stderr, `listening on` to stdout, SIGINT/SIGTERM graceful); RED→GREEN `tests/cli.rs`: X-help, X-mode, X-env, X-nocas, X-corrupt, X-listen.
+- [x] B.1 RED→GREEN `src/config.rs`: `Cli`/`Mode`/`ApiKey`/`Config::from_cli`; U-dbg.
+- [x] B.2 `tests/common/mod.rs`: `start(config) -> SocketAddr` (in-process `app()` on `127.0.0.1:0`), `write_cassette(entries)`, counting TCP listener used as dead upstream.
+- [x] B.3 RED→GREEN `src/proxy.rs` replay path + `ProxyError::IntoResponse`: R-hit, R-same, R-400, R-big (32 MiB limit).
+- [x] B.4 RED→GREEN miss contract: U-sum, U-hint, R-miss (message names method, path, model, key prefix, record command).
+- [x] B.5 RED→GREEN R-net (counter stays 0), R-h2c (raw TCP request copied from langchain4j capture), R-conc (64 parallel).
+- [x] B.6 `src/main.rs` (anyhow, tracing to stderr, `listening on` to stdout, SIGINT/SIGTERM graceful); RED→GREEN `tests/cli.rs`: X-help, X-mode, X-env, X-nocas, X-corrupt, X-listen.
+
+> Deviation (2026-11-26, PR B): no `assert_cmd` (std `Command` + `env!("CARGO_BIN_EXE_nf-llm-replay")`
+> suffice) and no HTTP client dev-dep (tests use a raw HTTP/1.1 client in `tests/common`, needed for
+> R-h2c anyway). `--volatile-field/--volatile-pattern` flags land with D.5 (X-help checks the flags that
+> exist; D.5 extends it). Record/passthrough return `StartupError::Unsupported` until PR C. Actual size
+> ≈ 1,190 hand-written lines (≈ 590 tests/helpers), not ≈ 700.
 
 ## PR C — record + passthrough · ≈ 760 lines
 

@@ -8,13 +8,13 @@ phases:
   design: done
   tasks: done
   apply: in-progress
-  verify: pending
+  verify: in-progress
   archive: pending
 batches:
   - {id: A, title: "normalization + cassette model", est_lines: 500, status: applied}
-  - {id: B, title: "replay server + CLI", est_lines: 700, status: pending}
+  - {id: B, title: "replay server + CLI", est_lines: 700, actual_lines: 1190, status: applied}
   - {id: C, title: "record + passthrough", est_lines: 760, status: pending}
   - {id: D, title: "SSE streaming + normalization flags", est_lines: 420, status: pending}
   - {id: E, title: "Docker image + offline example + CI docker job", est_lines: 380, status: pending}
 updated: 2026-11-26
-next: sdd-verify (PR A), then sdd-apply (PR B)
+next: sdd-apply (PR C)
