@@ -2,7 +2,7 @@
 
 Date: 2026-11-26. Scope: the assumptions nf-agents relies on before writing code — Nextflow
 data lineage (storage model and `nextflow lineage` CLI), supported Nextflow versions, the
-`agent` primitive, rmcp, object_store, the planning tooling, MiniStack and the Rust quality
+`agent` primitive, rmcp, object_store, MiniStack and the Rust quality
 tooling. Rule applied: where observed behaviour contradicts an initial assumption, the observed
 behaviour wins.
 
@@ -12,7 +12,7 @@ Nextflow releases in the official `nextflow/nextflow:<tag>` Docker images, every
 `nextflow lineage` subcommand captured, the `agent` primitive pointed at a dummy HTTP
 endpoint to capture its requests, and small Rust probe crates compiled and tested on the
 local toolchain (rustc 1.94.1). The experiments were run locally; the pipeline and generator
-scripts were later ported into the repository under `scripts/fixtures/` and the test suites.
+scripts are kept under `scripts/fixtures/`.
 
 Pinned upstream references used below:
 
@@ -37,7 +37,7 @@ Pinned upstream references used below:
 | 4 | `agent` primitive in preview; maybe accepts `baseUrl`; maybe chat completions / responses / streaming | Exists since **26.10** (first in 26.08.0-edge). Accepts `agent.baseUrl`. Default runner `langchain4j` calls **`POST {baseUrl}/chat/completions` non-streaming**. The `pi` runner calls **`POST /v1/responses` with SSE** (OpenAI) or **`POST /v1/messages?beta=true` with SSE** (Anthropic) | **Yes** — nf-llm-replay priority is non-streaming chat completions; SSE is needed for the Responses and Messages APIs, not for chat completions |
 | 5 | rmcp: latest stable, features, tool API | `rmcp 3.12.0`; `#[tool_router]` / `#[tool]` / `#[tool_handler]`, `Parameters<T>` with schemars 1; in-process tests over `tokio::io::duplex` work | Minor — pin 3.x, disable default features (chrono advisory) |
 | 6 | object_store covers local, S3, GCS, Azure | `object_store 0.14.2` with features `aws`, `gcp`, `azure` (local `fs` is default, in-memory always on). Verified local + in-memory + S3 on MiniStack. **`Path::from` percent-encodes `#`**, which breaks `<hash>#output` keys unless `Path::parse` is used | **Yes** — key handling rule; `#[async_trait]` stays (native `async fn` is not dyn-compatible) |
-| 7 | Spec Kit: version, init, command names | Spec Kit `v1.4.5`: `uv tool install specify-cli`, `specify init --integration <agent>`, `/speckit.*` commands. nf-agents uses OpenSpec-style SDD for planning | **Yes** — drop `specs/`, use `openspec/specs/` + `openspec/changes/` |
+| 7 | Spec Kit: version, init, command names | Spec Kit `v1.4.5`: `uv tool install specify-cli`, `specify init --integration <agent>`, `/speckit.*` commands. | **Yes** — drop `specs/`, use `openspec/specs/` + `openspec/changes/` |
 | 8 | MiniStack for S3; insta, assert_cmd, cargo-deny, cargo-machete on edition 2024 | MiniStack `ministackorg/ministack:1.5.45`, port 4566, S3 works with object_store. `insta 1.49.0` and `assert_cmd 2.2.2` OK. `cargo-deny 0.22.1` needs rustc 1.95, `cargo-machete 0.10.1` does not build on 1.94.1 | CI must use current stable Rust (1.100.0) or pin `cargo-deny 0.21.0` / `cargo-machete 0.9.2` locally |
 
 ---
@@ -557,15 +557,13 @@ and command names.
   `/speckit.checklist`, `/speckit.tasks`, `/speckit.analyze`, `/speckit.implement`,
   `/speckit.converge` (new: assess implementation vs artifacts). Extensions add e.g. `/speckit.bug.*`.
 - Nextflow itself uses Spec Kit (`.specify/` is present at `v26.10.7`).
-- nf-agents uses OpenSpec-style SDD for planning: `openspec/specs/<capability>/spec.md`
-  (source of truth) and `openspec/changes/<change>/{proposal,design,tasks}.md` plus delta specs,
-  archived under `openspec/changes/archive/`. (OpenSpec itself is at v2.2.0, npm `@fission-ai/openspec`.)
+- The repository keeps its specifications in `openspec/specs/<capability>/spec.md`, which are the
+  source of truth. (OpenSpec itself is at v2.2.0, npm `@fission-ai/openspec`.)
 
 ### 7.3 Design impact
 
 Yes: replace `specs/` with `openspec/` (`openspec/specs/nf-lineage`, `openspec/specs/nf-llm-replay`,
-`openspec/specs/nf-lineage-mcp`) and plan each PR-sized change in `openspec/changes/`. Do not
-run `specify init` (two SDD layouts would confuse contributors).
+`openspec/specs/nf-lineage-mcp`). Do not run `specify init` (two SDD layouts would confuse contributors).
 
 ---
 
