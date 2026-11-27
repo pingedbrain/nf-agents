@@ -1,7 +1,7 @@
 # Apply progress: nf-llm-replay
 
-**Mode**: Strict TDD (runner `cargo test --workspace`). Batches: PR A done (6/6 tasks), PR B done (6/6 tasks); PR C-E pending.
-Overall: 12/31 tasks.
+**Mode**: Strict TDD (runner `cargo test --workspace`). Batches: PR A done (6/6 tasks), PR B done (6/6 tasks), PR C1 done (3/3 tasks); PR C2, D, E pending.
+Overall: 15/31 tasks. (PR C was split into C1/C2 on 2026-11-26; task IDs unchanged, see tasks.md.)
 
 ## PR A — normalization + cassette model (2026-11-26)
 
@@ -96,6 +96,44 @@ no `assert_cmd` / HTTP client dev-deps.
   table-like test fixtures). PR C (≈ 760 est.) will likely overshoot similarly.
 - `json!` on a derived `Serialize` struct is infallible for these field types; no panic path on input.
 
+## PR C1 — upstream client + Recorder (2026-11-26)
+
+### Files changed
+
+| File | Action | What |
+|------|--------|------|
+| `Cargo.toml` | Modified | workspace dep reqwest 0.13.5 (no default features; `rustls, http2`); tokio += `sync, fs, io-util` |
+| `crates/nf-llm-replay/Cargo.toml` | Modified | `reqwest`; dev tokio keeps only `time` (`io-util` is now a normal feature) |
+| `deny.toml` | Modified | `CDLA-Permissive-2.0` (webpki-root-certs, via reqwest rustls) with comment |
+| `Cargo.lock` | Modified | generated |
+| `src/upstream.rs` | Created | `Upstream::new/send`, `forward_headers`, `UpstreamError::{Key, Client}`; 600 s / 10 s timeouts, no redirects, no compression, URL stripped from errors; 4 unit tests |
+| `src/cassette.rs` | Modified | `Recorder::open/cell/persist`, `Cell`, `write_sorted` (temp sibling + `sync_all` + rename), `CassetteError::{Write, Secret}`; 3 unit tests |
+| `src/config.rs` | Modified | `ApiKey` field `pub(crate)` |
+| `src/lib.rs` | Modified | `pub mod upstream` |
+
+### TDD cycle evidence
+
+| Task | Test file | Layer | Safety net | RED | GREEN | Triangulate | Refactor |
+|------|-----------|-------|------------|-----|-------|-------------|----------|
+| C.1 | — | config | ✅ 37/37 | — | `cargo deny check` ok with reqwest | ➖ structural (manifest/policy); confirmed `webpki-root-certs` is the only CDLA crate | ➖ |
+| C.2 | `src/upstream.rs` | Unit | ✅ 37/37 | ✅ U-hdr, U-auth, send, send-error → E0425/E0433 (no `Upstream`/`UpstreamError`) | ✅ 4/4 | ✅ Bearer / `x-api-key` / `api-key` / both / no credential; all 15 dropped names + `proxy-*`; invalid key → `UpstreamError::Key`; base with path prefix + trailing `/`; mutation: default redirect policy and missing `without_url` each make a test FAIL | test asserts compare `to_str()` |
+| C.4 | `src/cassette.rs` | Unit | ✅ 41/41 | ✅ K-sorted, K-guard, cells → E0425/E0599 (no `Recorder`, `Write`, `Secret`) | ✅ 27/27 lib | ✅ pre-existing line kept + 3 inserts out of order; key echoed in response vs in request body; `sk-test-other` accepted; failed write (dir removed) → `Write` naming the file and the entry is rolled back (mutation-checked); corrupt file → `Line 1`; absent file created empty | ➖ |
+
+### Test summary
+
+- Tests written in PR C1: 7 unit (4 upstream, 3 cassette); workspace total 44, all passing.
+- Pure functions: `Upstream::forward_headers`.
+
+### Deviations from design
+
+Recorded in design.md ("Deviation (2026-11-26, PR C1)") and tasks.md (PR C split + C1 note).
+
+### Issues found / notes for C2
+
+- Empty `NF_LLM_REPLAY_API_KEY` would make the secret guard refuse every entry: treat empty as missing (X-nokey).
+- Map `reqwest::Error` from `Upstream::send` to `ProxyError::Upstream` (502); `UpstreamError` and `CassetteError::Write` need `StartupError` variants when wiring `app()`.
+- `cargo deny` duplicate warning `syn` 2/3 is back (Android-only `jni` via `rustls-platform-verifier`); optional fix: `[graph] targets` in deny.toml.
+
 ### Remaining
 
-PR C (C.1-C.7), PR D (D.1-D.5), PR E (E.1-E.7).
+PR C2 (C.3, C.5, C.6, C.7), PR D (D.1-D.5), PR E (E.1-E.7).

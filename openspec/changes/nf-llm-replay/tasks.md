@@ -36,15 +36,29 @@ Every `tests/*.rs` / `examples/*.rs` starts with a `//!` line.
 > exist; D.5 extends it). Record/passthrough return `StartupError::Unsupported` until PR C. Actual size
 > ≈ 1,190 hand-written lines (≈ 590 tests/helpers), not ≈ 700.
 
-## PR C — record + passthrough · ≈ 760 lines
+## PR C1 — upstream client + Recorder (library only) · ≈ 450 lines
 
-- [ ] C.1 `deny.toml`: add `CDLA-Permissive-2.0` with comment; `cargo deny check` green after adding reqwest.
-- [ ] C.2 RED→GREEN `src/upstream.rs`: U-hdr, U-auth; `Upstream` (600 s timeout, 10 s connect, no redirects, no compression).
+- [x] C.1 `deny.toml`: add `CDLA-Permissive-2.0` with comment; `cargo deny check` green after adding reqwest.
+- [x] C.2 RED→GREEN `src/upstream.rs`: U-hdr, U-auth; `Upstream` (600 s timeout, 10 s connect, no redirects, no compression) + `send` unit test against a one-shot local listener (base + path + query, injected key, 3xx not followed).
+- [x] C.4 RED→GREEN `Recorder` (`cassette.rs`): K-sorted, K-guard (+ per-key cells shared and pre-filled from the file; open creates an absent file).
+
+## PR C2 — record + passthrough wiring · ≈ 650 lines
+
 - [ ] C.3 `tests/common/fake_upstream.rs` (chat JSON only: plain, `json_schema`, tool call `call_1`, tool-result echo; counters, last headers/URI, forced status, echo-key).
-- [ ] C.4 RED→GREEN `Recorder` (`cassette.rs`): K-sorted, K-guard.
 - [ ] C.5 RED→GREEN record path in `proxy.rs` (`tests/record.rs`): W-rt, W-tool, W-fill, W-once, W-err, W-502, W-auth, W-fwd, K-conc.
 - [ ] C.6 RED→GREEN passthrough: P-pass (buffered streaming check moves to D).
 - [ ] C.7 RED→GREEN `tests/secrets.rs` S-scan; `tests/cli.rs` X-nokey, X-noup, X-nolog.
+
+> Deviation (2026-11-26, PR C split): PR B landed at ≈ 1,190 lines vs ≈ 700 estimated, so the
+> ≈ 760-line PR C is split. **C1** = the upstream client and the `Recorder` as library code with unit
+> tests (C.1, C.2, C.4); **C2** = wiring record/passthrough into `app()`/`proxy.rs`/CLI, the fake
+> upstream and the integration/secret-scan tests (C.3, C.5-C.7). Task IDs are unchanged. `deny.toml`
+> moves with reqwest into C1.
+
+> Deviation (2026-11-26, PR C1): `Upstream::new(base: &str, key) -> Result<_, UpstreamError>` validates
+> the key as a header value once; `send` returns `reqwest::Error` (URL stripped) and C2 maps it to the
+> 502. `pub mod upstream` (private would be dead code until C2 wires it). `Config.upstream` stays a
+> validated `String`. reqwest features `rustls, http2` (`stream` lands with D.4). Actual size ≈ 470 lines.
 
 ## PR D — SSE streaming + normalization flags · ≈ 420 lines
 

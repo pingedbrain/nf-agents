@@ -1,6 +1,6 @@
 # Verification Report: nf-llm-replay
 
-**Mode**: Strict TDD. Scope so far: PR A (A.1-A.6), PR B (B.1-B.6). Later batches merge their sections below.
+**Mode**: Strict TDD. Scope so far: PR A (A.1-A.6), PR B (B.1-B.6), PR C1 (C.1, C.2, C.4). Later batches merge their sections below.
 
 ## PR A — normalization + cassette model (2026-11-26)
 
@@ -229,3 +229,101 @@ X-nolog (C); E-*, X-vol (D); packaging and CI (E).
 ### Verdict
 
 **PASS WITH WARNINGS** — PR B is complete, all gates green, 17/17 scoped scenarios compliant.
+
+## PR C1 — upstream client + Recorder (2026-11-26)
+
+PR C was split into C1/C2 (tasks.md deviation); this section covers C.1, C.2, C.4.
+
+### Completeness
+
+| Metric | Value |
+|--------|-------|
+| PR C1 tasks | 3 |
+| Complete | 3 |
+| Incomplete (PR C1) | 0 |
+| Change overall | 15/31 (PR C2, D, E pending, out of scope) |
+
+### Build and tests (executed in the worktree)
+
+| Check | Command | Result |
+|-------|---------|--------|
+| C-fmt | `cargo fmt --all -- --check` | ✅ exit 0 |
+| C-clippy | `cargo clippy --workspace --all-targets --locked -- -D warnings` | ✅ exit 0 |
+| C-test | `cargo test --workspace --locked` | ✅ 44 passed, 0 failed, 0 skipped (nf-lineage 1, lib 27, captures 2, cli 6, replay 8) |
+| C-deny | `cargo deny check` | ✅ ok (warning: duplicate `syn` 2/3, see W-4) |
+| C-machete | `cargo machete` | ✅ no unused dependencies |
+| build warnings | `cargo build --workspace --locked` | ✅ 0 warnings |
+
+Coverage: ➖ not available.
+
+### Mutation spot checks
+
+| Mutation | Result |
+|----------|--------|
+| disable the secret guard in `persist` | ✅ K-guard fails |
+| no rollback of `saved` after a failed write | ✅ K-sorted fails (assertion added during verify; initially survived) |
+| forward `proxy-*` headers | ✅ U-hdr fails |
+| prefer `api-key` over `x-api-key` | ✅ U-auth + send test fail |
+| default redirect policy | ✅ send test fails |
+| keep the URL in reqwest errors | ✅ `send_error_omits_the_url` fails |
+
+### TDD compliance
+
+apply-progress.md has TDD evidence rows for C.1-C.4 (C1 subset); every RED was a compile failure
+against missing types (E0425/E0433/E0599), confirmed by execution before GREEN. C.1 is structural.
+
+### Spec compliance matrix (PR C1 checks)
+
+| Requirement | Scenario | Test | Result |
+|-------------|----------|------|--------|
+| Upstream credentials and headers | Injection (U-hdr) | `upstream::tests::hop_by_hop_credential_and_encoding_headers_are_not_forwarded` | ✅ COMPLIANT |
+| Upstream credentials and headers | Injection (U-auth) | `upstream::tests::api_key_is_injected_in_the_client_header_style` | ✅ COMPLIANT |
+| Record mode (forward base + path + query, original bytes) | unit level of W-fwd | `upstream::tests::send_targets_base_path_and_query_without_following_redirects` | ⚠️ PARTIAL (W-fwd integration test is C2) |
+| Stable ordering and safe concurrent writes | Sorted atomic insert (K-sorted) | `cassette::tests::insert_rewrites_file_sorted_by_key_without_temp_leftovers` | ✅ COMPLIANT |
+| No secrets in cassettes | Echoed key (K-guard) | `cassette::tests::entry_containing_the_api_key_is_refused` | ⚠️ PARTIAL: refusal + file untouched proven; "client gets HTTP 500" needs the C2 wiring |
+
+**Compliance summary**: 3/5 compliant, 2 partial by design (the remaining halves are C2 scenarios).
+
+### Correctness (static)
+
+| Requirement | Status | Notes |
+|------------|--------|-------|
+| Key only from env, injected in client style, credentials/hop-by-hop/host/length/encoding dropped | ✅ | `DROPPED` + `proxy-*`; key values `set_sensitive` |
+| No redirects, no compression, 600 s / 10 s timeouts | ✅ | reqwest without gzip features; constants `TIMEOUT`/`CONNECT_TIMEOUT` (not unit-tested) |
+| Cassette sorted, temp sibling + rename, one in-process lock | ✅ | `tokio::sync::Mutex<BTreeMap>`, `<cassette>.tmp`, `sync_all` |
+| Entry containing the key refused, nothing written | ✅ | checked on the serialized line before taking the lock |
+| Record loads the cassette, created if absent | ✅ | `Recorder::open`; known keys pre-fill their `OnceCell` |
+| No panics on external input | ✅ | poisoned mutex → `into_inner`; no unwrap/expect/indexing outside tests |
+
+### Coherence (design)
+
+| Decision | Followed? | Notes |
+|----------|-----------|-------|
+| Inject env key, strip client credentials | ✅ | |
+| `redirect::Policy::none()` / identity encoding | ✅ | |
+| BTreeMap + temp + `sync_all` + rename under tokio Mutex | ✅ | |
+| Per-key `OnceCell` single-flight | ✅ | `Recorder::cell`; coalescing itself is exercised in C2 (W-once) |
+| Secret guard test + runtime | ✅ runtime + unit | S-scan integration is C2 |
+| reqwest default rustls; `CDLA-Permissive-2.0` | ✅ | features `rustls, http2` only (`stream` → D.4) |
+| `Upstream` / `forward_headers` signatures | ⚠️ Deviated | `new` returns `UpstreamError`, `forward_headers` is a method, `send` returns `reqwest::Error`; documented in design.md |
+| `Config.upstream: reqwest::Url` | ⚠️ Deviated | still a validated `String`; documented |
+
+### Issues
+
+**CRITICAL**: None.
+
+**WARNING**:
+- W-4: `cargo deny` duplicate-version warning `syn` 2.0/3.0 is back; `syn` 2 enters only through
+  Android-only `jni` (`rustls-platform-verifier`). Non-blocking (`multiple-versions = "warn"`); fix with
+  `[graph] targets` in deny.toml if wanted.
+- W-5: An empty `NF_LLM_REPLAY_API_KEY` would make the guard refuse every entry (`contains("")`); C2's
+  X-nokey config check must treat an empty key as missing.
+
+**SUGGESTION**:
+- S-5: `upstream` is a `pub` module only so it is not dead code before C2 wires it; C2 can make it private.
+- S-6: If the final `rename` fails, `<cassette>.tmp` is left behind (it is overwritten on the next write).
+
+### Verdict
+
+**PASS WITH WARNINGS** — PR C1 is complete, all gates green, 3/5 scoped scenarios fully compliant and
+2 partial by design (their integration halves are C2 tasks).
