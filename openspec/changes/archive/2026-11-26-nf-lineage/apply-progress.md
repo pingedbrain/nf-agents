@@ -5,7 +5,9 @@
 Remaining work re-split into B1/B2/C1/C2 (tasks.md, 2026-11-26). Batch PR B1: B1.1–B1.7 done
 (incl. A.8–A.9). Batch PR B2: B2.1–B2.5 done; `diff_raw` moved to C1.0 by the escape hatch
 (B2 ≈ 905 lines with it, ≈ 870 without). Batch PR C1: C1.0–C1.4 done (`diff_raw`, `view`,
-`provenance`, CLI contract suite, CI `contract` job; ≈ 787 lines, no escape hatch).
+`provenance`, CLI contract suite, CI `contract` job; ≈ 787 lines, no escape hatch). Batch PR C2:
+C2.1–C2.5 done (MiniStack S3 tests, CI `integration` job, CONTRIBUTING MiniStack section,
+`0.1.0` metadata + crate README; ≈ 350 lines). All tasks complete.
 
 ## Files changed (PR A)
 
@@ -41,6 +43,9 @@ Remaining work re-split into B1/B2/C1/C2 (tasks.md, 2026-11-26). Batch PR B1: B1
 | C1.1 | `tests/provenance.rs` (`published_file_reaches_pipeline_input`, `task_file_stops_at_its_task_and_runs_are_rejected`) written first → 3 compile errors (`provenance`, `Provenance`, `ProvenanceInput` missing) | BFS over `get` → 2/2 on all 4 core versions | `cycles_are_visited_once` (InMemory FileOutput ↔ TaskRun cycle); WorkflowRun → `UnexpectedKind`, missing → `NotFound`, task file → GENERATE only; mutation probes: no visited check → cycle test hangs (killed by timeout); no source/taskRun dedupe → cycle test fails; both reverted | none |
 | C1.2/C1.3 | `tests/contract.rs` (5 contract tests) written first → compile error (`view` missing) | `view` → `contract_view` green at once; `contract_diff` failed on 25.04/25.10 `diff-tasks` (trailing `,` after `workflowRun`) → comparison drops a trailing `,` (deviation) → 5/5 | `tests/view.rs` edge cases (missing `#output` → `[]`, `#output.value`, array navigation, `#type`, `null`, flat record, unknown property, missing record); mutation probes: no output redirect → view-*output cases fail; `spec()` instead of `to_json()` → record views fail; `label` alias broken → find-fileoutput-label fails; no mtime bump → check-mtime-only fails; list columns swapped → list fails; no `#output`→`[]` mapping → view test fails; no fragment validation → view test fails; all reverted, each failure names `<version> <case>` | `changed_lines` un-escape as a table |
 | C1.4 | structural (CI job); YAML parsed, `secrets.` count 0; triangulation skipped: no logic | — | — | — |
+| C2.1 | `tests/s3_ministack.rs` written against the existing S3 code paths (store from B1, S3 `check` from B2); RED = new behaviour never exercised against a real S3 API; first run against `ministackorg/ministack:1.5.45` (port 14566) green | 2/2 pass with `NF_LINEAGE_MINISTACK_URL`; unset → skip notice, 2/2 pass | unreachable `http://localhost:1` → both FAIL after 60 s (not skip); mutation probes: S3 mtime truncated to seconds → `s3_check_valid_and_mismatch` fails (MiniStack listings keep ms); hashed S3 path without the bucket → fails; both reverted | none |
+| C2.2/C2.3 | structural (CI job, docs); actionlint (docker `rhysd/actionlint`) 0 errors, `secrets.` count 0; V-doc greps 1/1/1; triangulation skipped: no logic | — | — | — |
+| C2.4 | README examples added as `#[cfg(doctest)]` item | 2 README doctests compile + store doctest pass; `cargo package -p nf-lineage --locked` ok; `RUSTDOCFLAGS=-D warnings cargo doc` clean | mutation probe: `list_runz` in the README → doctest FAILED; reverted | `include` limits the package to `src/` + README |
 
 ## Files changed (PR B1)
 
@@ -86,6 +91,18 @@ Remaining work re-split into B1/B2/C1/C2 (tasks.md, 2026-11-26). Batch PR B1: B1
 | `crates/nf-lineage/tests/contract.rs` | Created | `contract_list`, `contract_view`, `contract_find`, `contract_diff`, `contract_check` |
 | `.github/workflows/ci.yml` | Modified | job `contract` |
 
+## Files changed (PR C2)
+
+| File | Action | What |
+|------|--------|------|
+| `crates/nf-lineage/tests/s3_ministack.rs` | Created | env-gated `s3_store_roundtrip`, `s3_check_valid_and_mismatch`; raw `PUT /<bucket>` readiness wait (≤ 60 s) |
+| `.github/workflows/ci.yml` | Modified | job `integration` (service `ministackorg/ministack:1.5.45`, `NF_LINEAGE_MINISTACK_URL`) |
+| `CONTRIBUTING.md` | Modified | "S3 integration tests (MiniStack)" section |
+| `crates/nf-lineage/Cargo.toml` | Modified | `0.1.0`, publishable; description, readme, documentation, keywords, categories, `include` |
+| `crates/nf-lineage/README.md` | Created | overview, examples (doctests), features |
+| `crates/nf-lineage/src/lib.rs` | Modified | `#[cfg(doctest)]` README include |
+| `Cargo.lock` | Modified | nf-lineage version |
+
 ## Deviations
 
 See design.md "Deviations (2026-11-26, apply PR A)": snapshot masking with `regex` before sorting
@@ -98,10 +115,12 @@ scheme rules, JSON-table projection).
 PR C1: see design.md "Deviations (2026-11-26, apply PR C1)" (`diff_raw` diffs the canonical
 envelope for every version; contract diff drops a trailing `,`; view/provenance details).
 
+PR C2: see design.md "Deviations (2026-11-26, apply PR C2)" (dummy credentials in the test, fixed
+buckets + raw-PUT readiness, S3 check expectation from the listing, package `include`).
+
 PR B1: see design.md "Deviations (2026-11-26, apply PR B1)" (re-split, no `Did you mean` suffix,
 navigation over `spec()` JSON, history `tokenize`, deny warnings for undetected advisories).
 
 ## Remaining
 
-C2.1–C2.5 (MiniStack, integration
-CI, CONTRIBUTING, 0.1.0 metadata).
+None. All tasks (A–C2) complete; ready for verify and archive.

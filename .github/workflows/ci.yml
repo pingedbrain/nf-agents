@@ -57,3 +57,22 @@ jobs:
       - run: rustup toolchain install
       - uses: Swatinem/rust-cache@v2
       - run: cargo test -p nf-lineage --test contract --locked
+
+  # S3 integration tests against MiniStack (an AWS emulator). The tests use fixed dummy
+  # credentials (`test`/`test`) and their own buckets; no secrets are involved.
+  integration:
+    runs-on: ubuntu-latest
+    services:
+      ministack:
+        image: ministackorg/ministack:1.5.45
+        ports:
+          - 4566:4566
+    env:
+      NF_LINEAGE_MINISTACK_URL: http://localhost:4566
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - run: rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test -p nf-lineage --test s3_ministack --locked

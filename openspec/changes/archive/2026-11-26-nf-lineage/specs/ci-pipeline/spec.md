@@ -21,8 +21,9 @@ tests; `contract` exists as a named status check.)
 
 Job `integration` MUST run on every PR and push to `main` with a service container
 `ministackorg/ministack:1.5.45` on port 4566, set `NF_LINEAGE_MINISTACK_URL=http://localhost:4566`,
-and run `cargo test -p nf-lineage --test s3_ministack --locked`. It MUST use only dummy credentials
-(`test`/`test`) defined in the workflow, never `secrets.*`. The tests themselves MUST wait for
+and run `cargo test -p nf-lineage --test s3_ministack --locked`. It MUST NOT use `secrets.*`: the tests
+use fixed dummy credentials (`test`/`test`) in their own code, so the workflow defines none
+(Deviation 2026-11-26, apply PR C2: was "defined in the workflow"). The tests themselves MUST wait for
 MiniStack readiness (bounded, ≤ 60 s) and fail, not skip, when the variable is set but MiniStack is unreachable.
 
 #### Scenario: Service up (C-it, V-yaml)
