@@ -4,7 +4,7 @@ nf-agents is built in milestones. Each one has a goal, a list of deliverables, a
 
 The architecture behind this plan is in [docs/architecture.md](docs/architecture.md).
 
-**Status markers:** **in review** means implemented and under review, **in progress** means partly implemented, and unmarked items are planned.
+**Status markers:** checked items are merged on `main` (not yet released), **in progress** means partly implemented, and unmarked items are planned.
 
 ## Tracks
 
@@ -26,12 +26,12 @@ Work is grouped into tracks that run across milestones.
 
 Deliverables:
 
-- [ ] Cargo workspace and CI (rustfmt, clippy with `-D warnings`, cargo-deny, cargo-machete, tests), contributor guide, code of conduct, security policy, issue templates. **in review**
-- [ ] Lineage fixtures: a minimal 3-process pipeline; stores and `nextflow lineage` CLI output for Nextflow 25.04.8, 25.10.9, 26.04.9 and 26.10.7, plus an `AgentRun` store; an offline generator; a weekly, non-blocking drift check against the latest edge release. **in review**
-- [ ] `nf-lineage`: a tolerant record model (both on-disk envelopes, `AgentRun`, unknown kinds and fields preserved); the `LineageStore` trait with an `object_store` backend (local, S3, GCS, Azure); `find`; `check` (Nextflow's metadata checksum); semantic and raw `diff`; `view`; `provenance`; a CLI contract suite; S3 integration tests against MiniStack. **in review**
-- [ ] `nf-llm-replay`: `record`, `replay` and `passthrough` modes; OpenAI chat completions (JSON, structured output, tool calls); SSE for the Responses and Messages APIs; normalized request keys; JSONL cassettes without credentials; a distroless image; an offline end-to-end test with Nextflow's `agent` primitive. **in review**
-- [ ] `nf-lineage-mcp`: a read-only MCP server over stdio with `list_runs`, `view`, `find`, `diff`, `check` and `provenance`, and a configurable cap on response size. **in review**
-- [ ] Local demo with Docker: an MCP client asks what changed between two pipeline runs. **in review**
+- [x] Cargo workspace and CI (rustfmt, clippy with `-D warnings`, cargo-deny, cargo-machete, tests), contributor guide, code of conduct, security policy, issue templates.
+- [x] Lineage fixtures: a minimal 3-process pipeline; stores and `nextflow lineage` CLI output for Nextflow 25.04.8, 25.10.9, 26.04.9 and 26.10.7, plus an `AgentRun` store; an offline generator; a weekly, non-blocking drift check against the latest edge release.
+- [x] `nf-lineage`: a tolerant record model (both on-disk envelopes, `AgentRun`, unknown kinds and fields preserved); the `LineageStore` trait with an `object_store` backend (local, S3, GCS, Azure); `find`; `check` (Nextflow's metadata checksum); semantic and raw `diff`; `view`; `provenance`; a CLI contract suite; S3 integration tests against MiniStack.
+- [x] `nf-llm-replay`: `record`, `replay` and `passthrough` modes; OpenAI chat completions (JSON, structured output, tool calls); SSE for the Responses and Messages APIs; normalized request keys; JSONL cassettes without credentials; a distroless image; an offline end-to-end test with Nextflow's `agent` primitive.
+- [x] `nf-lineage-mcp`: a read-only MCP server over stdio with `list_runs`, `view`, `find`, `diff`, `check` and `provenance`, and a configurable cap on response size.
+- [x] Local demo with Docker: an MCP client asks what changed between two pipeline runs.
 - [ ] Release pipeline: crates on crates.io at `0.1.0`, images on GHCR.
 
 **Done when:**
@@ -60,7 +60,7 @@ Deliverables:
 - [ ] Provenance link: module output carries the A2A `taskId`, the `contextId` and the cassette ID, and `nf-lineage-mcp provenance` resolves them.
 - [ ] `nf-evals`: the `Grader` trait, JSONL cases, N repetitions, a pass threshold and a spend cap. Its A2A target sends messages built from fixtures and scores the returned artifact with deterministic graders and an LLM judge.
 - [ ] `nf-otel`: OpenTelemetry export with the GenAI semantic conventions to any OTLP backend. Off by default.
-- [ ] Docs site (Astro + Starlight): landing page, getting started, architecture, module catalog. **in progress**
+- [ ] Docs site (Astro + Starlight): landing page, getting started, architecture, module catalog. **in progress** (landing and docs are live; module catalog pending)
 
 **Done when:**
 
