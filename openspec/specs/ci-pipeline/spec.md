@@ -2,7 +2,7 @@
 
 ## Purpose
 
-GitHub Actions gates every PR and every push to `main` with lint and test jobs, a `nextflow lineage` contract job, an S3 integration job (MiniStack) and a Docker job that builds and smoke-tests the container images, none of which need secrets, plus the cargo-deny supply-chain policy.
+GitHub Actions gates every PR and every push to `main` with five jobs in `ci.yml`, none of which need secrets: `lint`, `test` (including the offline fixture and demo checks), a `nextflow lineage` contract job, an S3 integration job (MiniStack) and a Docker job that builds and smoke-tests the container images and runs the local demo. A separate `fixtures.yml` workflow (manual and weekly) regenerates the lineage fixtures and warns about edge-release drift. `deny.toml` holds the cargo-deny supply-chain policy.
 
 ## Verification checks
 
@@ -13,7 +13,12 @@ GitHub Actions gates every PR and every push to `main` with lint and test jobs, 
 | C-contract | CI `contract` | `cargo test -p nf-lineage --test contract --locked` |
 | C-it | CI `integration` | `cargo test -p nf-lineage --test s3_ministack --locked` with MiniStack |
 | C-docker | CI `docker` | the PR run shows `docker` green: D-build, D-user, D-size, D-run, D-e2e of llm-replay-packaging and D-build, D-user, D-size, D-smoke of lineage-mcp |
+| C-fixtures | CI `test` | `python3 -I -m unittest discover -s scripts/fixtures -p 'test_*.py'` and `python3 -I scripts/fixtures/check.py fixtures/lineage` |
+| C-demo-unit | CI `test` | DM-unit and DM-sh of local-demo |
+| C-demo | CI `docker` | the PR run shows the step `Local demo` green (DM-run of local-demo) |
+| C-fx-run | CI (manual) | a `workflow_dispatch` run of `fixtures.yml` |
 | V-yaml | verify | inspect `.github/workflows/ci.yml` (grep/yq) |
+| V-fx-yaml | verify | inspect `.github/workflows/fixtures.yml` (grep/yq; `actionlint` if available) |
 | V-deny | verify | inspect `deny.toml` + run `cargo deny check` locally |
 
 ## Requirements
@@ -34,12 +39,12 @@ The workflow MUST run on `pull_request` and on `push` to `main`. A newer run for
 
 ### Requirement: Least privilege, no secrets
 
-The workflow MUST declare `permissions: contents: read` at top level and MUST NOT reference `secrets.*`. It MUST NOT need API keys or cloud credentials.
+`ci.yml` MUST declare `permissions: contents: read` at top level and MUST NOT reference `secrets.*`. It MUST NOT need API keys or cloud credentials. (`fixtures.yml` is governed by "Fixtures regeneration workflow".)
 
 #### Scenario: Fork PR (V-yaml, C-run)
 - GIVEN a PR from a fork (no secrets available)
 - WHEN CI runs
-- THEN all jobs (`lint`, `test`, `contract`, `integration`, `docker`) can pass; `grep -c 'secrets\.' ci.yml` is 0
+- THEN all five `ci.yml` jobs (`lint`, `test`, `contract`, `integration`, `docker`) can pass; `grep -c 'secrets\.' ci.yml` is 0
 
 ### Requirement: Lint job
 
@@ -57,12 +62,22 @@ Job `lint` MUST run, and fail on failure of any of: `cargo fmt --all -- --check`
 
 ### Requirement: Test job
 
-Job `test` MUST run `cargo test --workspace --locked` and fail if any test fails.
+Job `test` MUST run `cargo test --workspace --locked`, the offline fixture checks (C-fixtures) and the demo checks (C-demo-unit: tour unittest and `shellcheck demo/run.sh`). It MUST fail if any of them fails. The fixture and demo checks MUST NOT need Docker or network.
 
 #### Scenario: Failing test (C-run, V-yaml)
 - GIVEN a failing test in any member
 - WHEN `test` runs
 - THEN the job fails
+
+#### Scenario: Corrupted fixture (C-fixtures)
+- GIVEN a PR that changes one byte of a data file under `fixtures/lineage/`
+- WHEN `test` runs
+- THEN the job fails naming the file
+
+#### Scenario: Broken tour logic (C-demo-unit)
+- GIVEN a PR that makes `tour.py` accept a diff with extra changes
+- WHEN `test` runs
+- THEN `TourTests.test_unexpected_diff_fails` fails the job
 
 ### Requirement: Toolchain source and action pinning
 
@@ -104,14 +119,12 @@ MiniStack readiness (bounded, ≤ 60 s) and fail, not skip, when the variable is
 
 ### Requirement: Docker job
 
-Job `docker` MUST run on every PR and push to `main`, on `ubuntu-latest`, with no secrets and no
-registry login or push. It MUST: build `crates/nf-llm-replay/Dockerfile` from the repo root as
-`nf-llm-replay:ci`; fail if the image user is not `65532:65532` or the image exceeds 25 MB; run
-`docs/examples/nf-llm-replay/e2e.sh` with `E2E_REQUIRE_DOCKER=1` and `IMAGE=nf-llm-replay:ci`.
-It MUST also build `crates/nf-lineage-mcp/Dockerfile` as `nf-lineage-mcp:ci`, fail if its user is
-not `65532:65532` or it exceeds 30 MB, and run the D-smoke stdio session against
-`fixtures/lineage/26.10.7/.lineage` mounted read-only. It MUST NOT depend on `lint`/`test` (runs
-in parallel). It SHOULD finish in under 10 minutes (`timeout-minutes: 20`).
+Job `docker` MUST run on every PR and every push to `main`, on `ubuntu-latest`, with no secrets and no registry login or push. It MUST:
+- build `crates/nf-llm-replay/Dockerfile` from the repo root as `nf-llm-replay:ci`, fail if the image user is not `65532:65532` or the image exceeds 25 MB, and run `docs/examples/nf-llm-replay/e2e.sh` with `E2E_REQUIRE_DOCKER=1` and `IMAGE=nf-llm-replay:ci`;
+- build `crates/nf-lineage-mcp/Dockerfile` as `nf-lineage-mcp:ci`, fail if its user is not `65532:65532` or it exceeds 30 MB, and run the D-smoke stdio session against `fixtures/lineage/26.10.7/.lineage` mounted read-only;
+- as its last step, run `demo/run.sh` with `MCP_IMAGE=nf-lineage-mcp:ci` and `REPLAY_IMAGE=nf-llm-replay:ci` (no image rebuild) and fail if the script fails or its stdout lacks the `claude mcp add` hand-off.
+
+It MUST NOT depend on `lint`/`test`, so it runs in parallel with them. It SHOULD finish in under 10 minutes (`timeout-minutes: 20`).
 
 #### Scenario: PR touching the proxy (C-docker)
 - GIVEN a PR
@@ -123,6 +136,11 @@ in parallel). It SHOULD finish in under 10 minutes (`timeout-minutes: 20`).
 - WHEN CI runs
 - THEN `docker` builds `nf-lineage-mcp:ci` and the stdio smoke returns 2 run LIDs
 
+#### Scenario: README demo cannot rot (C-demo)
+- GIVEN a PR that breaks any piece the demo uses (pipeline, cassette, a tool contract, an image)
+- WHEN `docker` runs
+- THEN the `Local demo` step fails
+
 #### Scenario: Broken image (V-yaml)
 - GIVEN a Dockerfile change that runs as root
 - WHEN `docker` runs
@@ -132,6 +150,61 @@ in parallel). It SHOULD finish in under 10 minutes (`timeout-minutes: 20`).
 - GIVEN the `docker` job definition
 - WHEN inspected
 - THEN it contains no `docker push`, `docker login`, `secrets.` or `packages: write`
+
+### Requirement: Fixtures regeneration workflow
+
+`.github/workflows/fixtures.yml` MUST trigger only on `workflow_dispatch` (inputs `force`:
+boolean, default `false`; `edge`: string, default `26.11.0-edge`) and on a weekly `schedule`;
+it MUST NOT trigger on `pull_request` or `push`. Top-level `permissions` MUST be
+`contents: read`; only the regeneration job MAY raise them, to exactly `contents: write` and
+`pull-requests: write`. It MUST NOT reference any secret other than the built-in `GITHUB_TOKEN`
+and MUST NOT use third-party actions (only `actions/*` plus the preinstalled `gh` CLI). Runs MUST
+NOT overlap (`concurrency` group without cancelling a run in progress).
+
+#### Scenario: Triggers and permissions (V-fx-yaml)
+- GIVEN `fixtures.yml`
+- THEN `on` has exactly `workflow_dispatch` and `schedule`, top-level permissions are `contents: read`, and `grep -E 'secrets\.' | grep -v GITHUB_TOKEN` is empty
+
+#### Scenario: Action allowlist (V-fx-yaml)
+- GIVEN every `uses:` line
+- THEN each starts with `actions/` and has a `@vN` or 40-hex ref
+
+### Requirement: Regeneration opens a PR only on drift
+
+The regeneration job MUST run `scripts/gen-fixtures.sh` (which includes the round trip), then
+C-fixtures. If any `fixtures/lineage/*/shape.txt` differs from the checked-out ref, or `force`
+is true, it MUST commit `fixtures/` to branch `automation/lineage-fixtures`, force-push it and
+open (or update the existing) PR against the triggering ref, with a body listing the changed
+versions, the image digests and a note that CI must be re-triggered by a maintainer because
+`GITHUB_TOKEN` pushes do not start workflows. Otherwise it MUST NOT push or open a PR and MUST
+write "no format drift" to the job summary. Any generation or check failure MUST fail the job
+without pushing.
+
+#### Scenario: No drift (C-fx-run)
+- GIVEN fixtures generated with the same images
+- WHEN the weekly run executes
+- THEN the job succeeds, nothing is pushed and the summary says "no format drift"
+
+#### Scenario: Drift (C-fx-run, V-fx-yaml)
+- GIVEN a `shape.txt` change (or `force: true`)
+- WHEN the run executes
+- THEN exactly one open PR from `automation/lineage-fixtures` exists afterwards, containing only `fixtures/` changes
+
+#### Scenario: Generation failure (V-fx-yaml)
+- GIVEN `scripts/gen-fixtures.sh` exits non-zero
+- THEN the job fails and no push step runs (steps gated on success)
+
+### Requirement: Edge early warning
+
+A separate job MUST, on `schedule` and on `workflow_dispatch` with a non-empty `edge` input,
+generate fixtures for that edge tag into a temporary directory, and write the diff between its
+`shape.txt` and `fixtures/lineage/26.10.7/shape.txt` to the job summary. It MUST be non-blocking
+(`continue-on-error: true`), MUST have `contents: read` only and MUST NOT commit, push or open PRs.
+
+#### Scenario: Edge drift reported (C-fx-run, V-fx-yaml)
+- GIVEN the edge image emits a new checksum `mode`
+- WHEN the edge job runs
+- THEN the summary shows the shape diff and the workflow result is not failed by this job
 
 ### Requirement: Supply-chain policy
 

@@ -7,9 +7,9 @@ phases:
   spec: done
   design: done
   tasks: done
-  apply: in-progress  # PR A done, PR B pending
-  verify: pass-with-warnings  # PR A scope
-  archive: pending
+  apply: done  # PR A, PR B; A.13 (CI run) post-merge
+  verify: pass-with-warnings  # PR A + PR B
+  archive: done
 depends_on:
   - nf-lineage        # PR C (view, provenance)
   - nf-lineage-mcp    # PR B (all tools, binary, Dockerfile, docker job)
@@ -28,4 +28,4 @@ measurements:  # verified locally, 2026-11-26
   demo_build_from_source_s: 180  # both images built by run.sh; base and Nextflow images cached
   demo_ci_images_s: 21        # MCP_IMAGE/REPLAY_IMAGE set to the :ci images
 updated: 2026-11-26
-next: sdd-apply (PR B) after PR A merges
+next: post-merge A.13 (CI `Local demo` green, record its duration)
