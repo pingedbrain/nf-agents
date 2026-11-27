@@ -4,8 +4,12 @@
 //! ([`Record`]): every known field is optional and unknown fields are kept, so records written by
 //! Nextflow 25.04 (flat envelope) through 26.10 (`spec` envelope) parse alike. [`FindQuery`]
 //! reproduces `nextflow lineage find`; [`ObjectLineageStore`] reads a `.lineage` directory from
-//! local disk or object storage (S3, GCS, Azure) behind the [`LineageStore`] trait. Read-only.
+//! local disk or object storage (S3, GCS, Azure) behind the [`LineageStore`] trait. [`check`]
+//! verifies a data file against its recorded checksum; [`diff`] compares records semantically.
+//! Read-only.
 
+mod check;
+mod diff;
 mod error;
 mod lid;
 mod model;
@@ -13,6 +17,8 @@ mod query;
 mod record;
 mod store;
 
+pub use check::{CheckOptions, CheckReport, CheckStatus, check, nextflow_standard_checksum};
+pub use diff::{Change, SemanticDiff, diff, diff_records};
 pub use error::LineageError;
 pub use lid::Lid;
 pub use model::{

@@ -150,3 +150,84 @@ Layers: unit (`src/query.rs`), integration (`tests/store.rs`, fixtures + InMemor
 ## Verdict
 
 PASS WITH WARNINGS — B1 green on every gate; slightly over the line budget.
+
+---
+
+# Verification Report: nf-lineage — PR B2
+
+**Mode**: Strict TDD. **Scope**: B2.1–B2.5 (check + semantic diff; `diff_raw` moved to C1.0 by
+the escape hatch). **Date**: 2026-11-26.
+
+## Completeness
+
+| Metric | Value |
+|--------|-------|
+| PR B2 tasks in scope | 5 (B2.1–B2.5) |
+| Complete | 5 (B2.5 without `diff_raw`) |
+| Moved | `diff_raw` + `similar` + raw-diff test → C1.0 (dated deviation in tasks.md/design.md) |
+| Remaining (later PRs) | C1.0–C1.4, C2.1–C2.5 |
+
+## Execution
+
+| Check | Result |
+|-------|--------|
+| `cargo fmt --all -- --check` | ✅ |
+| `cargo clippy --workspace --all-targets --locked -- -D warnings` | ✅ |
+| `cargo clippy -p nf-lineage --no-default-features --all-targets -- -D warnings` | ✅ |
+| `cargo test --workspace --locked` | ✅ 29 passed (20 unit, 1 check, 2 diff, 2 fixtures_parse, 3 store, 1 doctest), 0 failed, 0 skipped |
+| `cargo test -p nf-lineage --no-default-features` | ✅ 27 passed (doctest/feature-gated excluded by count) |
+| `cargo deny check` | ✅ advisories, bans, licenses, sources ok (same 2 `advisory-not-detected` warnings as B1) |
+| `cargo machete` | ✅ |
+| V-grep (`Path::from(`, `set_var`, `process::exit` in `src/`) | ✅ 0 hits |
+| Coverage | ➖ not available |
+
+## Spec compliance (PR B2 scenarios)
+
+| Requirement | Scenario | Test | Result |
+|-------------|----------|------|--------|
+| Check | Golden vectors (4 incl. S3 `/bucket/key`, empty, unicode + pre-epoch) | `check::tests::golden_vectors` | ✅ |
+| Check | Fixtures: all FileOutputs `Valid`; touch/append → `Mismatch`; delete → `FileMissing`; TaskRun → `UnexpectedKind` | `check::fixture_outcomes` (4 core versions × 10 files) | ✅ |
+| Check | No checksum / unsupported algorithm or mode / `gs`,`az`,`http` → typed errors | `check::tests::rejects_what_it_cannot_verify` | ✅ |
+| Check | S3 size+mtime from parent listing (not HEAD) | `check::tests::object_stat_lists_the_parent_prefix` (InMemory) | ⚠️ PARTIAL — end-to-end S3 is C2 `s3_ministack::s3_check_valid_and_mismatch` |
+| Check | `path_map` prefix remap | `check::tests::path_map_remaps_on_component_boundaries` + fixture test | ✅ |
+| Diff | Minimal runs: exactly `params.greeting` hello→bonjour | `diff::minimal_runs_differ_only_in_greeting` (4 core versions) | ✅ |
+| Diff | Task pair, kind mismatch | `diff::task_pairs_and_kind_mismatch` | ✅ |
+| Diff | Volatile fields / LID hashes / null-vs-absent ignored | `diff::tests::projection_ignores_volatile_fields_and_lid_hashes` | ✅ |
+| Diff | Raw parity | — | ➖ C1.0 / C1.3 `contract_diff` |
+
+7/8 in-scope scenarios fully compliant, 1 partial by design (live S3 in C2).
+
+## TDD compliance
+
+Evidence rows B2.1–B2.5 in apply-progress.md. RED observed as compile failures (21 for check, 10
+for diff). Mutation probes each made a test fail (BE hash bytes, truncated pre-epoch ms, first
+listed object, no LID masking, `sessionId` leaked into the projection, kept nulls — the last one
+survived at first and a null-vs-absent assertion was added). Assertion audit: no tautologies; the
+fixture loops are guarded (`files.len() == 10` asserted for core fixtures, `versions()` asserts
+≥ 5). Layers: unit (`src/check.rs`, `src/diff.rs`), integration on fixtures (`tests/check.rs`,
+`tests/diff.rs`).
+
+## Coherence (design)
+
+| Decision | Followed? | Notes |
+|----------|-----------|-------|
+| `murmur3 0.5`, `u128::to_le_bytes` | ✅ | golden vectors match Nextflow 26.10.7 on S3 and local |
+| `check` on S3: hash `/<bucket>/<key>`, `list_with_delimiter(parent)` | ✅ | reuses `open_with_options` (`store` field `pub(crate)`) |
+| `gs`/`az` → `Unsupported` | ✅ | |
+| `CheckReport { status }`; bad kind/algo → `Err` | ✅ | |
+| Semantic diff: whitelist projection, LID masked | ✅ | tables as dot-path strings over `spec()` (deviation noted) |
+| Raw diff with `similar 2` | ⚠️ Moved | to C1.0 (escape hatch) |
+
+## Issues
+
+- **CRITICAL**: none.
+- **WARNING**: B2 ≈ 870 hand-written lines (src ≈ 500 incl. ~110 doc lines, tests ≈ 330), over
+  the ~800 budget even after moving `diff_raw` out; under the ~900 stop line.
+- **WARNING**: `check` on a directory FileOutput hashes it like a file (Nextflow hashes
+  directories differently) → would report `Mismatch`; no fixture has one. Follow-up.
+- **SUGGESTION**: `check` reports `NoChecksum` before testing existence; the CLI fails on a missing
+  file first. Documented deviation; switch the order if exact CLI parity matters.
+
+## Verdict
+
+PASS WITH WARNINGS — B2 green on every gate; `diff_raw` deferred to C1.0; slightly over budget.
