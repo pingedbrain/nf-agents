@@ -12,7 +12,7 @@
 
 - [ ] The PR is small and does one thing.
 - [ ] Tests are included in this PR, and every acceptance criterion maps to a test.
-- [ ] Rust: `cargo fmt --all`, `cargo clippy --all-targets -- -D warnings` and `cargo test --workspace` pass.
+- [ ] Rust: `cargo fmt --all`, `cargo clippy --workspace --all-targets --locked -- -D warnings` and `cargo test --workspace --locked` pass.
 - [ ] OpenTofu: `tofu fmt -recursive`, `tofu validate` and `tofu test` pass.
 - [ ] No secrets, `.env` files, or real patient/genomic data are committed.
 - [ ] PR CI does not require secrets or API keys.
