@@ -78,7 +78,7 @@ No crates affected.
 | Broken links under `base` | Med | post-build prefix check |
 | Rewritten doc links break | Med | transform unit test |
 | Path-filtered check can't be required | Low | `check` also runs on push to `main` |
-| Private wording leaks | Low | copy table above; review in verify |
+| Unsupported claims in copy | Low | copy table above; review in verify |
 
 ## Rollout
 

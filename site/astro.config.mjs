@@ -11,6 +11,10 @@ export default defineConfig({
       title: 'nf-agents docs',
       description: 'Documentation for nf-agents: agent modules and tools for Nextflow pipelines.',
       customCss: ['./src/styles/tokens.css', './src/styles/starlight.css'],
+      head: [
+        { tag: 'meta', attrs: { property: 'og:image', content: 'https://pingedbrain.github.io/nf-agents/og.png' } },
+        { tag: 'meta', attrs: { name: 'twitter:card', content: 'summary_large_image' } },
+      ],
       components: {
         Footer: './src/components/StarlightFooter.astro',
       },

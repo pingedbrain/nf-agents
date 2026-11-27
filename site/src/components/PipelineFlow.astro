@@ -1,0 +1,120 @@
+<svg class="flow" viewBox="0 0 640 260" role="img" aria-labelledby="flow-title flow-desc">
+  <title id="flow-title">Diagram of the nf-agents data flow</title>
+  <desc id="flow-desc">
+    A Nextflow run calls an agent step. The agent step calls a model through nf-llm-replay.
+    The same run writes a lineage store. nf-lineage-mcp reads that store and serves it to an
+    MCP client.
+  </desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path class="arrowhead" d="M0,0 L10,5 L0,10 z" />
+    </marker>
+    <filter id="glow-blur" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="6" />
+    </filter>
+  </defs>
+
+  <path class="edge" d="M200 68 H284" marker-end="url(#arrow)" />
+  <path class="edge" d="M376 68 H396" marker-end="url(#arrow)" />
+  <path class="edge" d="M110 96 V172" marker-end="url(#arrow)" />
+  <path class="edge" d="M200 204 H256" marker-end="url(#arrow)" />
+  <path class="edge" d="M456 204 H476" marker-end="url(#arrow)" />
+
+  <path class="pulse" d="M200 68 H284" pathLength="100" style="--d: 0s" />
+  <path class="pulse" d="M376 68 H396" pathLength="100" style="--d: 0.4s" />
+  <path class="pulse" d="M110 96 V172" pathLength="100" style="--d: 0.8s" />
+  <path class="pulse" d="M200 204 H256" pathLength="100" style="--d: 1.2s" />
+  <path class="pulse" d="M456 204 H476" pathLength="100" style="--d: 1.6s" />
+
+  <rect class="node" x="20" y="40" width="180" height="56" rx="10" />
+  <text class="label" x="110" y="74" text-anchor="middle">Nextflow run</text>
+
+  <path class="glow" d="M330 36 L362 68 L330 100 L298 68 Z" filter="url(#glow-blur)" />
+  <path class="agent" d="M330 36 L362 68 L330 100 L298 68 Z" />
+  <text class="caption" x="330" y="124" text-anchor="middle">Agent step</text>
+
+  <rect class="node" x="396" y="40" width="224" height="56" rx="10" />
+  <text class="label" x="508" y="74" text-anchor="middle">nf-llm-replay</text>
+
+  <rect class="node" x="20" y="172" width="180" height="56" rx="10" />
+  <text class="label" x="110" y="206" text-anchor="middle">Lineage store</text>
+
+  <rect class="node" x="256" y="172" width="200" height="56" rx="10" />
+  <text class="label" x="356" y="206" text-anchor="middle">nf-lineage-mcp</text>
+
+  <rect class="node" x="476" y="172" width="144" height="56" rx="10" />
+  <text class="label" x="548" y="206" text-anchor="middle">MCP client</text>
+</svg>
+
+<style>
+  .flow {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+  .flow .edge {
+    fill: none;
+    stroke: var(--nf-muted);
+    stroke-width: 2;
+  }
+  .flow .arrowhead {
+    fill: var(--nf-muted);
+  }
+  /* Dots travelling along each edge: a dash of 0.1 on a 100-unit path length. */
+  .flow .pulse {
+    fill: none;
+    stroke: var(--nf-accent);
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-dasharray: 0.1 49.9;
+    stroke-dashoffset: 0;
+    animation: travel 3.2s linear infinite;
+    animation-delay: var(--d);
+  }
+  .flow .glow {
+    fill: var(--nf-accent);
+    opacity: 0.2;
+    animation: glow 2.4s ease-in-out infinite;
+  }
+  .flow .node {
+    fill: var(--nf-surface);
+    stroke: var(--nf-muted);
+    stroke-width: 1.5;
+  }
+  .flow .agent {
+    fill: var(--nf-accent);
+  }
+  .flow .label {
+    fill: var(--nf-ink);
+    font: 600 16px 'Inter Variable', system-ui, sans-serif;
+  }
+  .flow .caption {
+    fill: var(--nf-ink);
+    font: 500 14px 'Inter Variable', system-ui, sans-serif;
+  }
+
+  @keyframes travel {
+    to {
+      stroke-dashoffset: -50;
+    }
+  }
+  @keyframes glow {
+    0%,
+    100% {
+      opacity: 0.2;
+    }
+    50% {
+      opacity: 0.8;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .flow .pulse {
+      display: none;
+    }
+    .flow .glow {
+      animation: none;
+      opacity: 0.5;
+    }
+  }
+</style>

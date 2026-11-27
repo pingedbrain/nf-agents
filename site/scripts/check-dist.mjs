@@ -90,6 +90,21 @@ export function checkRoutes(files) {
   return DOCS_ROUTES.filter((r) => !files.has(r)).map((r) => `missing docs route: ${r}`);
 }
 
+export const OG_IMAGE_URL = 'https://pingedbrain.github.io/nf-agents/og.png';
+
+export function checkOgMeta(relPath, html) {
+  const metas = html.match(/<meta\b[^>]*>/gi) ?? [];
+  const ok = metas.some((m) => /property\s*=\s*["']og:image["']/i.test(m) && m.includes(OG_IMAGE_URL));
+  return ok ? [] : [`${relPath}: missing og:image meta ${OG_IMAGE_URL}`];
+}
+
+export function checkOg(files, png) {
+  if (!files.has('og.png')) return ['missing og.png in dist'];
+  if (!png) return ['og.png could not be read'];
+  const { width, height } = pngSize(png);
+  return width === 1200 && height === 630 ? [] : [`og.png is ${width}x${height}, expected 1200x630`];
+}
+
 export function pngSize(buf) {
   const sig = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
   if (buf.length < 24 || sig.some((b, i) => buf[i] !== b) || buf.toString('ascii', 12, 16) !== 'IHDR') {
@@ -112,12 +127,13 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   const root = resolve(process.argv[2] ?? 'dist');
   const list = await walk(root);
   const files = new Set(list);
-  const errors = [...checkRoutes(files)];
+  const errors = [...checkRoutes(files), ...checkOg(files, files.has('og.png') ? await readFile(join(root, 'og.png')) : undefined)];
   let htmlCount = 0;
   for (const rel of list) {
     if (/\.(html)$/.test(rel)) {
       htmlCount += 1;
-      errors.push(...checkHtml(rel, await readFile(join(root, rel), 'utf8'), files));
+      const html = await readFile(join(root, rel), 'utf8');
+      errors.push(...checkHtml(rel, html, files), ...checkOgMeta(rel, html));
     } else if (/\.(css|js|mjs)$/.test(rel)) {
       errors.push(...checkText(rel, await readFile(join(root, rel), 'utf8')));
     }

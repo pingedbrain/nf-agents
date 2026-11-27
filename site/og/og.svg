@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#F5F6F2"/>
+  <g transform="translate(96 150) scale(3.4)">
+    <path d="M8 24H17M31 24L40 12M31 24L40 36" stroke="#141816" stroke-width="3" stroke-linecap="round" fill="none"/>
+    <circle cx="8" cy="24" r="4.5" fill="#141816"/>
+    <circle cx="40" cy="12" r="4.5" fill="#141816"/>
+    <circle cx="40" cy="36" r="4.5" fill="#141816"/>
+    <path d="M24 14L34 24L24 34L14 24Z" fill="#0B6B58"/>
+    <circle cx="24" cy="24" r="3" fill="#FFFFFF"/>
+  </g>
+  <text x="300" y="224" font-family="JetBrains Mono, monospace" font-weight="500" font-size="88" letter-spacing="-2"><tspan fill="#7A847F">nf-</tspan><tspan fill="#141816">agents</tspan></text>
+  <text x="96" y="380" font-family="Inter, sans-serif" font-weight="600" font-size="52" fill="#141816">AI agents inside your Nextflow pipelines.</text>
+  <text x="96" y="452" font-family="Inter, sans-serif" font-weight="400" font-size="48" fill="#0B6B58">With evals and lineage.</text>
+  <text x="96" y="560" font-family="Inter, sans-serif" font-weight="400" font-size="28" fill="#5C6661">Open source · Apache-2.0 · Pre-alpha</text>
+</svg>

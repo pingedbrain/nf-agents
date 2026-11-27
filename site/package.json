@@ -8,6 +8,7 @@
   "scripts": {
     "prebuild": "node scripts/sync-docs.mjs",
     "build": "astro build",
+    "og": "npm install --no-save @resvg/resvg-js@2.6.2 wawoff2@2.0.1 && node scripts/og.mjs",
     "dev": "node scripts/sync-docs.mjs && astro dev",
     "test": "node --test scripts/*.test.mjs && node scripts/check-dist.mjs dist"
   },
