@@ -1,0 +1,7 @@
+# Build context = repo root; send only what `cargo build -p nf-llm-replay` needs.
+*
+!Cargo.toml
+!Cargo.lock
+!crates/
+crates/*/tests/
+crates/*/examples/

@@ -72,7 +72,7 @@ plugin `nf-agent@0.2.0` with `nextflow/nextflow:26.10.7` into a temp dir (the on
 create a uniquely named `--internal` Docker network; start the replay container there (alias `replay`,
 cassette read-only); run `nextflow run main.nf` in `nextflow/nextflow:26.10.7` on that network with
 `NXF_OFFLINE=true`, `NXF_PLUGINS_DIR` (read-only) and `REPLAY_BASE_URL=http://replay:8080/v1`;
-assert Nextflow exit 0, the three expected outputs in its stdout, and zero `nf_llm_replay_miss` lines
+assert Nextflow exit 0, the three expected outputs in its stdout, and zero `outcome="miss"` lines
 in the replay logs; always clean up containers, network and temp dir (trap), restoring file ownership.
 
 #### Scenario: Offline pipeline run (D-e2e)

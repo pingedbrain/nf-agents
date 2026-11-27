@@ -98,6 +98,14 @@ line). `Cli.volatile_field`/`volatile_pattern` (`,` resp. newline `value_delimit
 /`volatile_patterns`. (6) Log outcome `recorded` only for the request whose upstream call filled the cell;
 coalesced waiters log `hit` (C2 suggestion S-8).
 
+**Deviation (2026-11-26, PR E).** (1) `e2e.sh` counts `outcome="miss"` log lines (the string
+`nf_llm_replay_miss` exists only in the 599 body). (2) `record.sh` uses host binaries (`cargo build -p
+nf-llm-replay --bin nf-llm-replay --example fake_upstream`) plus Nextflow in Docker on the host network,
+records into a temp cassette and copies it over `cassettes/example.jsonl` on success. (3) The example fake
+binds `127.0.0.1` only (`--port N`, default 18181). (4) `.dockerignore` sends only `Cargo.toml`,
+`Cargo.lock` and `crates/` minus `tests/`/`examples/`; `rust-toolchain.toml` is not copied (its
+`rustfmt`/`clippy` components would make rustup download them in the build stage). Image: 15.7 MB.
+
 ## Data Flow
 
     client ─▶ axum fallback(handle) ─▶ Normalizer::key(method, path, body)
