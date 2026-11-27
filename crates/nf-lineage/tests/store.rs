@@ -205,3 +205,33 @@ async fn store_errors_are_typed() {
         .is_ok()
     );
 }
+
+#[tokio::test]
+async fn find_skips_unrepresentable_objects() {
+    let run = record("WorkflowRun");
+    // `#` inside a path segment would otherwise be read as the fragment separator.
+    let store = memory_store(&[
+        (&format!("store/{H}/.data.json"), &run),
+        (&format!("store/{H}/a#b/.data.json"), &run),
+        (&format!("store/{H}/c?d/.data.json"), &run),
+    ])
+    .await;
+    assert_eq!(
+        store.find(&query(&[])).await.unwrap(),
+        vec![Lid::parse(&format!("lid://{H}")).unwrap()]
+    );
+}
+
+#[tokio::test]
+async fn find_keeps_listing_when_local_objects_are_unrepresentable() {
+    let (tmp, _) = common::fixture_copy("26.10.7");
+    let dir = tmp.path().join(".lineage");
+    let store = ObjectLineageStore::open(dir.to_str().unwrap()).unwrap();
+    let body = fs::read(&common::record_files(&dir)[0]).unwrap();
+    let before = store.find(&query(&[])).await.unwrap();
+    for key in ["ffff/odd#x", "ffff/odd?x"] {
+        fs::create_dir_all(dir.join(key)).unwrap();
+        fs::write(dir.join(key).join(".data.json"), &body).unwrap();
+    }
+    assert_eq!(store.find(&query(&[])).await.unwrap(), before);
+}

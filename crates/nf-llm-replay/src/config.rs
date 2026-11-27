@@ -69,9 +69,18 @@ pub struct Cli {
 fn parse_upstream(s: &str) -> Result<String, String> {
     let uri: Uri = s.parse().map_err(|e| format!("{e}"))?;
     match (uri.scheme_str(), uri.host()) {
-        (Some("http" | "https"), Some(host)) if !host.is_empty() => Ok(s.to_owned()),
-        _ => Err("expected an http:// or https:// URL".into()),
+        (Some("http" | "https"), Some(host)) if !host.is_empty() => {}
+        _ => return Err("expected an http:// or https:// URL".into()),
     }
+    if uri.query().is_some() || s.contains('#') {
+        return Err("the upstream URL must not have a query or a fragment".into());
+    }
+    if uri.authority().is_some_and(|a| a.as_str().contains('@')) {
+        return Err(
+            "the upstream URL must not have userinfo; set NF_LLM_REPLAY_API_KEY instead".into(),
+        );
+    }
+    Ok(s.to_owned())
 }
 
 /// Validated configuration.
@@ -215,7 +224,17 @@ mod tests {
             let cli = parse(&["--cassette", "c", "--upstream", ok]).unwrap();
             assert_eq!(cli.upstream.as_deref(), Some(ok));
         }
-        for bad in ["ftp://x", "api.openai.com", "http://", "not a url"] {
+        for bad in [
+            "ftp://x",
+            "api.openai.com",
+            "http://",
+            "not a url",
+            "http://api.example.com/v1?key=secret",
+            "http://api.example.com?key=secret",
+            "http://api.example.com/#fragment",
+            "http://user:pass@api.example.com",
+            "https://token@api.example.com:8443",
+        ] {
             assert!(
                 parse(&["--cassette", "c", "--upstream", bad]).is_err(),
                 "{bad}"

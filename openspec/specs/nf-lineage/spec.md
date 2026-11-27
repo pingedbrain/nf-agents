@@ -80,11 +80,15 @@ Unit tests live in `crates/nf-lineage/src/<module>.rs` (`<module>::tests::<name>
 
 ### Requirement: Store contract
 
-`LineageStore` MUST be dyn-compatible (`#[async_trait]`, `Send + Sync`) with `list_runs`, `get`, `find`. `list_runs` MUST read `.history/<one segment>` entries (4 tab-separated non-empty tokens, trailing whitespace ignored), sort by timestamp text then LID, return `[]` when `.history` is absent, and `InvalidFormat` naming the entry when malformed. `get` MUST read `<prefix>/<record_key>/.data.json` (`NotFound` naming the LID if absent). `find` MUST evaluate every `…/.data.json` record (excluding `.history`) and return matching LIDs sorted and de-duplicated; a record that fails to parse MUST fail the call with its error.
+`LineageStore` MUST be dyn-compatible (`#[async_trait]`, `Send + Sync`) with `list_runs`, `get`, `find`. `list_runs` MUST read `.history/<one segment>` entries (4 tab-separated non-empty tokens, trailing whitespace ignored), sort by timestamp text then LID, return `[]` when `.history` is absent, and `InvalidFormat` naming the entry when malformed. `get` MUST read `<prefix>/<record_key>/.data.json` (`NotFound` naming the LID if absent). `find` MUST evaluate every `…/.data.json` record (excluding `.history`) and return matching LIDs sorted and de-duplicated; a record that fails to parse MUST fail the call with its error. An object whose key has no valid LID (a `#` in a path segment, a `?`, `\`, control character or other segment `Lid::parse` rejects) MUST be skipped with a `tracing::warn!` naming the key, and the listing MUST continue; only the `<hash>#output` key is a `#` key.
 
 #### Scenario: Local fixtures (T `store::local_store_lists_gets_and_finds`)
 - GIVEN `ObjectLineageStore::open("<fixture>/.lineage")` for each version
 - THEN `list_runs` has 2 runs, `get` of a `#output` LID returns a TaskOutput, `find(type=WorkflowRun)` returns both runs
+
+#### Scenario: Unrepresentable keys are skipped (T `store::find_skips_unrepresentable_objects`, `store::find_keeps_listing_when_local_objects_are_unrepresentable`)
+- GIVEN records under keys `<h>/a#b/.data.json` and `<h>/c?d/.data.json` beside `<h>/.data.json`, and a local fixture copy with `ffff/odd#x` and `ffff/odd?x` objects
+- THEN `find` returns only the valid LIDs, unchanged from the fixture result, with no error
 
 #### Scenario: Directory markers (T `store::in_memory_store_ignores_directory_markers`)
 - GIVEN an InMemory store with zero-byte `store`, `store/.history`, `store/<h>#output` objects plus records
@@ -108,7 +112,7 @@ Unit tests live in `crates/nf-lineage/src/<module>.rs` (`<module>::tests::<name>
 
 ### Requirement: Check
 
-`check(store, lid, opts)` MUST load the record (`UnexpectedKind` unless FileOutput), and: no checksum → `NoChecksum`; algorithm ≠ `nextflow` or mode ∉ {absent, `standard` (any case)} → `UnsupportedChecksum`; otherwise compute murmur3_x64_128 (seed 0, hex of `u128` LE bytes) over UTF-16LE of the hashed path + LE i64 size + LE i64 floor(mtime ms). Local paths (plain or `file://`, after `opts.path_map` prefix remap) hash the recorded path and stat the file following symlinks; `s3://b/k` hashes `/b/k` and takes size/mtime from a listing of the parent prefix; other schemes → `Unsupported`. Missing file → `FileMissing`. Result: `Valid` or `Mismatch` with expected/actual.
+`check(store, lid, opts)` MUST load the record (`UnexpectedKind` unless FileOutput), and: no checksum → `NoChecksum`; algorithm ≠ `nextflow` or mode ∉ {absent, `standard` (any case)} → `UnsupportedChecksum`; otherwise compute murmur3_x64_128 (seed 0, hex of `u128` LE bytes) over UTF-16LE of the hashed path + LE i64 size + LE i64 floor(mtime ms). Local paths (plain or `file://`, after `opts.path_map` prefix remap) hash the recorded path and stat the file following symlinks (a recorded local path with a `..` component MUST be refused with `Unsupported` before `path_map` applies, T `check::tests::rejects_parent_components_before_path_map`); `s3://b/k` hashes `/b/k` and takes size/mtime from a listing of the parent prefix; other schemes → `Unsupported`. Missing file → `FileMissing`. Result: `Valid` or `Mismatch` with expected/actual.
 
 #### Scenario: Golden vectors (T `check::tests::golden_vectors`)
 - GIVEN (`/lineage/results/summary.txt`, 9, 1795726937562)

@@ -182,6 +182,7 @@ mod tests {
             "lid://ab#",
             "lid://ab#a..b",
             "lid://ab#a-b",
+            "lid://ab/a#b/c",
             "lid://ab/a\nb",
             "LID://ab",
             &long,

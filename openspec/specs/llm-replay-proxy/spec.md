@@ -120,7 +120,7 @@ body bytes. Concurrent requests with the same missing key MUST share one upstrea
 responses MUST be stored; other statuses MUST be returned unchanged and not stored. The client
 MUST receive exactly what a later replay returns (status, `content-type`, body/events).
 Upstream connect/timeout (600 s)/non-UTF-8 errors MUST yield 502 JSON `nf_llm_replay_upstream_error`;
-a failed write MUST yield 500 JSON `nf_llm_replay_cassette_error`.
+a failed write MUST yield 500 JSON `nf_llm_replay_cassette_error`. An upstream answer larger than 64 MiB (`MAX_UPSTREAM_BODY`) MUST NOT be read whole: it MUST yield 502 `nf_llm_replay_upstream_error` as soon as the limit is passed (T `proxy::tests::upstream_body_is_capped`).
 
 #### Scenario: Round trip (W-rt, W-tool)
 - GIVEN a fake upstream answering plain, `json_schema` strict and tool-call requests, then a tool-result follow-up
@@ -181,7 +181,7 @@ replay MUST NOT add delays.
 
 Flags (env): `--mode` (`NF_LLM_REPLAY_MODE`, `record|replay|passthrough`, default `replay`),
 `--cassette` (`NF_LLM_REPLAY_CASSETTE`, required unless passthrough), `--upstream`
-(`NF_LLM_REPLAY_UPSTREAM`, http(s) URL, required for record/passthrough), `--port`
+(`NF_LLM_REPLAY_UPSTREAM`, http(s) URL with no query, fragment or userinfo, required for record/passthrough; T `config::tests::upstream_must_be_an_http_url`), `--port`
 (`NF_LLM_REPLAY_PORT`, default 8080, 0 = ephemeral), `--bind` (`NF_LLM_REPLAY_BIND`, default
 `127.0.0.1`), `--volatile-field` (`NF_LLM_REPLAY_VOLATILE_FIELDS`, comma-separated, repeatable),
 `--volatile-pattern` (`NF_LLM_REPLAY_VOLATILE_PATTERNS`, newline-separated, repeatable). Usage errors

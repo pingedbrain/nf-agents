@@ -113,11 +113,15 @@ Lineage and validation failures MUST be tool results with `isError: true` and te
 
 ### Requirement: Response size cap
 
-A result whose text exceeds the cap MUST be cut so all content blocks total ≤ cap: arrays keep the longest prefix of whole items (valid JSON); other payloads are cut at a UTF-8 boundary. A final text block MUST start `[truncated]`, state shown/total items or bytes and how to narrow (filters, `#fragment`). Untruncated results MUST have exactly one block.
+A result whose text exceeds the cap MUST be cut so all content blocks total ≤ cap: arrays keep the longest prefix of whole items (valid JSON); an object over the cap keeps its other keys and cuts its largest array field the same way, with the notice naming that field; other payloads (and objects without an array field) are cut at a UTF-8 boundary. A final text block MUST start `[truncated]`, state shown/total items or bytes and how to narrow (filters, `#fragment`). Untruncated results MUST have exactly one block.
 
 #### Scenario: Over MCP (T `protocol::truncation_notice`)
 - GIVEN a server with `max_response_bytes` 512 (set through `Settings`: the fixture result is ~530 bytes; the 1024 minimum is a CLI rule), `find{type: FileOutput}` and `view{RUN1}`
 - THEN valid JSON array prefix + notice "of <n> items"; byte-cut text + notice; totals ≤ 512
+
+#### Scenario: Object over the cap (T `respond::tests::object_keeps_other_keys_and_cuts_its_largest_array`)
+- GIVEN `{"target":"x","nodes":[…500 items…]}` over the cap
+- THEN the text parses as JSON, keeps `target`, and `nodes` is a non-empty prefix of the original items
 
 #### Scenario: Unit (T `respond::tests::fit_rules`)
 - GIVEN small payload, large array, multi-byte text at the boundary
