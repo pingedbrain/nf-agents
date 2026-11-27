@@ -45,6 +45,9 @@ jobs:
       # Offline fixture checks (no Docker, no network): helper unit tests + committed stores.
       - run: python3 -I -m unittest discover -s scripts/fixtures -p 'test_*.py'
       - run: python3 -I scripts/fixtures/check.py fixtures/lineage
+      # Local demo checks (no Docker): tour logic, run.sh early exits, shell lint.
+      - run: python3 -I -m unittest discover -s demo -p 'test_*.py'
+      - run: shellcheck demo/run.sh
 
   # Named status check for `nextflow lineage` parity against the committed fixtures/lineage oracles
   # (no Docker, no network beyond crates.io, no secrets). `test` runs the same suite.
@@ -114,3 +117,12 @@ jobs:
           echo "$out"
           test "$(grep -o 'lid://[0-9a-f]\{32\}' <<<"$out" | sort -u | wc -l)" -eq 2
           grep -q '"isError":false' <<<"$out"
+      # The README demo end to end with the images above (no rebuild): pipeline + replay + MCP tour.
+      - name: Local demo
+        shell: bash
+        env:
+          MCP_IMAGE: nf-lineage-mcp:ci
+          REPLAY_IMAGE: nf-llm-replay:ci
+        run: |
+          demo/run.sh | tee "$RUNNER_TEMP/demo.log"
+          grep -q 'claude mcp add --transport stdio nf-lineage -- docker run -i' "$RUNNER_TEMP/demo.log"

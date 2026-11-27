@@ -1,0 +1,31 @@
+change: local-demo
+artifact_store: openspec
+mode: auto
+phases:
+  explore: done
+  proposal: done
+  spec: done
+  design: done
+  tasks: done
+  apply: in-progress  # PR A done, PR B pending
+  verify: pass-with-warnings  # PR A scope
+  archive: pending
+depends_on:
+  - nf-lineage        # PR C (view, provenance)
+  - nf-lineage-mcp    # PR B (all tools, binary, Dockerfile, docker job)
+  - nf-llm-replay     # PRs C-E (record mode, fake_upstream example, Dockerfile, docker job)
+  - lineage-fixtures  # PR A (minimal pipeline + python-in-image precedent)
+pr_batches:
+  - {id: A, scope: "demo/ (run.sh, pipeline, cassette, tour + unittest) + secrets test + CI steps", est_lines: 570}
+  - {id: B, scope: "README 'Try it in 5 minutes' + docs/demo.md with measured timings and transcript", est_lines: 220}
+measurements:  # verified locally, 2026-11-26
+  nextflow_two_runs_warm_s: 14
+  fifo_two_container_session_s: 3.7
+  cold_rust_release_build_mcp_like_4cpu_s: 97
+  cold_pull_nextflow_image_868mb_s: 23
+  # PR A apply, 2026-11-26, 12-thread desktop (Linux, Docker Engine)
+  demo_warm_s: 24             # images built, Nextflow image cached
+  demo_build_from_source_s: 180  # both images built by run.sh; base and Nextflow images cached
+  demo_ci_images_s: 21        # MCP_IMAGE/REPLAY_IMAGE set to the :ci images
+updated: 2026-11-26
+next: sdd-apply (PR B) after PR A merges

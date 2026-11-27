@@ -19,6 +19,8 @@ work/
 .nextflow.log*
 .nextflow*
 results/
+# Local demo workdir (demo/run.sh)
+demo/.run/
 .nf-test/
 .nf-test.log
 # Committed lineage fixtures keep their task output files (fixtures/README.md)
