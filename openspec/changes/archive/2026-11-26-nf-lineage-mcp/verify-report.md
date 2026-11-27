@@ -147,3 +147,66 @@ Test layers: unit (`respond`, `server`, `config`), protocol over real JSON-RPC (
 ## Verdict
 
 PASS WITH WARNINGS.
+
+# Verification Report: nf-lineage-mcp, PR C
+
+**Scope**: PR C (C.1–C.4) · **Date**: 2026-11-26 · **Mode**: Strict TDD (no Rust code in this batch; checks are the spec's D-* and V-* commands)
+
+## Completeness
+
+| Metric | Value |
+|---|---|
+| Tasks total (A–C) | 20 |
+| Complete | 20 |
+| Incomplete | 0 |
+
+## Execution
+
+| Check | Result |
+|---|---|
+| `cargo fmt --all -- --check` | pass |
+| `cargo clippy --workspace --all-targets --locked -- -D warnings` | pass |
+| `cargo test --workspace --locked` | all suites pass, 0 failed, 0 ignored |
+| `cargo deny check` | advisories, bans, licenses, sources ok |
+| `cargo machete` | no unused dependencies |
+| D-build | `docker build -f crates/nf-lineage-mcp/Dockerfile -t nf-lineage-mcp:ci .` ok |
+| D-user | `65532:65532` |
+| D-size | 21 151 114 B (gate 31 457 280 B) |
+| D-smoke | `session.jsonl` piped into `docker run -i --rm -v …/26.10.7/.lineage:/store:ro nf-lineage-mcp:ci --store /store`: 2 distinct run LIDs, `"isError":false`, logs on stderr only |
+| Image config | `ENTRYPOINT ["/nf-lineage-mcp"]`, no exposed ports, distroless (no shell) |
+| V-yaml | actionlint: 0 findings; no `docker push`, `docker login`, `secrets.`, `packages: write` |
+| V-doc | all 7 greps match in `crates/nf-lineage-mcp/README.md` |
+| V-pkg | `cargo package -p nf-lineage -p nf-lineage-mcp --locked` builds both packaged crates (`--allow-dirty` on the uncommitted tree) |
+| V-grep (`src/`) | 0 hits |
+| `.dockerignore` | unchanged; `nf-llm-replay` image rebuilt from the same context |
+
+## Spec Compliance Matrix (PR C scope)
+
+| Requirement | Scenario | Evidence | Result |
+|---|---|---|---|
+| Packaging and docs | Image (D-build, D-user, D-size, D-smoke) | local Docker run above; CI `docker` job steps | COMPLIANT (CI run pending on the PR) |
+| Packaging and docs | Package (V-pkg, V-grep, V-doc) | commands above | COMPLIANT |
+| ci-pipeline: Docker job | PR touching the MCP server | `docker` job steps, run locally | COMPLIANT (CI run pending) |
+| ci-pipeline: Docker job | Broken image | `test "$user" = "65532:65532"` step | COMPLIANT (static) |
+| ci-pipeline: Docker job | Never publishes | V-yaml grep | COMPLIANT |
+
+Every `lineage-mcp` scenario from PR A and PR B still maps to a passing test.
+
+## Coherence (Design)
+
+| Decision | Followed? | Notes |
+|---|---|---|
+| Own Dockerfile, same pattern as nf-llm-replay | Yes | no `ENV`/`EXPOSE` (stdio server) |
+| Smoke reuses `tests/data/session.jsonl` | Yes | |
+| Packaging check on both crates | Yes | crate `include` limited to `src/` and `README.md`, like `nf-lineage` |
+| README `claude mcp add` forms | Yes | syntax checked against the CLI help |
+
+## Issues
+
+- CRITICAL: none.
+- WARNING: none.
+- SUGGESTION: the CI `docker` job now builds two images serially; split into a matrix if it nears the 20-minute timeout.
+
+## Verdict
+
+PASS.

@@ -68,6 +68,28 @@ See `design.md` "Deviations (2026-11-26, PR A)". Size: ~930 physical lines (incl
 
 PR B: see `design.md` "Deviations (2026-11-26, PR B)" (PR B/C split, `config.rs` in the binary, startup errors via `writeln!`). Size: ~520 hand-written lines.
 
+## PR C — files
+
+| File | Action | What |
+|---|---|---|
+| `crates/nf-lineage-mcp/Dockerfile` | Created | static musl build on `rust:1.100.0-alpine` → `gcr.io/distroless/static-debian12:nonroot`, user `65532:65532`, OCI labels, no `EXPOSE` |
+| `.github/workflows/ci.yml` | Modified | `docker` job: build `nf-lineage-mcp:ci`, user/size (≤ 31 457 280 B) check, stdio smoke against `fixtures/lineage/26.10.7/.lineage` mounted `:ro` |
+| `crates/nf-lineage-mcp/README.md` | Created | install, `claude mcp add` (native, S3, Docker `-i`), `add-json`, flags/env, tools, error classes, truncation vs `MAX_MCP_OUTPUT_TOKENS`, security, research-use note |
+| `crates/nf-lineage-mcp/Cargo.toml` | Modified | `readme`, `include = ["/src", "/README.md"]` |
+
+`.dockerignore` is unchanged: it already sends only `Cargo.toml`, `Cargo.lock` and `crates/` (minus tests and examples), which both images need.
+
+## PR C — TDD Cycle Evidence
+
+PR C adds no Rust code; its checks are the spec's D-* and V-* commands, run after writing the artifacts.
+
+| Task | RED | GREEN | Notes |
+|---|---|---|---|
+| C.1 | D-build could not run (no Dockerfile) | D-build ok; D-user `65532:65532`; D-size 21 151 114 B ≤ 30 MB; D-smoke 2 LIDs, `"isError":false` | `object_store` cloud features + rustls fit well under the gate |
+| C.2 | — | actionlint 0 findings; the smoke step script run locally under `bash -euo pipefail` | output kept in a shell variable, no stray file in the checkout |
+| C.3 | V-doc greps had no README to match | all 7 V-doc greps match | `claude mcp add` syntax checked against the CLI help: options before the name, `--` before the command; `--env` is variadic, so another option separates it from the name |
+| C.4 | — | `cargo package -p nf-lineage -p nf-lineage-mcp --locked` builds both crates (`--allow-dirty` locally, uncommitted tree) | every spec scenario maps to a passing test |
+
 ## Remaining
 
-PR C: C.1–C.4 (Dockerfile, CI `docker` job, README, `cargo package`).
+None. All PR A–C tasks are complete.

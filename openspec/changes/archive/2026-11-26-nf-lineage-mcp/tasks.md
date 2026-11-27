@@ -30,9 +30,11 @@ Strict TDD (RED → GREEN). Test names from `specs/lineage-mcp/spec.md`. Paths r
 
 ## PR C — Docker image, CI `docker` job, README, packaging · est. ≈ 200 lines
 
-- [ ] C.1 `crates/nf-lineage-mcp/Dockerfile` (design: static musl on `gcr.io/distroless/static-debian12:nonroot`); local D-build, D-user, D-size, D-smoke when Docker is available.
-- [ ] C.2 `.github/workflows/ci.yml` `docker` job: build, user, size, smoke steps piping `tests/data/session.jsonl` into `docker run -i` against the 26.10.7 fixture store (create the job if absent: no secrets, `timeout-minutes: 20`); V-yaml.
-- [ ] C.3 `README.md` with `claude mcp add` instructions, native and Docker variants (V-doc); crate metadata (readme, keywords, categories).
-- [ ] C.4 V-pkg `cargo package -p nf-lineage -p nf-lineage-mcp --locked`; every spec scenario maps to a passing test.
+- [x] C.1 `crates/nf-lineage-mcp/Dockerfile` (design: static musl on `gcr.io/distroless/static-debian12:nonroot`); local D-build, D-user, D-size, D-smoke when Docker is available.
+- [x] C.2 `.github/workflows/ci.yml` `docker` job: build, user, size, smoke steps piping `tests/data/session.jsonl` into `docker run -i` against the 26.10.7 fixture store (create the job if absent: no secrets, `timeout-minutes: 20`); V-yaml.
+- [x] C.3 `README.md` with `claude mcp add` instructions, native and Docker variants (V-doc); crate metadata (readme, keywords, categories).
+- [x] C.4 V-pkg `cargo package -p nf-lineage -p nf-lineage-mcp --locked`; every spec scenario maps to a passing test.
 
 Deviation (2026-11-26, PR B/C split): PR B as planned (B.1–B.9) plus the items moved from PR A exceeds the ~800-line budget. The Docker image, the CI `docker` job, the README and the packaging check move to a new PR C; they depend only on the binary from PR B. The `docker` job pattern lives in the `nf-llm-replay` stack, which this branch stack does not contain yet, so PR C either extends that job or creates it.
+
+- Result (2026-11-26): PR C landed at ~130 hand-written lines (Dockerfile 18, CI 17, README ~100, crate metadata 3). Image: 21 151 114 B, user `65532:65532`; D-smoke returns 2 distinct run LIDs and `"isError":false`. `cargo package` passes (crate `include` limited to `src/` and `README.md`, like `nf-lineage`, because the tests read the repository fixtures).

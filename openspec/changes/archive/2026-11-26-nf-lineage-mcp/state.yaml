@@ -7,9 +7,9 @@ phases:
   spec: done
   design: done
   tasks: done
-  apply: in-progress   # PR A, PR B done 2026-11-26
-  verify: in-progress  # PR A, PR B pass with warnings
-  archive: pending
+  apply: done         # PR A, B, C done 2026-11-26
+  verify: done        # PR A, B, C pass
+  archive: done        # 2026-11-26
 depends_on:
   - nf-lineage        # PRs A-C merged (view/provenance land in C)
   - lineage-fixtures  # fixtures/lineage/<ver>/ incl. oracle/ids.json
@@ -19,4 +19,4 @@ pr_batches:
   - {id: B, scope: "diff/check/provenance + binary/CLI + stdio e2e", est_lines: 600}
   - {id: C, scope: "Dockerfile + CI docker job + README + cargo package", est_lines: 200}
 updated: 2026-11-26
-next: sdd-apply (PR C)
+next: none (archived)
