@@ -4,7 +4,7 @@ use nf_lineage::LineageError;
 use rmcp::ErrorData;
 use rmcp::model::{CallToolResult, ContentBlock};
 use serde::Serialize;
-use serde_json::Value;
+use serde_json::{Map, Value};
 
 /// Bytes kept free for the `[truncated]` notice (hints are short constants).
 const NOTICE_RESERVE: usize = 256;
@@ -50,12 +50,59 @@ pub(crate) fn finish_text(
 }
 
 /// Compact JSON within `cap` bytes: arrays keep their longest prefix of whole items (still valid
-/// JSON); anything else is cut as text. `hint` tells the agent how to narrow the request.
+/// JSON); an object keeps its other keys and cuts its largest array the same way; anything else
+/// is cut as text. `hint` tells the agent how to narrow the request.
 pub(crate) fn fit_json(value: &Value, cap: usize, hint: &str) -> CallToolResult {
     let text = value.to_string();
-    let Some(items) = value.as_array().filter(|_| text.len() > cap) else {
+    if text.len() <= cap {
         return fit_text(text, cap, hint);
-    };
+    }
+    match value {
+        Value::Array(items) => fit_array(items, cap, hint),
+        Value::Object(map) => {
+            fit_object(map, cap, hint).unwrap_or_else(|| fit_text(text, cap, hint))
+        }
+        _ => fit_text(text, cap, hint),
+    }
+}
+
+/// An object over `cap` with its largest array cut to a prefix of whole items. `None` when the
+/// object has no array field, or when its other fields alone exceed the cap.
+fn fit_object(map: &Map<String, Value>, cap: usize, hint: &str) -> Option<CallToolResult> {
+    let (key, items) = map
+        .iter()
+        .filter_map(|(k, v)| Some((k, v.as_array()?)))
+        .max_by_key(|(_, items)| items.iter().map(|v| v.to_string().len()).sum::<usize>())?;
+    let mut skeleton = map.clone();
+    skeleton.insert(key.clone(), Value::Array(Vec::new()));
+    // The object with an empty array: everything else is kept whatever the budget.
+    let base = Value::Object(skeleton.clone()).to_string().len();
+    let budget = cap.saturating_sub(NOTICE_RESERVE).checked_sub(base)?;
+    let mut kept = Vec::new();
+    let mut used = 0;
+    for item in items {
+        // `,` before every item but the first.
+        let added = item.to_string().len() + usize::from(!kept.is_empty());
+        if used + added > budget {
+            break;
+        }
+        used += added;
+        kept.push(item.clone());
+    }
+    let shown = kept.len();
+    skeleton.insert(key.clone(), Value::Array(kept));
+    let notice = format!(
+        "[truncated] showing {shown} of {} items in \"{key}\" ({cap}-byte response limit). Narrow the request: {hint}.",
+        items.len()
+    );
+    Some(CallToolResult::success(vec![
+        ContentBlock::text(Value::Object(skeleton).to_string()),
+        ContentBlock::text(notice),
+    ]))
+}
+
+/// An array over `cap`: its longest prefix of whole items plus a notice.
+fn fit_array(items: &[Value], cap: usize, hint: &str) -> CallToolResult {
     let budget = cap.saturating_sub(NOTICE_RESERVE);
     let mut shown = String::from("[");
     let mut count = 0;
@@ -203,6 +250,28 @@ mod tests {
         }
         let object = json!({"text": "é".repeat(1000)});
         assert_eq!(texts(&fit_json(&object, 1024, "h")).len(), 2);
+    }
+
+    #[test]
+    fn object_keeps_other_keys_and_cuts_its_largest_array() {
+        let nodes: Value = (0..500).map(|i| json!(format!("lid://{i:032}"))).collect();
+        let object = json!({"target": "x", "nodes": nodes, "edges": [1]});
+        let t = texts(&fit_json(&object, 1024, "narrow the depth"));
+        assert_eq!(t.len(), 2);
+        let shown: Value = serde_json::from_str(&t[0]).unwrap();
+        assert_eq!(shown["target"], "x");
+        assert_eq!(shown["edges"], json!([1]));
+        let kept = shown["nodes"].as_array().unwrap();
+        assert!(!kept.is_empty() && kept.len() < 500);
+        assert_eq!(kept[..], nodes.as_array().unwrap()[..kept.len()]);
+        assert!(t[1].starts_with("[truncated]"), "{}", t[1]);
+        assert!(t[1].contains(&format!("{} of 500 items in \"nodes\"", kept.len())));
+        assert!(t[1].contains("narrow the depth"));
+        assert!(total(&t) <= 1024);
+
+        // Other fields too big for the cap: the text cut applies.
+        let heavy = json!({"target": "x".repeat(2000), "nodes": [1, 2]});
+        assert_eq!(texts(&fit_json(&heavy, 1024, "h")).len(), 2);
     }
 
     #[test]
