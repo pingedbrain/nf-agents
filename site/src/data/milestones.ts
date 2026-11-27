@@ -1,7 +1,7 @@
 // Milestone versions and status, from ROADMAP.md. The landing page reads these so
 // version numbers are written once. Scores stay `pending` until a run publishes them.
 
-export type MilestoneStatus = 'in review' | 'planned';
+export type MilestoneStatus = 'unreleased' | 'planned';
 
 export interface Milestone {
   version: string;
@@ -10,7 +10,7 @@ export interface Milestone {
 }
 
 export const milestones = {
-  foundations: { version: 'v0.1', title: 'Foundations', status: 'in review' },
+  foundations: { version: 'v0.1', title: 'Foundations', status: 'unreleased' },
   agents: { version: 'v0.2', title: 'Agents & evals', status: 'planned' },
   benchmark: { version: 'v0.3', title: 'Benchmark', status: 'planned' },
   infrastructure: { version: 'v0.4', title: 'Infrastructure', status: 'planned' },

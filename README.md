@@ -54,7 +54,7 @@ Timings on a 12-thread Linux desktop: about 3 minutes on the first run, which bu
 
 **Pre-alpha.** APIs, formats and module contracts will change. This is research software: it makes no clinical claims and must not be used for diagnosis.
 
-Implemented and in review:
+Implemented on `main` (not yet released):
 
 - Lineage fixtures for Nextflow 25.04.8 through 26.10.7, including agent runs.
 - `nf-lineage`: a tolerant parser, a store on local disk and object storage, `find`, `view`, `provenance`, `check` and semantic and raw `diff`, with contract tests against the `nextflow lineage` CLI and S3 tests on MiniStack.
