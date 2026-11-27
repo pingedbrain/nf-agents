@@ -71,3 +71,82 @@ string → both fixture tests fail). Snapshot masking also mutation-probed.
 ## Verdict
 
 PASS WITH WARNINGS — PR A scope green on all gates; over the line budget.
+
+---
+
+# Verification Report: nf-lineage — PR B1
+
+**Mode**: Strict TDD. **Scope**: B1.1–B1.7 (FindQuery incl. former A.8–A.9, LineageStore,
+ObjectLineageStore, deny.toml). **Date**: 2026-11-26.
+
+## Completeness
+
+| Metric | Value |
+|--------|-------|
+| PR B1 tasks in scope | 7 (B1.1–B1.7) + A.8/A.9 (same work) |
+| Complete | 7 |
+| Remaining (later PRs) | B2.1–B2.5, C1.1–C1.4, C2.1–C2.5 |
+
+## Execution
+
+| Check | Result |
+|-------|--------|
+| `cargo fmt --all -- --check` | ✅ |
+| `cargo clippy --workspace --all-targets --locked -- -D warnings` | ✅ |
+| `cargo clippy -p nf-lineage --no-default-features --all-targets -- -D warnings` | ✅ (cloud features off) |
+| `cargo test --workspace --locked` | ✅ 21 passed (15 unit, 2 fixtures_parse, 3 store, 1 doctest), 0 failed, 0 skipped |
+| `cargo deny check` | ✅ exit 0; 2 × `advisory-not-detected` warnings (see WARNING) |
+| `cargo machete` | ✅ |
+| V-grep (`Path::from(`, `set_var`, `process::exit` in `src/`) | ✅ 0 hits |
+| Coverage | ➖ not available |
+
+## Spec compliance (PR B1 scenarios)
+
+| Requirement | Scenario | Test | Result |
+|-------------|----------|------|--------|
+| Find queries | CLI behaviour table | `query::tests::matches_cli_semantics_table` (28 records, 37 CLI cases) | ✅ |
+| Find queries | CLI errors (up to the `Did you mean` suffix, deviation) | `query::tests::parse_args_errors_match_cli_messages` (9 cases) | ✅ |
+| Find queries | decode/alias/accumulate, `new` without decoding, Java doubles, navigate | `parse_args_decodes_aliases_and_accumulates`, `java_double_strings` | ✅ |
+| Store contract | Local fixtures (all 5 versions, `Box<dyn LineageStore>`, `file://`) | `store::local_store_lists_gets_and_finds` | ✅ |
+| Store contract | Directory markers | `store::in_memory_store_ignores_directory_markers` | ✅ |
+| Store contract | Errors | `store::store_errors_are_typed` | ✅ |
+| Store construction | `Path::parse` only, read-only | V-grep + mutation probe (`Path::from` → 2 tests fail) | ✅ |
+| Store construction | S3 on MiniStack / no MiniStack | — | ➖ PR C2 |
+
+8/8 in-scope scenarios compliant. Note: the spec scenario "Local fixtures" says 2 runs; the
+`26.10.7-agent` fixture has 1, so the test compares with the `.history` entry count.
+
+## TDD compliance
+
+Evidence rows for B1.1–B1.7 in apply-progress.md. RED observed as compile failures (17 for query,
+4 for store). Tests passed on first GREEN; strength shown by mutation probes (int-format, falsy
+filter, `Path::from`, history depth, `.history` exclusion — each made a test fail, all reverted).
+Layers: unit (`src/query.rs`), integration (`tests/store.rs`, fixtures + InMemory), doctest.
+
+## Coherence (design)
+
+| Decision | Followed? | Notes |
+|----------|-----------|-------|
+| `#[async_trait]` dyn-compatible trait, 3 methods | ✅ | `Box<dyn LineageStore>` in test |
+| `.history` private to `list_runs` | ✅ | |
+| object_store only, `Path::parse` keys | ✅ | |
+| S3 markers: last segment `.data.json`, history one segment | ✅ | |
+| `from_env` + explicit options, no `set_var` | ✅ | |
+| Cloud features default-on, forwarded | ✅ | |
+| Find numbers / hand-rolled `url_decode` | ✅ | sign quirk not ported (ponytail note) |
+| `buffer_unordered(16)` | ✅ | |
+| PR layout B/C | ⚠️ Deviated | re-split into B1/B2/C1/C2; documented |
+
+## Issues
+
+- **CRITICAL**: none.
+- **WARNING**: B1 is ≈ 906 hand-written lines (src ≈ 545 incl. docs, tests ≈ 360), above the
+  ~800 budget but within ~900 tolerance; no coherent seam to cut further.
+- **WARNING**: cargo-deny 0.22.1 does not report the transitive unmaintained `chrono`/`humantime`
+  advisories, so the requested explicit ignores print `advisory-not-detected` warnings (exit 0).
+  Alternative: drop the ignores (or set `unmaintained = "workspace"`) — orchestrator's call.
+- **SUGGESTION**: port Nextflow's `closest` hint later if exact CLI text matters to consumers.
+
+## Verdict
+
+PASS WITH WARNINGS — B1 green on every gate; slightly over the line budget.

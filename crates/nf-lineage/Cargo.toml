@@ -11,11 +11,23 @@ repository.workspace = true
 [lints]
 workspace = true
 
+[features]
+default = ["aws", "gcp", "azure"]
+# Cloud object stores (s3://, gs://, az://); local paths and file:// always work.
+aws = ["object_store/aws"]
+gcp = ["object_store/gcp"]
+azure = ["object_store/azure"]
+
 [dependencies]
+async-trait.workspace = true
+futures.workspace = true
+object_store.workspace = true
 serde.workspace = true
 serde_json = { workspace = true, features = ["preserve_order"] }
 thiserror.workspace = true
+url.workspace = true
 
 [dev-dependencies]
 insta.workspace = true
 regex.workspace = true
+tokio.workspace = true

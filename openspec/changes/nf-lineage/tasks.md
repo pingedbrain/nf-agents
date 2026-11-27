@@ -11,33 +11,49 @@ Strict TDD (RED → GREEN). Test names/IDs from `specs/nf-lineage/spec.md`. Path
 - [x] A.5 RED `src/record.rs` tests: `parses_flat_envelope`, `parses_spec_envelope`, `unknown_kind_is_preserved`, `unknown_fields_are_preserved_and_reserialized`, `unsupported_version_names_version`, `invalid_inputs_are_invalid_format`.
 - [x] A.6 GREEN `src/model.rs` (10 structs, documented fields, Nextflow field order) + `Record::{parse, kind, spec, to_json}`, `Serialize`.
 - [x] A.7 RED `tests/common/mod.rs` (fixture root/versions helpers) + `tests/fixtures_parse.rs` `every_fixture_record_parses`, `fixture_snapshots`; GREEN by fixing parser; `cargo insta accept` after review.
-- [ ] A.8 RED `src/query.rs` tests `matches_cli_semantics_table` (findexp table on synthetic records, no host paths), `parse_args_errors_match_cli_messages`.
-- [ ] A.9 GREEN `FindQuery::{new, parse_args, matches, terms}`, `navigate`, `validate_property`, `url_decode`, Java double strings.
+- [x] A.8 (→ B1.1) RED `src/query.rs` tests `matches_cli_semantics_table` (findexp table on synthetic records, no host paths), `parse_args_errors_match_cli_messages`.
+- [x] A.9 (→ B1.2) GREEN `FindQuery::{new, parse_args, matches, terms}`, `navigate`, `validate_property`, `url_decode`, Java double strings.
 - Escape hatch: if > 800 lines, move A.8–A.9 to the start of PR B.
 - **Deviation (2026-11-26, apply PR A):** escape hatch applied. A.1–A.7 alone came to ≈ 940 hand-written lines (model docs are ~110 of them), so A.8–A.9 (FindQuery) move to the start of PR B. PR B then needs its own escape hatch (`diff_raw` → PR C) and likely `diff` as a whole → PR C to stay near 800.
 
-## PR B — LineageStore over object_store + check + diff · est. ≈ 775 lines (+ ≈ 250 for A.8–A.9, moved here)
+## Re-split of the remaining work (Deviation 2026-11-26, before PR B1)
 
-- [ ] A.8 / A.9 (moved from PR A, do first) — FindQuery, see PR A.
+The remaining scope (FindQuery moved in from A, store, check, diff, diff_raw, view, provenance,
+contract tests, MiniStack test, CI jobs, release metadata) is ≈ 1,700 hand-written lines, too much
+for B + C at ≤ ~800 each. It is re-batched into four PRs along the module seams; the old task IDs
+are kept in brackets for traceability. `deny.toml` moves into B1 because `object_store` (and with it
+the `chrono`/`humantime` advisories and the cloud licenses) arrives in B1.
 
-- [ ] B.1 `Cargo.toml`: async-trait, object_store 0.14, futures, url, murmur3 0.5, similar 2; features `aws`/`gcp`/`azure` (default); dev tokio, tempfile. `LineageError::{Storage, Io}`.
-- [ ] B.2 `deny.toml`: advisory ignores RUSTSEC-2026-0542/0543 with `reason`; crate-scoped license exceptions only for what `cargo deny check` reports (expected `webpki-root-certs` CDLA-Permissive-2.0).
-- [ ] B.3 RED `tests/store.rs`: `local_store_lists_gets_and_finds` (all versions), `in_memory_store_ignores_directory_markers`, `store_errors_are_typed`, a `Box<dyn LineageStore>` use.
-- [ ] B.4 GREEN `src/store.rs`: trait, `RunSummary`, `ObjectLineageStore::{new, open, open_with_options}`, history parsing, `get`, `find` (`buffer_unordered(16)`), `Path::parse` only.
-- [ ] B.5 RED `src/check.rs` `golden_vectors` (`/lineage/results/summary.txt`,9,1795726937562 → `c47bf938e54f24686b01873ab8d1ba53`; `/nf-agents-fixture/results-hello/summary.txt`,9,1795726427044 → `87105ea50d9e8dca5da368e47d34d9bc`; `""`,0,0 → `d618a97df21bbd4bb61c79cdeca965b4`; `/data/ünïcode 🧬.txt`,35,-1500 → `9ad8de60441a469eb4b8c0e1bca74c1a`); `tests/check.rs` `fixture_outcomes`.
-- [ ] B.6 GREEN `check`, `CheckOptions`, `CheckReport`, `CheckStatus`, `nextflow_standard_checksum`, local stat + `path_map`, S3 stat via `list_with_delimiter`, `UnsupportedChecksum`/`Unsupported`.
-- [ ] B.7 RED `tests/diff.rs` `minimal_runs_differ_only_in_greeting` (core versions), task-pair and kind-mismatch cases; unit projection test.
-- [ ] B.8 GREEN `src/diff.rs`: `diff_records`, `diff`, `diff_raw` (`similar`, CLI header).
-- [ ] B.9 Doctest on `ObjectLineageStore::new` with InMemory.
-- Escape hatch: if > 800, move `diff_raw` (+ its test) to PR C.
+## PR B1 — FindQuery + LineageStore + ObjectLineageStore · est. ≈ 650 lines
 
-## PR C — view, provenance, contract, MiniStack, CI, release-ready · est. ≈ 690 lines
+- [x] B1.1 [A.8] RED `src/query.rs` tests `matches_cli_semantics_table` (CLI table recorded from the 26.10.7 `findexp` store, host paths scrubbed, in `tests/data/find_cli.json`), `parse_args_errors_match_cli_messages`, Java double strings.
+- [x] B1.2 [A.9] GREEN `FindQuery::{new, parse_args, matches, terms}`, `navigate`, `validate_property`, `url_decode`, Java double strings.
+- [x] B1.3 [B.1 part] `Cargo.toml`: async-trait, object_store 0.14, futures, url; features `aws`/`gcp`/`azure` (default); dev tokio. `LineageError::{Storage, Io}`.
+- [x] B1.4 [B.2] `deny.toml`: advisory ignores RUSTSEC-2026-0542/0543 with `reason`; crate-scoped license exceptions only for what `cargo deny check` reports.
+- [x] B1.5 [B.3] RED `tests/store.rs`: `local_store_lists_gets_and_finds` (all versions), `in_memory_store_ignores_directory_markers`, `store_errors_are_typed`, a `Box<dyn LineageStore>` use.
+- [x] B1.6 [B.4] GREEN `src/store.rs`: trait, `RunSummary`, `ObjectLineageStore::{new, open, open_with_options}`, history parsing, `get`, `find` (`buffer_unordered(16)`), `Path::parse` only.
+- [x] B1.7 [B.9] Doctest on `ObjectLineageStore::new` with InMemory.
 
-- [ ] C.1 RED `tests/provenance.rs` `published_file_reaches_pipeline_input`; GREEN `src/provenance.rs`.
-- [ ] C.2 GREEN `src/view.rs` (fragment validation, `#output` redirect, navigate) driven by C.3 view cases.
-- [ ] C.3 RED→GREEN `tests/contract.rs`: oracle loader (`.args` JSON), temp copy + manifest mtime restore, normalizers; `contract_list`, `contract_view`, `contract_find`, `contract_diff`, `contract_check`.
-- [ ] C.4 `tests/s3_ministack.rs`: skip when `NF_LINEAGE_MINISTACK_URL` unset; readiness wait (raw TCP `PUT` bucket, ≤ 60 s); `s3_store_roundtrip`, `s3_check_valid_and_mismatch`. Run locally against `ministackorg/ministack:1.5.45`.
-- [ ] C.5 `.github/workflows/ci.yml`: jobs `contract`, `integration` (service container, dummy creds, no secrets).
-- [ ] C.6 `CONTRIBUTING.md` MiniStack section (contributor-guide delta greps).
-- [ ] C.7 `Cargo.toml` `0.1.0`, drop `publish = false`, add description/readme/keywords/categories/docs; `README.md` with example; crate docs complete; `cargo package -p nf-lineage --locked` (V-pkg), V-grep.
-- [ ] C.8 Verify every spec scenario maps to a passing test; diff ≤ 800 lines.
+## PR B2 — check + diff · est. ≈ 650 lines
+
+- [ ] B2.1 [B.1 rest] `Cargo.toml`: murmur3 0.5, similar 2; dev tempfile. `deny.toml` only if `cargo deny check` reports something new.
+- [ ] B2.2 [B.5] RED `src/check.rs` `golden_vectors` (`/lineage/results/summary.txt`,9,1795726937562 → `c47bf938e54f24686b01873ab8d1ba53`; `/nf-agents-fixture/results-hello/summary.txt`,9,1795726427044 → `87105ea50d9e8dca5da368e47d34d9bc`; `""`,0,0 → `d618a97df21bbd4bb61c79cdeca965b4`; `/data/ünïcode 🧬.txt`,35,-1500 → `9ad8de60441a469eb4b8c0e1bca74c1a`); `tests/check.rs` `fixture_outcomes`.
+- [ ] B2.3 [B.6] GREEN `check`, `CheckOptions`, `CheckReport`, `CheckStatus`, `nextflow_standard_checksum`, local stat + `path_map`, S3 stat via `list_with_delimiter`, `UnsupportedChecksum`/`Unsupported`.
+- [ ] B2.4 [B.7] RED `tests/diff.rs` `minimal_runs_differ_only_in_greeting` (core versions), task-pair and kind-mismatch cases; unit projection test.
+- [ ] B2.5 [B.8] GREEN `src/diff.rs`: `diff_records`, `diff`, `diff_raw` (`similar`, CLI header).
+- Escape hatch: if > 800, move `diff_raw` (+ its test) to C1.
+
+## PR C1 — view, provenance, CLI contract suite · est. ≈ 600 lines
+
+- [ ] C1.1 [C.1] RED `tests/provenance.rs` `published_file_reaches_pipeline_input`; GREEN `src/provenance.rs`.
+- [ ] C1.2 [C.2] GREEN `src/view.rs` (fragment validation, `#output` redirect, navigate) driven by C1.3 view cases.
+- [ ] C1.3 [C.3] RED→GREEN `tests/contract.rs`: oracle loader (`.args` JSON), temp copy + manifest mtime restore, normalizers; `contract_list`, `contract_view`, `contract_find`, `contract_diff`, `contract_check`.
+- [ ] C1.4 [C.5 part] `.github/workflows/ci.yml`: job `contract`.
+
+## PR C2 — MiniStack, integration CI, release-ready · est. ≈ 450 lines
+
+- [ ] C2.1 [C.4] `tests/s3_ministack.rs`: skip when `NF_LINEAGE_MINISTACK_URL` unset; readiness wait (raw TCP `PUT` bucket, ≤ 60 s); `s3_store_roundtrip`, `s3_check_valid_and_mismatch`. Run locally against `ministackorg/ministack:1.5.45`.
+- [ ] C2.2 [C.5 part] `.github/workflows/ci.yml`: job `integration` (service container, dummy creds, no secrets).
+- [ ] C2.3 [C.6] `CONTRIBUTING.md` MiniStack section (contributor-guide delta greps).
+- [ ] C2.4 [C.7] `Cargo.toml` `0.1.0`, drop `publish = false`, add description/readme/keywords/categories/docs; `README.md` with example; crate docs complete; `cargo package -p nf-lineage --locked` (V-pkg), V-grep.
+- [ ] C2.5 [C.8] Verify every spec scenario maps to a passing test; each PR diff ≤ 800 lines.
