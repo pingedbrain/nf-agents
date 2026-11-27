@@ -8,13 +8,14 @@ phases:
   design: done
   tasks: done
   apply: in-progress
-  verify: in-progress
+  verify: in-progress  # PR C2 verified 2026-11-26: PASS WITH WARNINGS
   archive: pending
 batches:
   - {id: A, title: "normalization + cassette model", est_lines: 500, status: applied}
   - {id: B, title: "replay server + CLI", est_lines: 700, actual_lines: 1190, status: applied}
-  - {id: C, title: "record + passthrough", est_lines: 760, status: pending}
+  - {id: C1, title: "upstream client + Recorder", est_lines: 450, actual_lines: 470, status: applied}
+  - {id: C2, title: "record + passthrough wiring", est_lines: 650, actual_lines: 910, status: applied}
   - {id: D, title: "SSE streaming + normalization flags", est_lines: 420, status: pending}
   - {id: E, title: "Docker image + offline example + CI docker job", est_lines: 380, status: pending}
 updated: 2026-11-26
-next: sdd-apply (PR C)
+next: sdd-apply (PR D)

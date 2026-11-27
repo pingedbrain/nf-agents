@@ -1,5 +1,16 @@
 # cargo-deny policy (cargo-deny 0.22). Run: cargo deny check
 
+[graph]
+# Platforms nf-agents ships for; others (e.g. Android-only `jni` via rustls-platform-verifier) are skipped.
+targets = [
+    "x86_64-unknown-linux-gnu",
+    "aarch64-unknown-linux-gnu",
+    "x86_64-unknown-linux-musl",
+    "aarch64-unknown-linux-musl",
+    "x86_64-apple-darwin",
+    "aarch64-apple-darwin",
+]
+
 [advisories]
 # Known vulnerabilities are always errors; yanked crates too.
 yanked = "deny"

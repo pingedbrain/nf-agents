@@ -44,10 +44,10 @@ Every `tests/*.rs` / `examples/*.rs` starts with a `//!` line.
 
 ## PR C2 — record + passthrough wiring · ≈ 650 lines
 
-- [ ] C.3 `tests/common/fake_upstream.rs` (chat JSON only: plain, `json_schema`, tool call `call_1`, tool-result echo; counters, last headers/URI, forced status, echo-key).
-- [ ] C.5 RED→GREEN record path in `proxy.rs` (`tests/record.rs`): W-rt, W-tool, W-fill, W-once, W-err, W-502, W-auth, W-fwd, K-conc.
-- [ ] C.6 RED→GREEN passthrough: P-pass (buffered streaming check moves to D).
-- [ ] C.7 RED→GREEN `tests/secrets.rs` S-scan; `tests/cli.rs` X-nokey, X-noup, X-nolog.
+- [x] C.3 `tests/common/fake_upstream.rs` (chat JSON only: plain, `json_schema`, tool call `call_1`, tool-result echo; counters, last headers/URI, forced status, echo-key).
+- [x] C.5 RED→GREEN record path in `proxy.rs` (`tests/record.rs`): W-rt, W-tool, W-fill, W-once, W-err, W-502, W-auth, W-fwd, K-conc.
+- [x] C.6 RED→GREEN passthrough: P-pass (buffered streaming check moves to D).
+- [x] C.7 RED→GREEN `tests/secrets.rs` S-scan; `tests/cli.rs` X-nokey, X-noup, X-nolog.
 
 > Deviation (2026-11-26, PR C split): PR B landed at ≈ 1,190 lines vs ≈ 700 estimated, so the
 > ≈ 760-line PR C is split. **C1** = the upstream client and the `Recorder` as library code with unit
@@ -59,6 +59,15 @@ Every `tests/*.rs` / `examples/*.rs` starts with a `//!` line.
 > the key as a header value once; `send` returns `reqwest::Error` (URL stripped) and C2 maps it to the
 > 502. `pub mod upstream` (private would be dead code until C2 wires it). `Config.upstream` stays a
 > validated `String`. reqwest features `rustls, http2` (`stream` lands with D.4). Actual size ≈ 470 lines.
+
+> Deviation (2026-11-26, PR C2): `--upstream` missing in record/passthrough is a usage error
+> (`ConfigError::MissingUpstream`, exit 2); an empty `NF_LLM_REPLAY_API_KEY` counts as missing
+> (`StartupError::MissingApiKey`, exit 1, checked before the cassette is created); `StartupError::Unsupported`
+> is gone. `upstream` is a private module. The fake upstream adds a `delay_ms` knob (so W-once exercises
+> coalescing, not just fill) and records the last body (P-pass checks non-JSON bodies are forwarded
+> unchanged). Extra test `record::echoed_key_returns_500_and_is_not_recorded` (500 mapping end to end).
+> `deny.toml` gets `[graph] targets` (Linux gnu/musl + macOS) to drop the Android-only `syn` duplicate.
+> Actual size ≈ 910 inserted lines (≈ 630 tests/fake), not ≈ 650; all C2 tasks landed, nothing moved.
 
 ## PR D — SSE streaming + normalization flags · ≈ 420 lines
 

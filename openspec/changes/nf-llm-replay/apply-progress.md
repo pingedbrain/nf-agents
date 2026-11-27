@@ -1,7 +1,7 @@
 # Apply progress: nf-llm-replay
 
-**Mode**: Strict TDD (runner `cargo test --workspace`). Batches: PR A done (6/6 tasks), PR B done (6/6 tasks), PR C1 done (3/3 tasks); PR C2, D, E pending.
-Overall: 15/31 tasks. (PR C was split into C1/C2 on 2026-11-26; task IDs unchanged, see tasks.md.)
+**Mode**: Strict TDD (runner `cargo test --workspace`). Batches: PR A done (6/6 tasks), PR B done (6/6 tasks), PR C1 done (3/3 tasks), PR C2 done (4/4 tasks); PR D, E pending.
+Overall: 19/31 tasks. (PR C was split into C1/C2 on 2026-11-26; task IDs unchanged, see tasks.md.)
 
 ## PR A — normalization + cassette model (2026-11-26)
 
@@ -134,6 +134,48 @@ Recorded in design.md ("Deviation (2026-11-26, PR C1)") and tasks.md (PR C split
 - Map `reqwest::Error` from `Upstream::send` to `ProxyError::Upstream` (502); `UpstreamError` and `CassetteError::Write` need `StartupError` variants when wiring `app()`.
 - `cargo deny` duplicate warning `syn` 2/3 is back (Android-only `jni` via `rustls-platform-verifier`); optional fix: `[graph] targets` in deny.toml.
 
+## PR C2 — record + passthrough wiring (2026-11-26)
+
+### Files changed
+
+| File | Action | What |
+|------|--------|------|
+| `src/config.rs` | Modified | `ConfigError::MissingUpstream` (record/passthrough); empty `NF_LLM_REPLAY_API_KEY` → `None`; 1 unit test |
+| `src/lib.rs` | Modified | `app()` builds `Replay`/`Record`/`Passthrough`; `StartupError::{MissingApiKey, Upstream}` replace `Unsupported`; key + upstream checked before `Recorder::open`; `mod upstream` private |
+| `src/proxy.rs` | Modified | `Backend::{Record, Passthrough}`; `ProxyError::{Upstream (502), Cassette (500), NotStored}` + `From<reqwest::Error>` (URL stripped); `answer` (per-mode dispatch, outcome), `record` (2xx → `Entry` → `persist`), `relay` (upstream answer minus hop-by-hop headers) |
+| `src/cassette.rs` | Modified | `VERSION` is `pub(crate)` |
+| `deny.toml` | Modified | `[graph] targets` (Linux gnu/musl, macOS): drops the Android-only `syn` duplicate warning |
+| `tests/common/fake_upstream.rs` | Created | axum fake: plain / `json_schema` / tool call `call_1` / tool-result echo; knobs `hits`, `last` (uri, headers, body), `status`, `delay_ms`, `echo_key`; `spawn()`, `router()` |
+| `tests/common/mod.rs` | Modified | `KEY`, `proxy(mode, cassette, upstream)`, `post_with` (extra header lines) |
+| `tests/record.rs` | Created | W-rt, W-tool, W-once, W-fill, W-err, W-auth, W-fwd, W-502, P-pass, K-conc + echoed key → 500 |
+| `tests/secrets.rs` | Created | S-scan |
+| `tests/cli.rs` | Modified | X-nokey (unset and empty), X-noup (record and passthrough), X-nolog (`RUST_LOG=trace`, stdout+stderr) |
+
+### TDD cycle evidence
+
+| Task | Test file | Layer | Safety net | RED | GREEN | Triangulate | Refactor |
+|------|-----------|-------|------------|-----|-------|-------------|----------|
+| (config, for C.5/C.7) | `src/config.rs` | Unit | ✅ 44/44 | ✅ `record_and_passthrough_need_upstream_and_empty_key_is_missing` FAILED | ✅ 4/4 (existing passthrough test given `--upstream`, now required by spec) | ✅ record and passthrough; empty vs non-empty key | ➖ |
+| C.3 | `tests/common/fake_upstream.rs` | helper | ✅ | ➖ helper (exercised by C.5-C.7) | ✅ | ➖ structural | ➖ |
+| C.5 | `tests/record.rs` | Integration | ✅ 45/45 | ✅ 10 record tests FAILED (`StartupError::Unsupported`) | ✅ 11/11 | ✅ plain + `json_schema` + 2-turn tool chain replayed offline (fake hit count unchanged); 16 concurrent + 1 later repeat; pre-existing line kept byte-for-byte + new key added; 429 then retry records; echoed key → 500; Bearer vs `x-api-key` style; closed port → 502; 32 distinct keys sorted, no temp file. Mutation: bypassing `OnceCell` coalescing makes W-once FAIL | boxed `NotStored` (clippy `result_large_err`) |
+| C.6 | `tests/record.rs` | Integration | ✅ | ✅ P-pass FAILED with the C.5 batch (`Unsupported`) | ✅ | ✅ JSON answer + non-JSON body forwarded byte-for-byte with the upstream's own 400; query forwarded; cassette not created | ➖ |
+| C.7 | `tests/secrets.rs`, `tests/cli.rs` | Integration + CLI | ✅ 56/56 | ⚠️ S-scan, X-nokey, X-noup, X-nolog passed on first run: acceptance tests of behaviour built in C.5/config. Mutations: storing path+query in the entry makes S-scan FAIL; logging the key at `debug` makes X-nolog FAIL | ✅ 60/60 | ✅ 3 credential styles + `?key=` + `?beta=true`; unset and empty key; record and passthrough without upstream; trace output checked to contain `TRACE` and `recorded` | ➖ |
+
+### Test summary
+
+- Tests written in PR C2: 16 (1 unit, 11 record, 1 secrets, 3 CLI); workspace total 60, all passing.
+- Pure functions: `reply` (fake), `ProxyError::outcome`.
+
+### Deviations from design
+
+Recorded in design.md ("Deviation (2026-11-26, PR C2)") and tasks.md.
+
+### Issues found
+
+- Size ≈ 910 inserted lines vs ≈ 650 estimated (≈ 630 are tests + fake; rustfmt expands the JSON fixtures). All
+  C2 tasks landed; nothing was moved to a later batch.
+- Record buffers the whole upstream body; SSE answers are stored as `body` until D.3 (spec'd behaviour lands there).
+
 ### Remaining
 
-PR C2 (C.3, C.5, C.6, C.7), PR D (D.1-D.5), PR E (E.1-E.7).
+PR D (D.1-D.5), PR E (E.1-E.7).

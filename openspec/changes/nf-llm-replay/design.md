@@ -68,6 +68,21 @@ features `rustls, http2` (`stream` lands with D.4); tokio adds `sync, fs, io-uti
 would make the secret guard refuse every entry: C2's config check (X-nokey) MUST treat empty as missing.
 (8) `cargo deny` warns about `syn` 2+3: `syn` 2 comes only via Android-only `jni` (rustls-platform-verifier).
 
+**Deviation (2026-11-26, PR C2).** (1) `Backend::{Replay(Cassette), Record(Recorder, Upstream),
+Passthrough(Upstream)}` without inner `Arc`s (the whole `AppState` is already shared). (2) `ProxyError` adds
+`Upstream(String)` (502, message = reqwest error + source chain, URL stripped), `Cassette(String)` (500, for
+`CassetteError::{Write, Secret}` and `RawValue` failures) and `NotStored(Box<Response>)`: a non-2xx upstream
+answer is relayed unchanged (status, headers minus `connection`/`transfer-encoding`/`content-length`/`keep-alive`,
+body) and not stored; boxed because clippy `result_large_err`. A failed `get_or_try_init` leaves the cell empty,
+so the next identical request retries. (3) Passthrough never normalizes (non-JSON bodies are forwarded) and buffers
+the body until D.4 streams it; record stores SSE answers as `body` until D.3. (4) `ConfigError::MissingUpstream`
+(usage error, exit 2) for record/passthrough; `Config::from_cli` drops an empty key; `app()` checks the key
+(`StartupError::MissingApiKey`, exit 1) and builds `Upstream` *before* `Recorder::open`, so no file is created
+without a key; `StartupError::Upstream(#[from] UpstreamError)`. (5) `mod upstream` is private now.
+(6) Log outcomes: `hit`, `recorded`, `forwarded`, `miss`, `bad_request`, `upstream_error`, `cassette_error`,
+`not_stored`; 502/500 messages are also logged at `warn`. (7) `deny.toml` `[graph] targets` = Linux gnu/musl
+(x86_64, aarch64) + macOS, which removes the `syn` 2/3 duplicate warning coming from Android-only `jni`.
+
 ## Data Flow
 
     client ─▶ axum fallback(handle) ─▶ Normalizer::key(method, path, body)

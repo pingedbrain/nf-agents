@@ -91,6 +91,9 @@ pub enum ConfigError {
     /// Record and replay need a cassette.
     #[error("--cassette is required in {0:?} mode")]
     MissingCassette(Mode),
+    /// Record and passthrough need an upstream.
+    #[error("--upstream is required in {0:?} mode")]
+    MissingUpstream(Mode),
 }
 
 impl Config {
@@ -99,13 +102,17 @@ impl Config {
         if cli.cassette.is_none() && cli.mode != Mode::Passthrough {
             return Err(ConfigError::MissingCassette(cli.mode));
         }
+        if cli.upstream.is_none() && cli.mode != Mode::Replay {
+            return Err(ConfigError::MissingUpstream(cli.mode));
+        }
         Ok(Self {
             mode: cli.mode,
             cassette: cli.cassette,
             upstream: cli.upstream,
             bind: cli.bind,
             port: cli.port,
-            api_key: api_key.map(ApiKey),
+            // An empty key would make the cassette secret guard refuse every entry.
+            api_key: api_key.filter(|k| !k.is_empty()).map(ApiKey),
         })
     }
 }
@@ -139,8 +146,34 @@ mod tests {
 
         let err = Config::from_cli(parse(&[]).unwrap(), None).unwrap_err();
         assert!(err.to_string().contains("--cassette"), "{err}");
-        let pass = parse(&["--mode", "passthrough"]).unwrap();
+        let pass = parse(&["--mode", "passthrough", "--upstream", "http://u"]).unwrap();
         assert!(Config::from_cli(pass, None).unwrap().cassette.is_none());
+    }
+
+    #[test]
+    fn record_and_passthrough_need_upstream_and_empty_key_is_missing() {
+        for mode in ["record", "passthrough"] {
+            let cli = parse(&["--mode", mode, "--cassette", "c"]).unwrap();
+            let err = Config::from_cli(cli, Some("k".into())).unwrap_err();
+            assert!(err.to_string().contains("--upstream"), "{err}");
+        }
+        let cli = parse(&[
+            "--mode",
+            "record",
+            "--cassette",
+            "c",
+            "--upstream",
+            "http://u",
+        ]);
+        let config = Config::from_cli(cli.unwrap(), Some(String::new())).unwrap();
+        assert!(config.api_key.is_none());
+        let cli = parse(&["--mode", "passthrough", "--upstream", "http://u"]).unwrap();
+        assert!(
+            Config::from_cli(cli, Some("k".into()))
+                .unwrap()
+                .api_key
+                .is_some()
+        );
     }
 
     #[test]
