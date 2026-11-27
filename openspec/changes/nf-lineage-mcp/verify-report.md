@@ -72,3 +72,78 @@ Test layers: unit (`respond`, `server`) + protocol over real JSON-RPC (duplex). 
 ## Verdict
 
 PASS WITH WARNINGS.
+
+---
+
+# Verification Report: nf-lineage-mcp, PR B
+
+**Scope**: PR B (B.1–B.6) · **Date**: 2026-11-26 · **Mode**: Strict TDD. PR C (C.1–C.4: Docker, CI `docker` job, README, packaging) is out of scope.
+
+## Completeness
+
+| Metric | Value |
+|---|---|
+| PR B tasks | 6 |
+| Complete | 6 |
+| PR C tasks (out of scope) | 4 pending |
+
+## Execution
+
+| Check | Result |
+|---|---|
+| `cargo fmt --all -- --check` | pass |
+| `cargo clippy --workspace --all-targets --locked -- -D warnings` | pass |
+| `cargo test --workspace --locked` | 63 passed, 0 failed, 0 ignored (nf-lineage-mcp: 4 lib unit, 1 bin unit, 12 protocol, 2 stdio, 1 doctest) |
+| `cargo deny check` | advisories, bans, licenses, sources ok |
+| `cargo machete` | no unused dependencies |
+| V-grep (`src/`) | 0 hits: `println!`, `print!`, `std::io::stdout`, `std::process::exit`, `set_var`, non-test `unwrap/expect` |
+| Manual stdio run (26.10.7 store) | stdout is JSON-RPC only, `"isError":false`, 2 run LIDs, logs on stderr, exit 0; `--store /nonexistent/x` exit 1 with the path on stderr |
+| Coverage | not available (`cargo-llvm-cov` not installed) |
+
+## Spec Compliance Matrix (PR B scope)
+
+| Requirement | Scenario | Test | Result |
+|---|---|---|---|
+| Server identity and tool catalogue | Catalogue | `protocol::server_info_and_tool_catalogue` (six tools) | COMPLIANT |
+| Configuration and startup | Bad store | `stdio::unopenable_store_fails_fast` | COMPLIANT (also: usage error exits 2) |
+| Configuration and startup | Flag validation | `config::tests::rejects_invalid_flags` | COMPLIANT |
+| Stdio protocol hygiene | Scripted session | `stdio::scripted_session_over_stdio` | COMPLIANT |
+| Tools | Semantic diff | `protocol::diff_runs_shows_only_greeting` | COMPLIANT (4 core versions) |
+| Tools | Raw diff | `protocol::diff_raw_has_cli_header` | COMPLIANT |
+| Tools | check | `protocol::check_outcomes` | COMPLIANT (4 core versions) |
+| Tools | provenance | `protocol::provenance_reaches_pipeline_input` | COMPLIANT (4 core versions) |
+| Error mapping | Classes over MCP | `protocol::errors_are_tool_results_with_hints` (TaskRun `check` → `unexpected_kind`) | COMPLIANT |
+| Tools / Error mapping / Size cap (PR A scenarios) | list_runs, view, find, unknown tool, truncation, unit | PR A tests, still passing | COMPLIANT |
+| Packaging and docs | Image, Package | PR C | out of scope |
+
+## TDD Compliance
+
+| Task | Evidence | Verdict |
+|---|---|---|
+| B.1–B.3 | protocol tests written first; RED compile failure (`Settings` has no field `check`, tools absent) | ok |
+| B.4 | RED `cannot find type Cli` | ok |
+| B.5 | stdio tests written against a stub `main`; first compile failed on a test-side borrow (fixed), so no runtime RED was recorded | WARNING: RED not observed at runtime |
+| B.6 | V-grep 0 hits | ok |
+
+Test layers: unit (`respond`, `server`, `config`), protocol over real JSON-RPC (duplex), end-to-end over the built binary's stdio. No mocks; fixtures are the recorded stores.
+
+## Coherence (Design)
+
+| Decision | Followed | Notes |
+|---|---|---|
+| Mismatch/FileMissing are results | yes | `isError: false` |
+| `--path-map` operator-only | yes | no tool parameter touches `CheckOptions` |
+| Raw diff as plain text, capped | yes | `finish_text` |
+| Logging via tracing to stderr, `NF_LINEAGE_MCP_LOG` | yes | startup failure via `writeln!(stderr)`, see deviations |
+| E2E with std `Command` + session file | yes | 30 s timeout thread |
+| `config.rs` placement | deviated | binary module, not library (keeps `clap` out of the API); documented |
+
+## Issues
+
+- CRITICAL: none.
+- WARNING: B.5 RED not observed at runtime (see TDD table).
+- SUGGESTION: install `cargo-llvm-cov` for per-file coverage.
+
+## Verdict
+
+PASS WITH WARNINGS.

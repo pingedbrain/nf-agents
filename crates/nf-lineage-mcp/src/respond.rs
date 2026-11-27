@@ -37,6 +37,18 @@ pub(crate) fn finish_json<T: Serialize>(
     }
 }
 
+/// The result of a text-returning tool: the capped text, or the failure as an `isError` result.
+pub(crate) fn finish_text(
+    result: Result<String, ToolError>,
+    cap: usize,
+    hint: &str,
+) -> CallToolResult {
+    match result {
+        Ok(text) => fit_text(text, cap, hint),
+        Err(e) => tool_error(&e),
+    }
+}
+
 /// Compact JSON within `cap` bytes: arrays keep their longest prefix of whole items (still valid
 /// JSON); anything else is cut as text. `hint` tells the agent how to narrow the request.
 pub(crate) fn fit_json(value: &Value, cap: usize, hint: &str) -> CallToolResult {
@@ -130,6 +142,7 @@ pub(crate) fn tool_error(error: &ToolError) -> CallToolResult {
         ToolError::Argument(m) => m.clone(),
         ToolError::Lineage(e) => e.to_string(),
     };
+    tracing::warn!(class, %message, "tool call failed");
     CallToolResult::error(vec![ContentBlock::text(format!(
         "{class}: {message} Hint: {hint}"
     ))])

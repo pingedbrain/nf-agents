@@ -17,15 +17,22 @@ Strict TDD (RED → GREEN). Test names from `specs/lineage-mcp/spec.md`. Paths r
 - Escape hatch: if > 800, move `truncation_notice` + `fit_text` cut path to PR B.
 - Deviation (2026-11-26): PR A landed at ~930 physical lines (tests ~45 %); the escape hatch was not used because `fit_text` bounds every non-array result (`view`). `Settings.check`, `finish_text` and tracing moved to PR B; see design deviations.
 
-## PR B — diff, check, provenance, binary, e2e, Docker, README · est. ≈ 635 lines
+## PR B — diff, check, provenance, binary, stdio e2e · est. ≈ 600 lines
 
-- [ ] B.1 RED→GREEN `diff_runs_shows_only_greeting` (all core versions), `diff_raw_has_cli_header`; `DiffArgs`, `DiffMode`.
-- [ ] B.2 RED `common::materialize` + `check_outcomes`; extend `errors_are_tool_results_with_hints` with TaskRun `check`; GREEN `Settings.check` + `check` tool; `finish_text` for raw diff (B.1).
-- [ ] B.3 RED→GREEN `provenance_reaches_pipeline_input`.
-- [ ] B.4 Crate deps `clap`, `anyhow`, `tracing`, `tracing-subscriber`, `tokio`, rmcp `transport-io` (workspace entries if absent). RED `src/config.rs::tests::rejects_invalid_flags`; GREEN `Cli`, `parse_path_map`, `Cli::settings`.
-- [ ] B.5 RED `tests/stdio.rs::scripted_session_over_stdio`, `unopenable_store_fails_fast` + `tests/data/session.jsonl`; GREEN `src/main.rs` (stderr tracing, open, serve stdio).
-- [ ] B.6 `Dockerfile` (design); local D-build, D-user, D-size, D-smoke when Docker is available.
-- [ ] B.7 `.github/workflows/ci.yml` `docker` job: build, user, size, smoke steps (create the job if absent: no secrets, `timeout-minutes: 20`); V-yaml.
-- [ ] B.8 `README.md` (V-doc); crate metadata (readme, keywords, categories); V-pkg `cargo package -p nf-lineage -p nf-lineage-mcp --locked`.
-- [ ] B.9 Every spec scenario maps to a passing test; diff ≤ 800.
-- Escape hatch: if > 800, move B.6–B.8 (Docker, CI, README) to PR C.
+- [x] B.1 RED→GREEN `diff_runs_shows_only_greeting` (all core versions), `diff_raw_has_cli_header`; `DiffArgs`, `DiffMode`; `finish_text` for the raw diff.
+- [x] B.2 RED `common::materialize` + `check_outcomes`; extend `errors_are_tool_results_with_hints` with TaskRun `check`; GREEN `Settings.check` + `check` tool (operator-only `path_map`).
+- [x] B.3 RED→GREEN `provenance_reaches_pipeline_input`; catalogue test expects the six tools.
+- [x] B.4 Crate deps `clap`, `anyhow`, `tracing`, `tracing-subscriber`, `tokio`, rmcp `transport-io` (workspace entries, nf-llm-replay versions). RED `src/config.rs::tests::rejects_invalid_flags`; GREEN `Cli`, `parse_path_map`, `Cli::settings`.
+- [x] B.5 RED `tests/stdio.rs::scripted_session_over_stdio`, `unopenable_store_fails_fast` + `tests/data/session.jsonl`; GREEN `src/main.rs` (stderr tracing, open, serve stdio).
+- [x] B.6 V-grep on `src/`; every PR B spec scenario maps to a passing test; diff ≤ 800.
+
+- Result (2026-11-26): PR B landed at ~520 hand-written lines (src ~290, tests ~230).
+
+## PR C — Docker image, CI `docker` job, README, packaging · est. ≈ 200 lines
+
+- [ ] C.1 `crates/nf-lineage-mcp/Dockerfile` (design: static musl on `gcr.io/distroless/static-debian12:nonroot`); local D-build, D-user, D-size, D-smoke when Docker is available.
+- [ ] C.2 `.github/workflows/ci.yml` `docker` job: build, user, size, smoke steps piping `tests/data/session.jsonl` into `docker run -i` against the 26.10.7 fixture store (create the job if absent: no secrets, `timeout-minutes: 20`); V-yaml.
+- [ ] C.3 `README.md` with `claude mcp add` instructions, native and Docker variants (V-doc); crate metadata (readme, keywords, categories).
+- [ ] C.4 V-pkg `cargo package -p nf-lineage -p nf-lineage-mcp --locked`; every spec scenario maps to a passing test.
+
+Deviation (2026-11-26, PR B/C split): PR B as planned (B.1–B.9) plus the items moved from PR A exceeds the ~800-line budget. The Docker image, the CI `docker` job, the README and the packaging check move to a new PR C; they depend only on the binary from PR B. The `docker` job pattern lives in the `nf-llm-replay` stack, which this branch stack does not contain yet, so PR C either extends that job or creates it.
