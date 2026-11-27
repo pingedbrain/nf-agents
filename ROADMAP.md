@@ -60,7 +60,7 @@ Deliverables:
 - [ ] Provenance link: module output carries the A2A `taskId`, the `contextId` and the cassette ID, and `nf-lineage-mcp provenance` resolves them.
 - [ ] `nf-evals`: the `Grader` trait, JSONL cases, N repetitions, a pass threshold and a spend cap. Its A2A target sends messages built from fixtures and scores the returned artifact with deterministic graders and an LLM judge.
 - [ ] `nf-otel`: OpenTelemetry export with the GenAI semantic conventions to any OTLP backend. Off by default.
-- [ ] Docs site (Astro + Starlight): landing page, getting started, architecture, module catalog.
+- [ ] Docs site (Astro + Starlight): landing page, getting started, architecture, module catalog. **in progress**
 
 **Done when:**
 

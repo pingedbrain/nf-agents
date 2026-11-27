@@ -1,0 +1,19 @@
+---
+import Landing from '../layouts/Landing.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+---
+
+<Landing title="nf-agents" description="nf-agents: agent modules and tools for Nextflow pipelines.">
+  <main>
+    <h1>nf-agents</h1>
+    <p>Agent modules and tools for Nextflow pipelines. Coming soon.</p>
+    <p><a href={`${import.meta.env.BASE_URL}docs/`}>Read the docs</a></p>
+  </main>
+  <SiteFooter />
+</Landing>
+
+<style>
+  main {
+    padding: 2rem 16px;
+  }
+</style>
