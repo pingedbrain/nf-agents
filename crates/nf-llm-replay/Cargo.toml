@@ -1,0 +1,31 @@
+[package]
+name = "nf-llm-replay"
+version = "0.1.0"
+description = "Record/replay proxy for LLM HTTP APIs, for offline Nextflow agent tests (pre-alpha)."
+publish = false
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+axum.workspace = true
+clap.workspace = true
+futures-util.workspace = true
+regex.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+tokio = { workspace = true, features = ["time"] }
+
+[lints]
+workspace = true

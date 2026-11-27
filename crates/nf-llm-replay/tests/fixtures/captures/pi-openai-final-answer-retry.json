@@ -1,0 +1,66 @@
+{
+  "method": "POST",
+  "path": "/v1/responses",
+  "body": {
+    "model": "gpt-5-mini",
+    "input": [
+      {
+        "role": "developer",
+        "content": "You MUST finish by calling final_answer exactly once with arguments matching its schema. Do not finish with ordinary assistant text.\n\n<cwd>\n/lab/agent-capture/runs/26.10.7-pi/work/93/7d19042af15a53cc0195befdaf2b51\n</cwd>"
+      },
+      {
+        "role": "user",
+        "content": [
+          {
+            "type": "input_text",
+            "text": "Answer briefly: Is FASTQ binary?\n\nInput:\n\"Is FASTQ binary?\""
+          }
+        ]
+      },
+      {
+        "role": "user",
+        "content": [
+          {
+            "type": "input_text",
+            "text": "Your previous response did not satisfy the required machine-readable output contract. Call final_answer now with the complete answer. Do not respond with ordinary text."
+          }
+        ]
+      }
+    ],
+    "stream": true,
+    "prompt_cache_key": "01a2199b-b63e-7436-9ef1-559d36f856bf",
+    "store": false,
+    "max_output_tokens": 128000,
+    "tools": [
+      {
+        "type": "function",
+        "name": "final_answer",
+        "description": "Return the final structured answer and terminate the agent.",
+        "parameters": {
+          "additionalProperties": false,
+          "properties": {
+            "answer": {
+              "type": "string"
+            },
+            "confidence": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "answer",
+            "confidence"
+          ],
+          "type": "object"
+        },
+        "strict": false
+      }
+    ],
+    "reasoning": {
+      "effort": "medium",
+      "summary": "auto"
+    },
+    "include": [
+      "reasoning.encrypted_content"
+    ]
+  }
+}

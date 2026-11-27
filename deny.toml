@@ -1,5 +1,16 @@
 # cargo-deny policy (cargo-deny 0.22). Run: cargo deny check
 
+[graph]
+# Platforms nf-agents ships for; others (e.g. Android-only `jni` via rustls-platform-verifier) are skipped.
+targets = [
+    "x86_64-unknown-linux-gnu",
+    "aarch64-unknown-linux-gnu",
+    "x86_64-unknown-linux-musl",
+    "aarch64-unknown-linux-musl",
+    "x86_64-apple-darwin",
+    "aarch64-apple-darwin",
+]
+
 [advisories]
 # Known vulnerabilities are always errors; yanked crates too.
 yanked = "deny"
@@ -19,6 +30,8 @@ allow = [
     "MIT",
     "BSD-2-Clause",
     "BSD-3-Clause",
+    # webpki-root-certs (Mozilla CA bundle data, via reqwest rustls); permissive data license.
+    "CDLA-Permissive-2.0",
     "ISC",
     "Unicode-3.0",
     "Zlib",

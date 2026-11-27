@@ -76,3 +76,25 @@ jobs:
       - run: rustup toolchain install
       - uses: Swatinem/rust-cache@v2
       - run: cargo test -p nf-lineage --test s3_ministack --locked
+
+  # Builds the image (never pushed) and runs the example pipeline offline against it.
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - run: docker build -f crates/nf-llm-replay/Dockerfile -t nf-llm-replay:ci .
+      - name: Image runs as 65532:65532 and is at most 25 MB
+        run: |
+          user=$(docker image inspect nf-llm-replay:ci --format '{{.Config.User}}')
+          size=$(docker image inspect nf-llm-replay:ci --format '{{.Size}}')
+          echo "user=$user size=$size"
+          test "$user" = "65532:65532"
+          test "$size" -le 26214400
+      - run: docker run --rm nf-llm-replay:ci --help
+      - run: docs/examples/nf-llm-replay/e2e.sh
+        env:
+          E2E_REQUIRE_DOCKER: "1"
+          IMAGE: nf-llm-replay:ci
