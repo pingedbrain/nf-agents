@@ -9,6 +9,7 @@ use axum::body::{Body, Bytes};
 use axum::extract::State;
 use axum::http::{HeaderMap, HeaderValue, Method, StatusCode, Uri, header};
 use axum::response::{IntoResponse, Response};
+use futures_util::{Stream, StreamExt};
 use serde::Serialize;
 use serde_json::value::RawValue;
 use serde_json::{Value, json};
@@ -111,6 +112,9 @@ pub(crate) struct MissRequest {
 
 /// Longest `last_message` excerpt, in characters.
 const EXCERPT_CHARS: usize = 120;
+
+/// Largest upstream answer recorded; a bigger one is refused with 502.
+const MAX_UPSTREAM_BODY: usize = 64 * 1024 * 1024;
 
 impl MissBody {
     fn new(state: &AppState, key: String, method: &str, path: &str, body: &[u8]) -> Self {
@@ -322,7 +326,8 @@ async fn record(
         .get(header::CONTENT_TYPE)
         .and_then(|v| v.to_str().ok())
         .map(str::to_owned);
-    let body = String::from_utf8(reply.bytes().await?.into())
+    let bytes = read_capped(reply.bytes_stream(), MAX_UPSTREAM_BODY).await?;
+    let body = String::from_utf8(bytes)
         .map_err(|_| ProxyError::Upstream("upstream response body is not UTF-8".into()))?;
     let stream = content_type
         .as_deref()
@@ -356,6 +361,26 @@ async fn record(
         .await
         .map_err(|e| ProxyError::Cassette(e.to_string()))?;
     Ok(entry)
+}
+
+/// Reads an upstream body chunk by chunk; fails (502) as soon as it passes `limit` bytes.
+async fn read_capped<S, E>(chunks: S, limit: usize) -> Result<Vec<u8>, ProxyError>
+where
+    S: Stream<Item = Result<Bytes, E>>,
+    E: Into<ProxyError>,
+{
+    let mut chunks = std::pin::pin!(chunks);
+    let mut body = Vec::new();
+    while let Some(chunk) = chunks.next().await {
+        let chunk = chunk.map_err(Into::into)?;
+        if body.len().saturating_add(chunk.len()) > limit {
+            return Err(ProxyError::Upstream(format!(
+                "upstream response is larger than {limit} bytes"
+            )));
+        }
+        body.extend_from_slice(&chunk);
+    }
+    Ok(body)
 }
 
 /// The upstream answer as is, streamed as it arrives, minus hop-by-hop headers.
@@ -474,5 +499,24 @@ mod tests {
             default_upstream("/v1/messages/count_tokens"),
             "https://api.openai.com"
         );
+    }
+
+    #[tokio::test]
+    async fn upstream_body_is_capped() {
+        let chunks = |n: usize| {
+            futures_util::stream::iter(
+                (0..n).map(|_| Ok::<_, ProxyError>(Bytes::from(vec![b'x'; 10]))),
+            )
+        };
+        assert_eq!(read_capped(chunks(3), 30).await.unwrap().len(), 30);
+        assert!(matches!(
+            read_capped(chunks(4), 30).await,
+            Err(ProxyError::Upstream(_))
+        ));
+        let failing = futures_util::stream::iter(vec![Err(ProxyError::Upstream("boom".into()))]);
+        assert!(matches!(
+            read_capped(failing, 30).await,
+            Err(ProxyError::Upstream(_))
+        ));
     }
 }

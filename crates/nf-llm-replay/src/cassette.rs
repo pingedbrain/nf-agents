@@ -183,11 +183,22 @@ impl Recorder {
         cells.entry(key.to_owned()).or_default().clone()
     }
 
+    /// Whether `line` holds the key as written or in its JSON-escaped form (`"` and `\` escaped).
+    fn holds_secret(&self, line: &str) -> bool {
+        let raw = self.secret.expose();
+        let escaped = serde_json::to_string(raw).ok();
+        line.contains(raw)
+            || escaped
+                .as_deref()
+                .and_then(|q| q.strip_prefix('"')?.strip_suffix('"'))
+                .is_some_and(|e| line.contains(e))
+    }
+
     /// Adds `entry` and rewrites the whole cassette sorted by key (temp sibling + rename).
     /// Refuses entries containing the upstream key; on error nothing is kept.
     pub async fn persist(&self, entry: Arc<Entry>) -> Result<(), CassetteError> {
         let line = serde_json::to_string(&*entry).map_err(|e| self.write_error(e.into()))?;
-        if line.contains(self.secret.expose()) {
+        if self.holds_secret(&line) {
             return Err(CassetteError::Secret);
         }
         let key = entry.key.clone();
@@ -432,6 +443,20 @@ mod tests {
 
         rec.persist(entry("cc", "sk-test-other")).await.unwrap();
         assert_eq!(std::fs::read_to_string(&path).unwrap().lines().count(), 1);
+    }
+
+    #[tokio::test]
+    async fn entry_containing_the_json_escaped_api_key_is_refused() {
+        // `"` and `\` are stored escaped in the cassette, so the raw key never appears there.
+        let raw = "sk-a\"b\\c";
+        let dir = tempfile::tempdir().unwrap();
+        let rec = Recorder::open(dir.path().join("c.jsonl"), ApiKey(raw.into())).unwrap();
+        let err = rec.persist(entry("aa", raw)).await.unwrap_err();
+        assert!(matches!(err, CassetteError::Secret), "{err:?}");
+        assert_eq!(
+            std::fs::read_to_string(dir.path().join("c.jsonl")).unwrap(),
+            ""
+        );
     }
 
     #[tokio::test]

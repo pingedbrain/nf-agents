@@ -148,7 +148,7 @@ create or write the file. Multiple processes writing one cassette are unsupporte
 
 Cassettes MUST NOT contain request or response headers (only `content_type`), query strings, or
 credential values. Before writing, an entry whose serialized line contains the configured upstream
-API key MUST be refused (request fails, nothing written).
+API key MUST be refused (request fails, nothing written). The key is also matched in its JSON-escaped form (`"` and `\` escaped), so a key containing those characters cannot be stored (T `cassette::tests::entry_containing_the_json_escaped_api_key_is_refused`).
 
 #### Scenario: Secret scan after recording (S-scan)
 - GIVEN a record session with env key `sk-test-SECRET-123` and clients sending `Authorization`, `x-api-key` and `?key=` queries
