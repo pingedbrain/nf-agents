@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { checkHtml, checkOg, checkOgMeta, checkRoutes, pngSize } from './check-dist.mjs';
+import { checkCopy, checkHtml, checkOg, checkOgMeta, checkRoutes, pngSize } from './check-dist.mjs';
 
 const FOOTER =
   '<footer data-site-footer><p>Not affiliated with or endorsed by Seqera. Nextflow is a registered trademark of Seqera Labs.</p></footer>';
@@ -108,4 +108,18 @@ test('OG image must exist and be 1200x630', () => {
   assert.ok(checkOg(new Set(['index.html']), undefined).some((e) => /og\.png/.test(e)));
   assert.ok(checkOg(new Set(['og.png']), pngOf(800, 600)).some((e) => /1200x630/.test(e)));
   assert.deepEqual(checkOg(new Set(['og.png']), pngOf(1200, 630)), []);
+});
+
+test('copy: wrong brand case and the docker one-liner are reported on any page', () => {
+  for (const bad of ['NF-Agents', 'Nf-agents', 'docker run ghcr.io/x/nf-agents-demo']) {
+    assert.ok(checkCopy('docs/index.html', page(`<p>${bad}</p>`)).length > 0, bad);
+  }
+  assert.deepEqual(checkCopy('docs/roadmap/index.html', page('<p>nf-core/sarek on AWS Batch</p>')), []);
+});
+
+test('copy: the landing needs the real demo and no sarek example', () => {
+  const ok = page('<pre>git clone x &amp;&amp; demo/run.sh</pre><pre>params.greeting</pre>');
+  assert.deepEqual(checkCopy('index.html', ok), []);
+  assert.ok(checkCopy('index.html', page('<pre>demo/run.sh params.greeting sarek</pre>')).some((e) => /sarek/.test(e)));
+  assert.ok(checkCopy('index.html', page('<p>hi</p>')).some((e) => /demo\/run\.sh/.test(e)));
 });

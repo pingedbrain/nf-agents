@@ -40,6 +40,8 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm test
+      - name: Build leaves no tracked or untracked changes
+        run: git status --porcelain . && test -z "$(git status --porcelain .)"
       - name: Upload Pages artifact
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v5

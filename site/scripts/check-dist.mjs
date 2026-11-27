@@ -86,6 +86,20 @@ export function checkText(relPath, text) {
   return errors;
 }
 
+// Copy rules from the project-site spec (S-copy). The roadmap may name sarek; the landing may not.
+const COPY_BANNED = [/NF-Agents/, /Nf-agents/, /docker run ghcr\.io/];
+const LANDING_BANNED = [/\bsarek\b/i];
+const LANDING_REQUIRED = ['demo/run.sh', 'params.greeting'];
+
+export function checkCopy(relPath, html) {
+  const banned = relPath === 'index.html' ? [...COPY_BANNED, ...LANDING_BANNED] : COPY_BANNED;
+  const errors = banned.filter((re) => re.test(html)).map((re) => `${relPath}: copy matches banned text ${re.source}`);
+  if (relPath === 'index.html') {
+    for (const t of LANDING_REQUIRED) if (!html.includes(t)) errors.push(`${relPath}: copy lacks required text "${t}"`);
+  }
+  return errors;
+}
+
 export function checkRoutes(files) {
   return DOCS_ROUTES.filter((r) => !files.has(r)).map((r) => `missing docs route: ${r}`);
 }
@@ -133,7 +147,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     if (/\.(html)$/.test(rel)) {
       htmlCount += 1;
       const html = await readFile(join(root, rel), 'utf8');
-      errors.push(...checkHtml(rel, html, files), ...checkOgMeta(rel, html));
+      errors.push(...checkHtml(rel, html, files), ...checkOgMeta(rel, html), ...checkCopy(rel, html));
     } else if (/\.(css|js|mjs)$/.test(rel)) {
       errors.push(...checkText(rel, await readFile(join(root, rel), 'utf8')));
     }
