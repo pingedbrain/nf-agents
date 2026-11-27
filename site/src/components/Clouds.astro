@@ -1,0 +1,111 @@
+---
+import { milestones } from '../data/milestones';
+
+const compute = [
+  { name: 'Local Docker (demo)', status: `${milestones.foundations.version}, ${milestones.foundations.status}` },
+  { name: 'AWS Batch', status: `${milestones.infrastructure.version}, planned` },
+  { name: 'Google Cloud Batch', status: `${milestones.ecosystem.version}, planned` },
+  { name: 'Azure Batch', status: `${milestones.ecosystem.version}, planned` },
+  { name: 'Kubernetes', status: `${milestones.ecosystem.version}, planned` },
+];
+
+const models = [
+  { name: 'OpenAI-compatible endpoints', status: `${milestones.foundations.version}, ${milestones.foundations.status}` },
+  { name: 'Amazon Bedrock', status: `${milestones.infrastructure.version}, planned` },
+  { name: 'Local, OpenAI-compatible', status: 'planned' },
+];
+
+const storage = [
+  { name: 'Local disk', status: `${milestones.foundations.version}, ${milestones.foundations.status}` },
+  { name: 'Amazon S3', status: `${milestones.foundations.version}, ${milestones.foundations.status}` },
+  { name: 'Google Cloud Storage', status: `${milestones.foundations.version}, ${milestones.foundations.status}` },
+  { name: 'Azure Blob Storage', status: `${milestones.foundations.version}, ${milestones.foundations.status}` },
+];
+
+const groups = [
+  { title: 'Compute', rows: compute },
+  { title: 'Models', rows: models },
+  { title: 'Lineage storage', rows: storage },
+];
+---
+
+<section id="clouds" class="section wrap" aria-labelledby="clouds-title">
+  <div class="section-head">
+    <p class="eyebrow">Pluggable by design</p>
+    <h2 id="clouds-title">Your cloud, your models, your storage</h2>
+    <p class="muted">
+      AWS is the first compute target. Each target is a plug-in with a small contract, so adding a
+      cloud is one module, not a fork.
+    </p>
+  </div>
+
+  <div class="grid-3">
+    {groups.map((group) => (
+      <article class="card">
+        <h3 class="group-title">{group.title}</h3>
+        <ul class="status-list">
+          {group.rows.map((row) => (
+            <li>
+              <span class="row-name">{row.name}</span>
+              <span class="badge">{row.status}</span>
+            </li>
+          ))}
+        </ul>
+      </article>
+    ))}
+  </div>
+
+  <div class="contract">
+    <p>Bring a new cloud: one OpenTofu module that outputs a queue, a work directory and a Nextflow config.</p>
+    <a href="https://github.com/pingedbrain/nf-agents/blob/main/ROADMAP.md#extension-points">Read the extension points</a>
+  </div>
+</section>
+
+<style>
+  .card {
+    min-width: 0;
+    padding: 24px;
+    background: var(--nf-surface);
+    border: 1px solid var(--nf-line);
+    border-radius: 14px;
+  }
+  .group-title {
+    margin: 0 0 8px;
+    font-family: 'JetBrains Mono Variable', ui-monospace, monospace;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--nf-muted);
+  }
+  .status-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .status-list li {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px 12px;
+    padding: 12px 0;
+    border-top: 1px solid var(--nf-line);
+  }
+  .row-name {
+    font-weight: 500;
+  }
+  .contract {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px 24px;
+    padding: 20px 24px;
+    border-radius: 12px;
+    background: var(--nf-surface);
+    border: 1px solid var(--nf-line);
+  }
+  .contract p {
+    margin: 0;
+    color: var(--nf-muted);
+  }
+</style>

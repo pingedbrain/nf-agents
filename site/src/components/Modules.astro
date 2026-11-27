@@ -1,0 +1,123 @@
+---
+import { milestones, SCORE_PENDING } from '../data/milestones';
+
+const rows = [
+  {
+    name: 'RUN_METHODS',
+    what: 'Writes a methods section from lineage. Every cited tool and version is checked against the run.',
+    status: `Planned, ${milestones.agents.version}`,
+  },
+  {
+    name: 'QC_REVIEW',
+    what: 'Reviews MultiQC output against a labelled case set of at least 30 cases.',
+    status: `Planned, ${milestones.agents.version}`,
+  },
+  {
+    name: 'SAMPLE_CHECK',
+    what: 'Sample-level check, with evals on expert-labelled cases.',
+    status: `Planned, ${milestones.compliance.version}`,
+  },
+  {
+    name: 'VARIANT_SUMMARY',
+    what: 'Variant summary for a research report, with evals on expert-labelled cases.',
+    status: `Planned, ${milestones.compliance.version}`,
+  },
+];
+---
+
+<section id="modules" class="section wrap" aria-labelledby="modules-title">
+  <div class="section-head">
+    <h2 id="modules-title">Agent modules</h2>
+    <p class="muted">Research use only. No module makes clinical claims.</p>
+  </div>
+
+  <div class="table-wrap">
+    <table class="modules-table">
+      <caption class="visually-hidden">Agent modules, status and eval score</caption>
+      <thead>
+        <tr>
+          <th scope="col">Module</th>
+          <th scope="col">What it does</th>
+          <th scope="col">Status</th>
+          <th scope="col">Eval score</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => (
+          <tr>
+            <td data-label="Module"><code>{row.name}</code></td>
+            <td data-label="What it does">{row.what}</td>
+            <td data-label="Status"><span class="badge">{row.status}</span></td>
+            <td data-label="Eval score" class="muted">{SCORE_PENDING}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<style>
+  .table-wrap {
+    background: var(--nf-surface);
+    border: 1px solid var(--nf-line);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .modules-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9375rem;
+  }
+  .modules-table th,
+  .modules-table td {
+    padding: 16px 20px;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid var(--nf-line);
+  }
+  .modules-table th {
+    font-weight: 500;
+    font-size: 0.8125rem;
+    color: var(--nf-muted);
+  }
+  .modules-table tbody tr:last-child td {
+    border-bottom: 0;
+  }
+  .modules-table code {
+    font-family: 'JetBrains Mono Variable', ui-monospace, monospace;
+    font-size: 0.875rem;
+  }
+  @media (max-width: 639px) {
+    .modules-table thead {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+    }
+    .modules-table,
+    .modules-table tbody,
+    .modules-table tr,
+    .modules-table td {
+      display: block;
+      width: 100%;
+    }
+    .modules-table tr {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--nf-line);
+    }
+    .modules-table tbody tr:last-child {
+      border-bottom: 0;
+    }
+    .modules-table td {
+      padding: 4px 0;
+      border: 0;
+    }
+    .modules-table td::before {
+      content: attr(data-label);
+      display: block;
+      font-size: 0.75rem;
+      color: var(--nf-muted);
+    }
+  }
+</style>

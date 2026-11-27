@@ -32,20 +32,20 @@ D13 adopted ("Unrelated PR" scenario widened). Align "Check on pull requests" pa
 
 ## Phase 4: Data and contrast (TDD)
 
-- [ ] 4.1 RED `scripts/tokens.test.mjs`: parse `tokens.css`, assert ≥4.5:1 per text pair, light and dark.
-- [ ] 4.2 GREEN: adjust values in `tokens.css` only if RED fails.
-- [ ] 4.3 `src/data/milestones.ts` (versions, planned/pending).
+- [x] 4.1 RED `scripts/tokens.test.mjs`: parse `tokens.css`, assert ≥4.5:1 per text pair, light and dark.
+- [x] 4.2 GREEN: adjust values in `tokens.css` only if RED fails.
+- [x] 4.3 `src/data/milestones.ts` (versions, planned/pending).
 
 ## Phase 5: Sections
 
-- [ ] 5.1 `SiteHeader.astro` (mark-light/mark-dark via `?raw`, CSS switch).
-- [ ] 5.2 `Hero.astro` with static flow SVG (`role="img"`, `<title>`).
-- [ ] 5.3 `Terminal.astro`, `QuickStart.astro`: `git clone … && demo/run.sh`, real `params.greeting` diff from `docs/demo.md`.
-- [ ] 5.4 `HowItWorks.astro`, `Clouds.astro`, `Principles.astro`, `Modules.astro` (planned v0.2).
-- [ ] 5.5 `Bench.astro` (scores `pending`), `Audience.astro`, `BuiltFor.astro`, `Explorer.astro` (v0.6, leaderboard v0.3, compute/Bedrock/NIST as v0.4/v0.5).
-- [ ] 5.6 `src/styles/landing.css`: responsive, 16px gutter, no horizontal scroll at 375px, focus styles, reduced-motion base.
-- [ ] 5.7 Compose sections in `src/pages/index.astro`; exactly one h1.
-- [ ] 5.8 Batch gate; commit B.
+- [x] 5.1 `SiteHeader.astro` (mark-light/mark-dark via `?raw`, CSS switch).
+- [x] 5.2 `Hero.astro` with static flow SVG (`role="img"`, `<title>`).
+- [x] 5.3 `Terminal.astro`, `QuickStart.astro`: `git clone … && demo/run.sh`, real `params.greeting` diff from `docs/demo.md`.
+- [x] 5.4 `HowItWorks.astro`, `Clouds.astro`, `Principles.astro`, `Modules.astro` (planned v0.2).
+- [x] 5.5 `Bench.astro` (scores `pending`), `Audience.astro`, `BuiltFor.astro`, `Explorer.astro` (v0.6, leaderboard v0.3, compute/Bedrock/NIST as v0.4/v0.5).
+- [x] 5.6 `src/styles/landing.css`: responsive, 16px gutter, no horizontal scroll at 375px, focus styles, reduced-motion base.
+- [x] 5.7 Compose sections in `src/pages/index.astro`; exactly one h1.
+- [x] 5.8 Batch gate; commit B.
 
 ## Batch C (PR C): OG image, hero animation
 

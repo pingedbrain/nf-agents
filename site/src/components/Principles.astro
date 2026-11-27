@@ -1,0 +1,87 @@
+---
+import { milestones } from '../data/milestones';
+
+const items = [
+  {
+    title: 'Stays in your account',
+    text: 'Your data stays in your account. There is no third-party telemetry by default.',
+  },
+  {
+    title: 'Read-only lineage',
+    text: 'The lineage MCP server is read-only. It lists, views, diffs and checks runs. It does not modify data or launch runs.',
+  },
+  {
+    title: 'Evals for every module',
+    text: `Planned for ${milestones.agents.version}: each agent module ships with labelled cases, a pass threshold and an eval job.`,
+  },
+  {
+    title: 'Tests without API keys',
+    text: 'Recorded model answers let pull request tests run without API keys and without network access.',
+  },
+];
+---
+
+<section class="principles" aria-labelledby="principles-title">
+  <div class="wrap section">
+    <h2 id="principles-title">Principles</h2>
+    <div class="grid-4">
+      {items.map((item) => (
+        <article class="principle">
+          <h3>{item.title}</h3>
+          <p>{item.text}</p>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .principles {
+    background: var(--nf-surface);
+    border-block: 1px solid var(--nf-line);
+  }
+  .section {
+    display: flex;
+    flex-direction: column;
+    gap: 36px;
+    padding-block: 72px;
+  }
+  .section h2 {
+    margin: 0;
+    font-family: 'Space Grotesk Variable', system-ui, sans-serif;
+    font-size: clamp(1.75rem, 4vw, 2.375rem);
+    line-height: 1.1;
+  }
+  .grid-4 {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  @media (min-width: 640px) {
+    .grid-4 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 1000px) {
+    .grid-4 {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+  .principle {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+  }
+  .principle h3 {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+  }
+  .principle p {
+    margin: 0;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: var(--nf-muted);
+  }
+</style>

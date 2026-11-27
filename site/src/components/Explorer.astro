@@ -1,0 +1,66 @@
+---
+import { milestones } from '../data/milestones';
+---
+
+<section class="explorer wrap" aria-labelledby="explorer-title">
+  <div class="panel">
+    <div class="copy">
+      <p class="eyebrow">Lineage explorer</p>
+      <h2 id="explorer-title">Browse a run in your browser</h2>
+      <p class="muted">
+        A browser explorer compiles nf-lineage to WebAssembly, so a run can be walked from any output
+        back to its inputs. Planned for {milestones.ecosystem.version}.
+      </p>
+    </div>
+    <div class="placeholder">
+      <p class="placeholder-title">Planned for {milestones.ecosystem.version}</p>
+      <p class="muted">Not available yet. The command-line and MCP tools cover the same questions today.</p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .explorer {
+    padding-block: 40px 88px;
+  }
+  .panel {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 40px;
+    padding: 40px;
+    border-radius: 18px;
+    background: var(--nf-surface);
+    border: 1px solid var(--nf-line);
+  }
+  .panel > * {
+    flex: 1 1 320px;
+    min-width: 0;
+  }
+  .copy {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .copy h2 {
+    margin: 0;
+    font-family: 'Space Grotesk Variable', system-ui, sans-serif;
+    font-size: clamp(1.5rem, 3.5vw, 2rem);
+    line-height: 1.15;
+  }
+  .placeholder {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 10px;
+    min-height: 160px;
+    padding: 24px;
+    border-radius: 14px;
+    border: 1px dashed var(--nf-muted);
+  }
+  .placeholder-title {
+    margin: 0;
+    font-family: 'Space Grotesk Variable', system-ui, sans-serif;
+    font-size: 1.375rem;
+  }
+</style>

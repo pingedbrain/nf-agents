@@ -1,0 +1,65 @@
+---
+import { milestones } from '../data/milestones';
+
+const groups = [
+  {
+    title: 'Bioinformaticians',
+    text: `Ask what ran, with which versions, and what changed. Answers are traced to the run record. QC review and methods modules are planned for ${milestones.agents.version}.`,
+  },
+  {
+    title: 'Platform engineers',
+    text: `One compute contract per cloud target, AWS first (${milestones.infrastructure.version}). The default configuration is planned to send no data or telemetry outside your account, checked by a policy test.`,
+  },
+  {
+    title: 'Compliance and security',
+    text: `Hardened profiles with evidence generated for each release, planned for ${milestones.compliance.version}. Profiles are technical controls and evidence, not a certification.`,
+  },
+];
+---
+
+<section class="audience wrap" aria-labelledby="audience-title">
+  <h2 id="audience-title">Who it's for</h2>
+  <div class="grid-3">
+    {groups.map((group) => (
+      <article class="card">
+        <h3>{group.title}</h3>
+        <p>{group.text}</p>
+      </article>
+    ))}
+  </div>
+</section>
+
+<style>
+  .audience {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    padding-block: 72px;
+  }
+  .audience h2 {
+    margin: 0;
+    font-family: 'Space Grotesk Variable', system-ui, sans-serif;
+    font-size: clamp(1.75rem, 4vw, 2.375rem);
+    line-height: 1.1;
+  }
+  .card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+    padding: 28px;
+    border-radius: 14px;
+    background: var(--nf-surface);
+    border: 1px solid var(--nf-line);
+  }
+  .card h3 {
+    margin: 0;
+    font-size: 1.1875rem;
+    font-weight: 600;
+  }
+  .card p {
+    margin: 0;
+    line-height: 1.6;
+    color: var(--nf-muted);
+  }
+</style>
