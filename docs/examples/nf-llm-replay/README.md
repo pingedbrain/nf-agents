@@ -53,10 +53,12 @@ Recording with the image instead of the host binary: mount the cassette's **dire
 as your user so the file stays yours:
 
 ```bash
-docker run --rm -p 8080:8080 --user "$(id -u):$(id -g)" -e NF_LLM_REPLAY_API_KEY \
+docker run --rm -p 127.0.0.1:8080:8080 --user "$(id -u):$(id -g)" -e NF_LLM_REPLAY_API_KEY \
   -v "$PWD/cassettes:/cassettes" nf-llm-replay \
   --mode record --cassette /cassettes/example.jsonl --upstream https://api.openai.com
 ```
+
+Record and passthrough modes hold the real API key and have no auth, so never expose them beyond localhost.
 
 ## The `pi` runner
 

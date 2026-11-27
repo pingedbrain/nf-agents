@@ -59,8 +59,10 @@ representative at an online or offline event.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the community leaders responsible for enforcement at
-[CONDUCT CONTACT — set before the first public release].
+reported privately to the community leaders responsible for enforcement, through
+GitHub's private reporting form at
+https://github.com/pingedbrain/nf-agents/security/advisories/new. That form is
+also used for conduct reports and is visible only to maintainers.
 All complaints will be reviewed and investigated promptly and fairly.
 
 All community leaders are obligated to respect the privacy and security of the
