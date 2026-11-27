@@ -12,6 +12,7 @@ repository.workspace = true
 anyhow.workspace = true
 axum.workspace = true
 clap.workspace = true
+futures-util.workspace = true
 regex.workspace = true
 reqwest.workspace = true
 serde.workspace = true

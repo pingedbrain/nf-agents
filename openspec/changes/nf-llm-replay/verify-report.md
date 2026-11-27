@@ -441,3 +441,103 @@ Resolved from C1: W-4 (`[graph] targets`), W-5 (empty key = missing), S-5 (`upst
 ### Verdict
 
 **PASS WITH WARNINGS** — PR C2 is complete; all gates green; 14/15 scoped scenarios compliant, 1 partial by design (E-live half in PR D). Only warning is the batch size.
+
+## PR D — SSE streaming + normalization flags (2026-11-26)
+
+Scope: D.1-D.5 (llm-replay-cassette E-split, E-exact, E-tail, E-store, N-ptr, N-pat; llm-replay-proxy
+E-resp, E-msg, E-chat, E-live, X-vol, X-help extension).
+
+### Completeness
+
+| Metric | Value |
+|--------|-------|
+| Tasks in batch | 5 |
+| Tasks complete | 5 |
+| Tasks incomplete | 0 |
+
+### Build and tests (executed in the worktree)
+
+| Command | Result |
+|---------|--------|
+| `cargo fmt --all -- --check` | ✅ |
+| `cargo clippy --workspace --all-targets --locked -- -D warnings` | ✅ no warnings |
+| `cargo test --workspace --locked` | ✅ 72 passed, 0 failed (nf-lineage 1; lib 34, captures 2, cli 10, record 11, replay 8, secrets 1, sse 5) |
+| `cargo deny check` | ✅ advisories, bans, licenses, sources ok |
+| `cargo machete` | ✅ no unused dependencies |
+
+### Mutation spot checks
+
+| Mutation | Result |
+|----------|--------|
+| Record keeps SSE as `body` (pre-D.3 code) | E-store FAILED |
+| Buffered `relay` (`reply.bytes()`, pre-D.4 code) | E-live FAILED (timeout while upstream paused) |
+| Top-level volatile removal disabled | N-ptr, N-pat, N-vol FAILED |
+| Regex error printed multi-line | N-pat FAILED |
+
+### TDD compliance
+
+| Task | RED | GREEN | Triangulate | Notes |
+|------|-----|-------|-------------|-------|
+| D.1 | ✅ E0425 | ✅ 3/3 | ✅ | |
+| D.2 | ➖ helper | ✅ exercised by 5 tests | ➖ | |
+| D.3 | ✅ E-store FAILED | ✅ | ✅ | E-resp/E-msg/E-chat passed before the change (byte-exact via concatenated body): regression guards |
+| D.4 | ✅ E-live FAILED | ✅ | ✅ | |
+| D.5 | ✅ compile errors | ✅ | ✅ | mutation-checked |
+
+5/5 tasks have TDD evidence in apply-progress.md.
+
+### Spec compliance matrix (PR D checks)
+
+| Check | Scenario | Test | Result |
+|-------|----------|------|--------|
+| E-split | Mixed terminators | `sse::tests::splits_lf_crlf_and_cr_terminated_events` | ✅ COMPLIANT |
+| E-exact | Mixed terminators | `sse::tests::concatenated_events_equal_the_original_bytes` | ✅ COMPLIANT |
+| E-tail | Mixed terminators | `sse::tests::unterminated_trailing_event_is_kept` | ✅ COMPLIANT |
+| E-store | Stored per event | `sse::sse_cassette_stores_one_string_per_event` | ✅ COMPLIANT (5 events, no `body`) |
+| E-resp | Byte-exact SSE | `sse::responses_stream_record_replay_is_byte_exact` | ✅ COMPLIANT |
+| E-msg | Byte-exact SSE | `sse::messages_stream_with_beta_query_record_replay_is_byte_exact` | ✅ COMPLIANT (CRLF event kept) |
+| E-chat | Byte-exact SSE | `sse::chat_completions_stream_record_replay_is_byte_exact` | ✅ COMPLIANT |
+| E-live | No cassette I/O | `sse::passthrough_streams_events_incrementally` | ✅ COMPLIANT (closes the P-pass partial from C2) |
+| N-ptr | Configured additions | `normalize::tests::json_pointer_volatile_field_is_removed` | ✅ COMPLIANT |
+| N-pat | Configured additions | `normalize::tests::custom_volatile_pattern_is_replaced` | ✅ COMPLIANT |
+| X-vol | CLI errors | `cli::invalid_volatile_pattern_exits_1_naming_it` | ✅ COMPLIANT (flag + env; one stderr line; bad pointer too) |
+| X-help | CLI errors | `cli::help_lists_flags_and_env_vars` | ✅ COMPLIANT (now every flag) |
+
+**Compliance summary**: 12/12 compliant.
+
+### Correctness (static)
+
+| Requirement | Status | Notes |
+|------------|--------|-------|
+| `text/event-stream` stored as raw events incl. terminator, tail kept, concat byte-exact | ✅ | `split_events` cuts only after ASCII line endings (`get`, no indexing) |
+| Replay: same bytes, `content-type`, no delays | ✅ | `Body::from_stream(stream::iter(events))` |
+| Passthrough streams as it arrives, no cassette I/O | ✅ | `Body::from_stream(bytes_stream())`; mid-stream upstream errors end the body |
+| Volatile fields: name = top level only, pointer = exact member, missing ignored; defaults kept | ✅ | |
+| Patterns in string values only, in order, `<volatile/>` | ✅ | |
+| Invalid pattern/pointer → startup error naming it, exit 1, one line | ✅ | |
+| No panics on external input | ✅ | no unwrap/expect/indexing outside tests |
+
+### Coherence (design)
+
+| Decision | Followed? | Notes |
+|----------|-----------|-------|
+| SSE stored as raw event strings incl. terminator | ✅ | |
+| Streaming detected from upstream `content-type`, not the request | ✅ | prefix match |
+| `Normalizer::new(extra_fields, extra_patterns)`, `VolatileField`, `NormalizeError::Field` | ✅ | array-index removal added (deviation note) |
+| Record forwards and stores (buffered) | ⚠️ Deviated (documented) | record buffers, then answers from the entry; only passthrough streams live |
+
+### Issues
+
+**CRITICAL**: None.
+
+**WARNING**: None (batch ≈ 575 changed lines, within the ~800 budget).
+
+**SUGGESTION**:
+- S-7 (from C2) still open: a non-2xx coalesced leader makes each waiting duplicate retry once.
+- S-9: replay's one-chunk-per-event framing is not asserted (hyper may coalesce small writes); bytes are.
+
+Resolved from C2: S-8 (coalesced waiters log `hit`), P-pass partial (E-live).
+
+### Verdict
+
+**PASS** — PR D is complete; all gates green; 12/12 scoped scenarios compliant.

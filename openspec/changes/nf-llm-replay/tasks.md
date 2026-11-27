@@ -71,11 +71,18 @@ Every `tests/*.rs` / `examples/*.rs` starts with a `//!` line.
 
 ## PR D — SSE streaming + normalization flags · ≈ 420 lines
 
-- [ ] D.1 RED→GREEN `src/sse.rs`: E-split, E-exact, E-tail.
-- [ ] D.2 Fake upstream SSE: chat `stream:true`, `/v1/responses` (5 events), `/v1/messages` (Anthropic event names, CRLF on one event), pause gate.
-- [ ] D.3 RED→GREEN record stores `events`, replay streams one chunk per event (`tests/sse.rs`): E-store, E-resp, E-msg, E-chat.
-- [ ] D.4 RED→GREEN passthrough streams `bytes_stream()`: E-live.
-- [ ] D.5 RED→GREEN `--volatile-field` / `--volatile-pattern` (+ env): N-ptr, N-pat, X-vol.
+- [x] D.1 RED→GREEN `src/sse.rs`: E-split, E-exact, E-tail.
+- [x] D.2 Fake upstream SSE: chat `stream:true`, `/v1/responses` (5 events), `/v1/messages` (Anthropic event names, CRLF on one event), pause gate.
+- [x] D.3 RED→GREEN record stores `events`, replay streams one chunk per event (`tests/sse.rs`): E-store, E-resp, E-msg, E-chat.
+- [x] D.4 RED→GREEN passthrough streams `bytes_stream()`: E-live.
+- [x] D.5 RED→GREEN `--volatile-field` / `--volatile-pattern` (+ env): N-ptr, N-pat, X-vol.
+
+> Deviation (2026-11-26, PR D): record still buffers the upstream answer (one shared entry per key) and
+> splits it into `events`; only passthrough and relayed non-2xx answers stream live. SSE tests use reqwest
+> (already a normal dependency) as the client; the raw test client learned chunked decoding because relayed
+> answers are no longer content-length framed. E-resp/E-msg/E-chat passed before D.3 (concatenated `body`
+> was already byte-exact): they are regression guards, E-store and E-live were the RED drivers. Suggestion
+> S-8 from C2 done (coalesced waiters log `hit`); S-7 not done. Actual size ≈ 575 changed lines; nothing moved.
 
 ## PR E — Docker image, offline example, CI · ≈ 380 lines
 

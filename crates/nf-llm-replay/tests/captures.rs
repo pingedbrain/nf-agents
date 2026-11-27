@@ -61,7 +61,7 @@ fn capture(name: &str) -> (String, String, Value) {
 }
 
 fn key(method: &str, path: &str, body: &Value) -> (String, String) {
-    let out = Normalizer::new()
+    let out = Normalizer::new(&[], &[])
         .unwrap()
         .normalize(method, path, &serde_json::to_vec(body).unwrap())
         .unwrap();

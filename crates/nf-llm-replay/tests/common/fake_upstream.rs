@@ -1,15 +1,18 @@
-//! Deterministic fake LLM provider (chat completions JSON) with knobs and observations for tests.
+//! Deterministic fake LLM provider (chat completions JSON and SSE streams) with knobs and
+//! observations for tests.
 
 use std::sync::atomic::{AtomicBool, AtomicU16, AtomicU64, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex, PoisonError};
 use std::time::Duration;
 
 use axum::Router;
-use axum::body::Bytes;
+use axum::body::{Body, Bytes};
 use axum::extract::State;
 use axum::http::{HeaderMap, StatusCode, Uri, header};
 use axum::response::{IntoResponse, Response};
+use futures_util::StreamExt;
 use serde_json::{Value, json};
+use tokio::sync::Notify;
 
 /// What the fake saw and how it misbehaves (all knobs off by default).
 #[derive(Default)]
@@ -24,6 +27,47 @@ pub struct Fake {
     pub delay_ms: AtomicU64,
     /// Put the received credential in the answer (a provider leaking the key).
     pub echo_key: AtomicBool,
+    /// Stop a stream after its first event until [`Fake::resume`] is notified.
+    pub pause: AtomicBool,
+    /// Lets a paused stream continue.
+    pub resume: Notify,
+}
+
+/// Chat completions `stream: true` events.
+pub const CHAT_EVENTS: [&str; 3] = [
+    "data: {\"id\":\"chatcmpl-fake\",\"object\":\"chat.completion.chunk\",\"created\":0,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"FASTQ is \"}}]}\n\n",
+    "data: {\"id\":\"chatcmpl-fake\",\"object\":\"chat.completion.chunk\",\"created\":0,\"choices\":[{\"index\":0,\"delta\":{\"content\":\"a text format.\"},\"finish_reason\":\"stop\"}]}\n\n",
+    "data: [DONE]\n\n",
+];
+
+/// `/v1/responses` events.
+pub const RESPONSES_EVENTS: [&str; 5] = [
+    "event: response.created\ndata: {\"type\":\"response.created\",\"response\":{\"id\":\"resp_fake\",\"status\":\"in_progress\"}}\n\n",
+    "event: response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"delta\":\"FASTQ is \"}\n\n",
+    "event: response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"delta\":\"a text format.\"}\n\n",
+    "event: response.output_text.done\ndata: {\"type\":\"response.output_text.done\",\"text\":\"FASTQ is a text format.\"}\n\n",
+    "event: response.completed\ndata: {\"type\":\"response.completed\",\"response\":{\"id\":\"resp_fake\",\"status\":\"completed\"}}\n\n",
+];
+
+/// `/v1/messages` (Anthropic) events; the first one uses CRLF line endings.
+pub const MESSAGES_EVENTS: [&str; 4] = [
+    "event: message_start\r\ndata: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_fake\",\"role\":\"assistant\"}}\r\n\r\n",
+    "event: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"FASTQ is a text format.\"}}\n\n",
+    "event: message_delta\ndata: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\"}}\n\n",
+    "event: message_stop\ndata: {\"type\":\"message_stop\"}\n\n",
+];
+
+/// The events the fake streams for `path` and `request`, if it answers with SSE.
+pub fn sse_events(path: &str, request: &Value) -> Option<&'static [&'static str]> {
+    if path.ends_with("/responses") {
+        Some(&RESPONSES_EVENTS)
+    } else if path.ends_with("/messages") {
+        Some(&MESSAGES_EVENTS)
+    } else if request.get("stream") == Some(&Value::Bool(true)) {
+        Some(&CHAT_EVENTS)
+    } else {
+        None
+    }
 }
 
 /// One received request.
@@ -92,6 +136,19 @@ async fn handle(
     let Some(request) = request else {
         return (StatusCode::BAD_REQUEST, "fake upstream: body is not JSON").into_response();
     };
+    if let Some(events) = sse_events(uri.path(), &request) {
+        let stream = futures_util::stream::iter(events.iter().enumerate()).then(move |(i, e)| {
+            let fake = fake.clone();
+            async move {
+                if i == 1 && fake.pause.load(Ordering::SeqCst) {
+                    fake.resume.notified().await;
+                }
+                Ok::<_, std::convert::Infallible>(*e)
+            }
+        });
+        let sse = [(header::CONTENT_TYPE, "text/event-stream")];
+        return (sse, Body::from_stream(stream)).into_response();
+    }
     let mut message = reply(&request);
     if fake.echo_key.load(Ordering::SeqCst) {
         message = json!({"role": "assistant", "content": format!("you sent {credential}")});

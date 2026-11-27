@@ -16,7 +16,60 @@ const VOLATILE: &str = "<volatile/>";
 /// Turns an HTTP request into a canonical body and a stable cassette key.
 #[derive(Debug)]
 pub struct Normalizer {
+    fields: Vec<VolatileField>,
     patterns: Vec<Regex>,
+}
+
+/// A body member left out of the key.
+#[derive(Debug)]
+enum VolatileField {
+    /// A top-level object key.
+    TopLevel(String),
+    /// An RFC 6901 pointer split into its parent pointer and unescaped last token.
+    Pointer { parent: String, last: String },
+}
+
+impl VolatileField {
+    fn parse(field: &str) -> Result<Self, NormalizeError> {
+        let bad = || NormalizeError::Field(field.to_owned());
+        if !field.starts_with('/') {
+            return if field.is_empty() {
+                Err(bad())
+            } else {
+                Ok(Self::TopLevel(field.to_owned()))
+            };
+        }
+        // `~` must start an escape: `~0` (`~`) or `~1` (`/`).
+        if field.split('~').skip(1).any(|s| !s.starts_with(['0', '1'])) {
+            return Err(bad());
+        }
+        let (parent, last) = field.rsplit_once('/').ok_or_else(bad)?;
+        Ok(Self::Pointer {
+            parent: parent.to_owned(),
+            last: last.replace("~1", "/").replace("~0", "~"),
+        })
+    }
+
+    /// Removes the member if it exists.
+    fn remove(&self, value: &mut Value) {
+        match (self, value) {
+            (Self::TopLevel(name), Value::Object(map)) => {
+                map.remove(name);
+            }
+            (Self::Pointer { parent, last }, value) => match value.pointer_mut(parent) {
+                Some(Value::Object(map)) => {
+                    map.remove(last);
+                }
+                Some(Value::Array(items)) => {
+                    if let Some(i) = last.parse().ok().filter(|i| *i < items.len()) {
+                        items.remove(i);
+                    }
+                }
+                _ => {}
+            },
+            _ => {}
+        }
+    }
 }
 
 /// Why a request could not be normalized.
@@ -26,13 +79,24 @@ pub enum NormalizeError {
     #[error("request body is not valid JSON: {0}")]
     Body(serde_json::Error),
     /// A volatile pattern that is not a valid regular expression.
-    #[error("invalid volatile pattern `{pattern}`: {source}")]
+    #[error("invalid volatile pattern `{pattern}`: {}", one_line(source))]
     Pattern {
         /// The pattern as given.
         pattern: String,
         /// Why it does not compile.
         source: regex::Error,
     },
+    /// A volatile field that is neither a name nor a valid JSON pointer.
+    #[error("invalid volatile field `{0}` (use a name or a JSON pointer starting with `/`)")]
+    Field(String),
+}
+
+/// Regex errors span several lines; startup errors are printed as one.
+fn one_line(e: &regex::Error) -> String {
+    e.to_string()
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
 }
 
 /// A normalized request.
@@ -45,18 +109,27 @@ pub struct Normalized {
 }
 
 impl Normalizer {
-    /// A normalizer with the default volatile rules.
-    pub fn new() -> Result<Self, NormalizeError> {
+    /// A normalizer with the default volatile rules plus `extra_fields` (top-level names or
+    /// JSON pointers) and `extra_patterns` (regular expressions).
+    pub fn new(extra_fields: &[String], extra_patterns: &[String]) -> Result<Self, NormalizeError> {
+        let fields = DEFAULT_VOLATILE_FIELDS
+            .iter()
+            .copied()
+            .chain(extra_fields.iter().map(String::as_str))
+            .map(VolatileField::parse)
+            .collect::<Result<_, _>>()?;
         let patterns = DEFAULT_VOLATILE_PATTERNS
             .iter()
+            .copied()
+            .chain(extra_patterns.iter().map(String::as_str))
             .map(|p| {
                 Regex::new(p).map_err(|source| NormalizeError::Pattern {
-                    pattern: (*p).to_owned(),
+                    pattern: p.to_owned(),
                     source,
                 })
             })
             .collect::<Result<_, _>>()?;
-        Ok(Self { patterns })
+        Ok(Self { fields, patterns })
     }
 
     /// Normalizes one request. The query string of `path` is ignored; headers never matter.
@@ -70,10 +143,8 @@ impl Normalizer {
         let mut canonical = String::new();
         if !body.is_empty() {
             let mut value: Value = serde_json::from_slice(body).map_err(NormalizeError::Body)?;
-            if let Value::Object(map) = &mut value {
-                for field in DEFAULT_VOLATILE_FIELDS {
-                    map.remove(field);
-                }
+            for field in &self.fields {
+                field.remove(&mut value);
             }
             self.scrub(&mut value);
             write_canonical(&value, &mut canonical);
@@ -146,7 +217,76 @@ mod tests {
     use super::*;
 
     fn n() -> Normalizer {
-        Normalizer::new().unwrap()
+        Normalizer::new(&[], &[]).unwrap()
+    }
+
+    fn strings(items: &[&str]) -> Vec<String> {
+        items.iter().map(|s| (*s).to_owned()).collect()
+    }
+
+    #[test]
+    fn json_pointer_volatile_field_is_removed() {
+        let fields = strings(&[
+            "/metadata/user_id",
+            "/opts/run_id",
+            "/a~1b/c~0d",
+            "/messages/0",
+            "/x/9",
+            "seed",
+        ]);
+        let n = Normalizer::new(&fields, &[]).unwrap();
+        let canonical = |body: &str| {
+            n.normalize("POST", "/p", body.as_bytes())
+                .unwrap()
+                .canonical
+        };
+        assert_eq!(
+            canonical(
+                r#"{"opts":{"run_id":"r1","keep":1},"a/b":{"c~d":1,"c":2},"messages":["a","b"],"seed":7,"x":{"seed":7,"run_id":1}}"#
+            ),
+            r#"{"a/b":{"c":2},"messages":["b"],"opts":{"keep":1},"x":{"run_id":1,"seed":7}}"#
+        );
+        // Missing targets and non-object bodies are ignored.
+        assert_eq!(canonical(r#"{"opts":3}"#), r#"{"opts":3}"#);
+        assert_eq!(canonical("[1]"), "[1]");
+
+        for bad in ["", "/a~2", "/a~"] {
+            let err = Normalizer::new(&strings(&[bad]), &[]).unwrap_err();
+            assert!(
+                matches!(&err, NormalizeError::Field(f) if f == bad),
+                "{err}"
+            );
+        }
+    }
+
+    #[test]
+    fn custom_volatile_pattern_is_replaced() {
+        let n = Normalizer::new(&[], &strings(&["run-[0-9]+", "t=[0-9]+"])).unwrap();
+        let out = n
+            .normalize(
+                "POST",
+                "/p",
+                br#"{"run-1":["see run-12 and run-345 at t=9"],"m":"run-x"}"#,
+            )
+            .unwrap();
+        assert_eq!(
+            out.canonical,
+            r#"{"m":"run-x","run-1":["see <volatile/> and <volatile/> at <volatile/>"]}"#
+        );
+        // Defaults stay active next to the additions.
+        assert!(
+            n.normalize("POST", "/p", br#"{"user":"u","s":"<cwd>/w</cwd>"}"#)
+                .unwrap()
+                .canonical
+                == r#"{"s":"<volatile/>"}"#
+        );
+
+        let err = Normalizer::new(&[], &strings(&["ok", "(unclosed"])).unwrap_err();
+        let shown = err.to_string();
+        assert!(
+            shown.contains("`(unclosed`") && !shown.contains('\n'),
+            "{shown}"
+        );
     }
 
     fn key(body: &str) -> String {
