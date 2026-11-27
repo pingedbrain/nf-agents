@@ -7,9 +7,9 @@ phases:
   spec: done
   design: done
   tasks: done
-  apply: pending
-  verify: pending
-  archive: pending
+  apply: done  # Batches A, B, C
+  verify: pass-with-warnings  # 0 CRITICAL; see verify-report.md
+  archive: done
 depends_on:
   - local-demo  # docs/demo.md and the README quickstart are the getting-started source
 pr_batches:
@@ -19,4 +19,4 @@ pr_batches:
 rollout:
   - "after PR A: enable GitHub Pages with source GitHub Actions (orchestrator, via API)"
 updated: 2026-11-27
-next: sdd-apply
+next: none (Pages enablement and W1-W6 follow-ups, see archive-report.md)
