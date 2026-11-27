@@ -10,6 +10,10 @@ __pycache__/
 node_modules/
 dist/
 .astro/
+# Site: generated from repo sources and brand assets (site/scripts/sync-docs.mjs)
+site/src/content/docs/docs/
+site/src/generated/
+site/public/favicon.svg
 npm-debug.log*
 marketing/promo/out/
 

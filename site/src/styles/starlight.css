@@ -1,0 +1,23 @@
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/space-grotesk';
+@import '@fontsource-variable/jetbrains-mono';
+
+/* Map Starlight theme variables onto the brand tokens. */
+:root,
+:root[data-theme='light'],
+:root[data-theme='dark'] {
+  --sl-color-black: var(--nf-bg);
+  --sl-color-white: var(--nf-ink);
+  --sl-color-gray-1: var(--nf-ink);
+  --sl-color-gray-2: var(--nf-ink);
+  --sl-color-gray-3: var(--nf-muted);
+  --sl-color-gray-4: var(--nf-line);
+  --sl-color-gray-5: var(--nf-line);
+  --sl-color-gray-6: var(--nf-surface);
+  --sl-color-gray-7: var(--nf-surface);
+  --sl-color-accent-low: var(--nf-surface);
+  --sl-color-accent: var(--nf-accent);
+  --sl-color-accent-high: var(--nf-accent-strong);
+  --sl-font: 'Inter Variable', system-ui, sans-serif;
+  --sl-font-system-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+}

@@ -1,0 +1,22 @@
+change: site-landing
+artifact_store: openspec
+mode: auto
+phases:
+  explore: skipped
+  proposal: done
+  spec: done
+  design: done
+  tasks: done
+  apply: pending
+  verify: pending
+  archive: pending
+depends_on:
+  - local-demo  # docs/demo.md and the README quickstart are the getting-started source
+pr_batches:
+  - {id: A, scope: "site/ scaffold, brand tokens, fonts, docs sync + node:test, placeholder landing, .github/workflows/site.yml", est_lines: 725}
+  - {id: B, scope: "landing page sections (static hero flow SVG), milestones data, responsive, a11y, token contrast test", est_lines: 760}
+  - {id: C, scope: "hero pipeline-flow animation, Open Graph image + OG dist check", est_lines: 380}
+rollout:
+  - "after PR A: enable GitHub Pages with source GitHub Actions (orchestrator, via API)"
+updated: 2026-11-27
+next: sdd-apply

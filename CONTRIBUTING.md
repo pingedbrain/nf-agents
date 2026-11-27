@@ -39,6 +39,19 @@ docker stop ministack
 
 The tests create their own buckets with dummy `test`/`test` credentials. Without `NF_LINEAGE_MINISTACK_URL` they print a skip notice and pass, so `cargo test --workspace` works without Docker. With the variable set they wait up to 60 seconds for MiniStack and fail if it does not answer. CI runs them in the `integration` job.
 
+### Docs site (`site/`)
+
+The site is Astro + Starlight. The docs pages are generated from `docs/demo.md`, `docs/architecture.md`, `crates/nf-lineage-mcp/README.md`, `docs/examples/nf-llm-replay/README.md` and `ROADMAP.md`, so edit those sources, not the generated pages. Run the same checks as CI (`.github/workflows/site.yml`):
+
+```sh
+cd site
+npm ci
+npm run build
+npm test
+```
+
+Use Node.js 26 (see `site/.nvmrc`). The site does not use analytics or external font or script hosts.
+
 ## Pull requests
 
 - Keep PRs small: one task per PR.

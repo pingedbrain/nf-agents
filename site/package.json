@@ -1,0 +1,21 @@
+{
+  "name": "nf-agents-site",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.23.4"
+  },
+  "scripts": {
+    "prebuild": "node scripts/sync-docs.mjs",
+    "build": "astro build",
+    "dev": "node scripts/sync-docs.mjs && astro dev",
+    "test": "node --test scripts/*.test.mjs && node scripts/check-dist.mjs dist"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "0.42.11",
+    "@fontsource-variable/inter": "5.3.0",
+    "@fontsource-variable/jetbrains-mono": "5.3.0",
+    "@fontsource-variable/space-grotesk": "5.3.0",
+    "astro": "7.4.11"
+  }
+}

@@ -1,0 +1,35 @@
+/* Brand tokens. Light set on :root; dark set under the media query and data-theme. */
+:root {
+  --nf-bg: #F5F6F2;
+  --nf-surface: #FFFFFF;
+  --nf-ink: #141816;
+  --nf-muted: #4B5651;
+  --nf-line: #D5DBD6;
+  --nf-accent: #0B6B58;
+  --nf-accent-strong: #08594A;
+  --nf-faint: #7A847F;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --nf-bg: #080B0A;
+    --nf-surface: #0E1412;
+    --nf-ink: #EEF2EF;
+    --nf-muted: #8E9893;
+    --nf-line: #222C27;
+    --nf-accent: #3FBF9B;
+    --nf-accent-strong: #5FD3B2;
+    --nf-faint: #7A847F;
+  }
+}
+
+:root[data-theme='dark'] {
+  --nf-bg: #080B0A;
+  --nf-surface: #0E1412;
+  --nf-ink: #EEF2EF;
+  --nf-muted: #8E9893;
+  --nf-line: #222C27;
+  --nf-accent: #3FBF9B;
+  --nf-accent-strong: #5FD3B2;
+  --nf-faint: #7A847F;
+}
