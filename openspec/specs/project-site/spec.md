@@ -9,8 +9,8 @@ Landing page and generated docs for nf-agents, built from `site/` (Astro + Starl
 | ID | Kind | Command / name |
 |----|------|----------------|
 | S-build | test | `npm run build` in `site/` |
-| S-test | test | `npm test` in `site/` (sync transform + `dist/` checks) |
-| S-copy | verify | `dist/` grep for the copy table |
+| S-test | test | `npm test` in `site/` (sync transform + `dist/` checks); CI then fails if `site/` has any git change |
+| S-copy | test | `checkCopy` in `scripts/check-dist.mjs` (banned and required copy) |
 | S-lh | verify | Lighthouse a11y and performance ≥ 95, desktop and mobile |
 | S-shot | verify | screenshots at desktop and 375 px |
 

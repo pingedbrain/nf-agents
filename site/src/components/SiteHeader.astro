@@ -13,9 +13,9 @@ const base = import.meta.env.BASE_URL;
   </a>
   <nav aria-label="Main">
     <ul class="nav-links">
-      <li><a href="#modules">Modules</a></li>
-      <li><a href="#bench">Benchmark</a></li>
-      <li><a href="#how">How it works</a></li>
+      <li class="nav-section"><a href="#modules">Modules</a></li>
+      <li class="nav-section"><a href="#bench">Benchmark</a></li>
+      <li class="nav-section"><a href="#how">How it works</a></li>
       <li><a href={`${base}docs/`}>Docs</a></li>
     </ul>
   </nav>
@@ -60,6 +60,12 @@ const base = import.meta.env.BASE_URL;
     display: inline-flex;
     align-items: center;
     min-height: 44px;
+  }
+  /* Section anchors stay reachable by scrolling; on phones the header keeps one row. */
+  @media (max-width: 559px) {
+    .nav-section {
+      display: none;
+    }
   }
   .nav-links a:hover {
     color: var(--nf-ink);
