@@ -243,3 +243,34 @@ No migration. PRs land A → B → C after `lineage-fixtures`. `publish = false`
   each hit, keeping TaskRun/AgentRun; `outputs.<name>` from `lid://<hash>#output` (absent → none).
 - **Tests**: `tests/common::fixture_copy` (temp copy + manifest mtimes) is shared with C1's contract
   suite; `tests/common` carries `#![allow(dead_code)]` because each test crate uses a subset.
+
+## Deviations (2026-11-26, apply PR C1)
+
+- **`diff_raw` input = canonical JSON, not stored bytes** (B2 risk, decided): the CLI does not print
+  the stored bytes either; it re-encodes both records with the running version's `LinEncoder`
+  (25.04: flat layout, 26.x: `spec` envelope). `diff_raw` pretty-prints `Record::to_json()` (the
+  `spec` envelope) for every version, so the trait stays `get`/`find`/`list_runs` (no raw-bytes
+  method) and MCP clients see one layout. Differences vs the 25.04/25.10 CLI are indentation (the
+  contract compares trimmed lines) and separators: our union model always emits fields newer
+  models added (`moduleId: null` after `workflowRun`), so a changed last line of an older record
+  gains a `,`. `contract_diff` drops a trailing `,` before comparing (spec scenario reworded).
+  serde_json does not use Gson's `\u003c`-style escapes; the contract un-escapes the oracle.
+- **`view`**: the record is loaded by the LID without fragment (CLI key = hash + path), the
+  fragment is validated segment by segment (`InvalidQuery`), `#type` returns the kind (CLI
+  `navigate` special case), `output` on WorkflowRun/TaskRun/AgentRun reads `lid://<hash>#output`
+  (`[]` when missing; a run record below a path never has one). Navigation reuses `query::navigate`.
+- **`provenance`**: FileOutput inputs are `source` and `taskRun` (kept once when equal, named after
+  the field), TaskRun/AgentRun inputs are each `input` value (list items one by one): a parsable
+  `lid://` string → `Lineage`, an object with `path` → `External` (with `checksum`), anything else
+  → `Value`. Other kinds are leaf nodes. A dangling reference fails with `NotFound` (no partial
+  graph). FileOutput nodes are named by their `path`.
+- **Contract suite** (`tests/contract.rs`): oracle cases are discovered by prefix (`list`, `view-`,
+  `find-`, `diff-`, `check-`) over every fixture version; view normalization wraps a top-level
+  flat envelope, drops `null` object members and turns every number into f64; find accepts a JSON
+  array or one LID per line (26.10.7-agent); `check-tampered` appends `tampered\n` and
+  `check-mtime-only` only bumps the mtime, each on a fresh `fixture_copy`, like
+  `scripts/fixtures/run-core.sh`. Error cases are classified by the CLI text (`Identifier is not a
+  lineage URL` → `InvalidLid`, `Error loading … not found` → `NotFound`, `doesn't exist in the
+  lineage model` → `InvalidQuery`).
+- **Extra tests**: `tests/view.rs` (`fragments_validate_redirect_and_navigate`, InMemory) and
+  `provenance::cycles_are_visited_once`, `provenance::task_file_stops_at_its_task_and_runs_are_rejected`.

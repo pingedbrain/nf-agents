@@ -46,12 +46,13 @@ the `chrono`/`humantime` advisories and the cloud licenses) arrives in B1.
 
 ## PR C1 — view, provenance, CLI contract suite · est. ≈ 640 lines
 
-- [ ] C1.0 [B2.5 part] RED `tests/diff.rs` `raw_diff_has_cli_header_and_record_lines`; GREEN `diff_raw` (`similar 2` dep, CLI header `diff --git k1 k2`/`--- k1`/`+++ k2`, `TextDiff::from_lines(..).unified_diff()`). Reuse `tests/common::fixture_copy` (temp copy + manifest mtime restore) in C1.3.
+- [x] C1.0 [B2.5 part] RED `tests/diff.rs` `raw_diff_has_cli_header_and_record_lines`; GREEN `diff_raw` (`similar 2` dep, CLI header `diff --git k1 k2`/`--- k1`/`+++ k2`, `TextDiff::from_lines(..).unified_diff()`). Reuse `tests/common::fixture_copy` (temp copy + manifest mtime restore) in C1.3.
 
-- [ ] C1.1 [C.1] RED `tests/provenance.rs` `published_file_reaches_pipeline_input`; GREEN `src/provenance.rs`.
-- [ ] C1.2 [C.2] GREEN `src/view.rs` (fragment validation, `#output` redirect, navigate) driven by C1.3 view cases.
-- [ ] C1.3 [C.3] RED→GREEN `tests/contract.rs`: oracle loader (`.args` JSON), temp copy + manifest mtime restore, normalizers; `contract_list`, `contract_view`, `contract_find`, `contract_diff`, `contract_check`.
-- [ ] C1.4 [C.5 part] `.github/workflows/ci.yml`: job `contract`.
+- [x] C1.1 [C.1] RED `tests/provenance.rs` `published_file_reaches_pipeline_input`; GREEN `src/provenance.rs`.
+- [x] C1.2 [C.2] GREEN `src/view.rs` (fragment validation, `#output` redirect, navigate) driven by C1.3 view cases.
+- [x] C1.3 [C.3] RED→GREEN `tests/contract.rs`: oracle loader (`.args` JSON), temp copy + manifest mtime restore, normalizers; `contract_list`, `contract_view`, `contract_find`, `contract_diff`, `contract_check`.
+- [x] C1.4 [C.5 part] `.github/workflows/ci.yml`: job `contract`.
+- **Deviation (2026-11-26, apply PR C1):** no escape hatch needed (≈ 790 hand-written lines incl. `tests/view.rs`, added to triangulate view edge cases the oracle lacks, and a provenance cycle test). Raw-diff parity compares changed lines with a trailing `,` trimmed (see design.md "Deviations (2026-11-26, apply PR C1)").
 
 ## PR C2 — MiniStack, integration CI, release-ready · est. ≈ 450 lines
 

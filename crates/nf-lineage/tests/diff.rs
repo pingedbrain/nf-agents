@@ -8,7 +8,7 @@
 
 mod common;
 
-use nf_lineage::{FindQuery, Lid, LineageStore, ObjectLineageStore, diff};
+use nf_lineage::{FindQuery, Lid, LineageStore, ObjectLineageStore, diff, diff_raw};
 use serde_json::json;
 
 fn core_versions() -> Vec<String> {
@@ -75,5 +75,38 @@ async fn task_pairs_and_kind_mismatch() {
         assert_eq!(paths(&d), ["kind"]);
         assert_eq!(d.changes[0].a, Some(json!("WorkflowRun")));
         assert_eq!(d.changes[0].b, Some(json!("TaskRun")));
+    }
+}
+
+#[tokio::test]
+async fn raw_diff_has_cli_header_and_record_lines() {
+    for version in core_versions() {
+        let store =
+            ObjectLineageStore::open(common::store_dir(&version).to_str().unwrap()).unwrap();
+        let (run1, run2) = runs(&store).await;
+        let raw = diff_raw(&store, &run1, &run2).await.unwrap();
+        let (k1, k2) = (run1.hash(), run2.hash());
+        let header = format!("diff --git {k1} {k2}\n--- {k1}\n+++ {k2}\n@@ ");
+        assert!(raw.starts_with(&header), "{version}: {raw}");
+        let changed = |sign: char| -> Vec<&str> {
+            raw.lines()
+                .skip(3)
+                .filter_map(|l| l.strip_prefix(sign))
+                .map(str::trim)
+                .collect()
+        };
+        assert!(
+            changed('-').contains(&r#""value": "hello""#),
+            "{version}: {raw}"
+        );
+        assert!(
+            changed('+').contains(&r#""value": "bonjour""#),
+            "{version}: {raw}"
+        );
+        let context = raw.lines().skip(3).filter(|l| l.starts_with(' ')).count();
+        assert!(context >= 6, "{version}: context lines");
+
+        let same = diff_raw(&store, &run1, &run1).await.unwrap();
+        assert_eq!(same.lines().count(), 3, "{version}: {same}");
     }
 }

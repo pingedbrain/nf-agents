@@ -132,7 +132,7 @@ Unit tests live in `crates/nf-lineage/src/<module>.rs` (`<module>::tests::<name>
 
 #### Scenario: Raw parity (C-contract `contract::contract_diff`)
 - GIVEN oracle `diff-runs`, `diff-tasks`
-- THEN header equals and the multisets of trimmed `+`/`-` lines equal after Gson-unescaping
+- THEN header equals and the multisets of trimmed `+`/`-` lines (trailing `,` dropped) equal after Gson-unescaping
 
 ### Requirement: View and provenance
 
