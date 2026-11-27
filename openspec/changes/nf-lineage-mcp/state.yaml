@@ -1,0 +1,21 @@
+change: nf-lineage-mcp
+artifact_store: openspec
+mode: auto
+phases:
+  explore: done
+  proposal: done
+  spec: done
+  design: done
+  tasks: done
+  apply: in-progress   # PR A done 2026-11-26
+  verify: in-progress  # PR A pass with warnings
+  archive: pending
+depends_on:
+  - nf-lineage        # PRs A-C merged (view/provenance land in C)
+  - lineage-fixtures  # fixtures/lineage/<ver>/ incl. oracle/ids.json
+  - nf-llm-replay     # soft: PR B workspace deps, PR E docker job/.dockerignore (else PR B creates them)
+pr_batches:
+  - {id: A, scope: "crate + list_runs/view/find + truncation + error mapping + MCP protocol tests", est_lines: 720}
+  - {id: B, scope: "diff/check/provenance + binary/CLI + stdio e2e + Dockerfile + CI docker + README", est_lines: 635}
+updated: 2026-11-26
+next: sdd-apply (PR B)
