@@ -1,8 +1,8 @@
-# Apply progress: site-landing (cumulative: Batch A, PR A; Batch B, PR B)
+# Apply progress: site-landing (cumulative: Batch A, PR A; Batch B, PR B; Batch C, PR C)
 
 **Mode**: Strict TDD (test runner: `cd site && npm test`, node:test)
-**Scope so far**: tasks 1.1-5.8 (phases 1-5). Batch C (phases 6-7) not started.
-**Prior progress**: Batch A (1.1-3.3) merged from the earlier apply run, kept unchanged below. Batch B added in this run.
+**Scope so far**: tasks 1.1-7.2 (phases 1-7). All batches complete.
+**Prior progress**: Batch A (1.1-3.3) and Batch B (4.1-5.8) kept unchanged below. Batch C added in this run.
 
 ## Completed tasks
 
@@ -36,7 +36,24 @@
 - [x] 5.7 `site/src/pages/index.astro` composes the sections; one `h1` (hero); skip link to `#main`
 - [x] 5.8 Batch gate passed; commit B (see git log)
 
+### Batch C (PR C)
+
+- [x] 6.1 RED `site/scripts/check-dist.test.mjs` OG cases (`og:image` base, missing meta, wrong base, og.png exists and 1200x630)
+- [x] 6.2 GREEN `site/og/og.svg`, `site/scripts/og.mjs`, `npm run og` writes `site/public/og.png` (1200x630); lockfile unchanged
+- [x] 6.3 OG/Twitter meta in `site/src/layouts/Landing.astro` and Starlight `head` in `site/astro.config.mjs`; OG checks in `site/scripts/check-dist.mjs`
+- [x] 7.1 `site/src/components/PipelineFlow.astro` (edge dots via dash offset, pre-blurred diamond glow via opacity, reduced motion); swapped into `site/src/components/Hero.astro`
+- [x] 7.2 Batch gate passed; commit C (see git log)
+
 ## TDD cycle evidence
+
+Batch C:
+
+| Task | RED | GREEN | REFACTOR |
+|------|-----|-------|----------|
+| 6.1 OG tests | Written first; `check-dist.test.mjs` fails on the missing `checkOg`/`checkOgMeta` exports | after adding both checks: 29/29 pass | none |
+| 6.2 og image | `npm test` against `dist/` fails (no `og.png`, no og meta) before render | `npm run og` renders 1200x630; `checkOg` passes on the real file | none |
+| 6.3 meta | dist check fails on missing `og:image` meta in `index.html` and docs pages | meta added; `dist OK: 7 html pages checked` | none |
+| 7.1 hero animation | No unit test (CSS only, D10 scope). Covered by build and dist checks | build passes; no JS added | none |
 
 | Task | RED (test first, run before implementation) | GREEN | REFACTOR |
 |------|---------------------------------------------|-------|----------|
@@ -68,7 +85,20 @@ Batch B:
 - Layout at 375 px: `scrollWidth` equals `clientWidth` (no horizontal overflow). One full-height screenshot reviewed.
 - Hand-written lines in batch B: about 1390 (scripts, data, components, styles, page), above the ~800 budget. See deviations.
 
+Batch C:
+- `npm ci`: pass, 0 vulnerabilities; `package-lock.json` unchanged (no resvg or wawoff2 in it)
+- `npm test`: 29/29 node:test pass; `dist OK: 7 html pages checked` (OG meta on index and docs pages, `og.png` 1200x630)
+- `npm run build`: pass (7 pages; same two known warnings as batch B)
+- Hand-written lines in batch C: about 240 added (check-dist, its tests, og.svg, og.mjs, PipelineFlow, layout and config meta)
+
 ## Deviations from design
+
+Batch C:
+- Fontsource packages ship only `.woff2`, not `.woff` as D11 assumed. `og.mjs` decodes WOFF2 with `wawoff2@2.0.1` (installed with `--no-save` in `npm run og`, next to `@resvg/resvg-js@2.6.2`). Lockfile unchanged; neither package is a runtime or CI dependency.
+- `og.mjs` loads two fonts (Inter, JetBrains Mono) as default-instance TTFs. Variable weights other than the default are not applied in the OG render.
+- `check-dist.mjs`: `checkOgMeta(relPath, html)` runs on every page; `checkOg(files, png)` checks the PNG size. The design listed them under `checkHtml` only.
+- `PipelineFlow.astro` holds the SVG moved out of `Hero.astro`. The caption and copy stay in `Hero.astro`.
+- Hero animation not verified in a browser (reduced-motion screenshot is in verify scope).
 
 Batch A:
 - `check-dist.mjs` exports `checkRoutes(files)` for the five docs routes and `checkText(path, text)` for css/js denylist and external `url()`. The design lists the routes under `checkHtml`. The same checks run on every build.
@@ -95,5 +125,4 @@ Batch B:
 
 ## Remaining tasks
 
-- Batch C: 6.1-7.2 (OG image, hero animation). Not started.
 - Post-merge (orchestrator): enable Pages after PR A; verify phase (Lighthouse, screenshots).

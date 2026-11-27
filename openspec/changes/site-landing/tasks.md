@@ -51,14 +51,14 @@ D13 adopted ("Unrelated PR" scenario widened). Align "Check on pull requests" pa
 
 ## Phase 6: OG (TDD)
 
-- [ ] 6.1 RED: `check-dist.test.mjs` OG case (1200x630 `og.png`, `og:image` = `https://pingedbrain.github.io/nf-agents/og.png`).
-- [ ] 6.2 GREEN: `og/og.svg`, `scripts/og.mjs` (WOFF→TTF, resvg, `npm run og`); commit `public/og.png`.
-- [ ] 6.3 OG/Twitter meta in `Landing.astro` and Starlight `head`; OG check in `check-dist.mjs`.
+- [x] 6.1 RED: `check-dist.test.mjs` OG case (1200x630 `og.png`, `og:image` = `https://pingedbrain.github.io/nf-agents/og.png`).
+- [x] 6.2 GREEN: `og/og.svg`, `scripts/og.mjs` (WOFF→TTF, resvg, `npm run og`); commit `public/og.png`.
+- [x] 6.3 OG/Twitter meta in `Landing.astro` and Starlight `head`; OG check in `check-dist.mjs`.
 
 ## Phase 7: Hero animation
 
-- [ ] 7.1 `src/components/PipelineFlow.astro`: edge twins with dasharray/dashoffset, pre-blurred diamond glow, reduced motion (`animation: none`, twins hidden, glow 0.5). Swap into `Hero.astro`.
-- [ ] 7.2 Batch gate; commit C.
+- [x] 7.1 `src/components/PipelineFlow.astro`: edge twins with dasharray/dashoffset, pre-blurred diamond glow, reduced motion (`animation: none`, twins hidden, glow 0.5). Swap into `Hero.astro`.
+- [x] 7.2 Batch gate; commit C.
 
 ## Post-merge (orchestrator)
 

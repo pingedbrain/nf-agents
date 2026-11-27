@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { checkHtml, checkRoutes, pngSize } from './check-dist.mjs';
+import { checkHtml, checkOg, checkOgMeta, checkRoutes, pngSize } from './check-dist.mjs';
 
 const FOOTER =
   '<footer data-site-footer><p>Not affiliated with or endorsed by Seqera. Nextflow is a registered trademark of Seqera Labs.</p></footer>';
@@ -77,4 +77,35 @@ test('pngSize reads width and height from the IHDR chunk', () => {
   buf.writeUInt32BE(630, 20);
   assert.deepEqual(pngSize(buf), { width: 1200, height: 630 });
   assert.throws(() => pngSize(Buffer.from('not a png at all, sorry......')));
+});
+
+const OG_URL = 'https://pingedbrain.github.io/nf-agents/og.png';
+const pngOf = (width, height) => {
+  const buf = Buffer.alloc(24);
+  Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).copy(buf, 0);
+  buf.write('IHDR', 12, 'ascii');
+  buf.writeUInt32BE(width, 16);
+  buf.writeUInt32BE(height, 20);
+  return buf;
+};
+
+test('og:image meta with the /nf-agents/ base passes', () => {
+  const html = page(`<h1>a</h1><meta property="og:image" content="${OG_URL}">`);
+  assert.deepEqual(checkOgMeta('index.html', html), []);
+});
+
+test('missing og:image meta is reported', () => {
+  const errors = checkOgMeta('index.html', page('<h1>a</h1>'));
+  assert.ok(errors.some((e) => /og:image/.test(e)), errors.join('\n'));
+});
+
+test('og:image without the /nf-agents/ base is reported', () => {
+  const html = page('<h1>a</h1><meta property="og:image" content="https://pingedbrain.github.io/og.png">');
+  assert.ok(checkOgMeta('index.html', html).some((e) => /og:image/.test(e)));
+});
+
+test('OG image must exist and be 1200x630', () => {
+  assert.ok(checkOg(new Set(['index.html']), undefined).some((e) => /og\.png/.test(e)));
+  assert.ok(checkOg(new Set(['og.png']), pngOf(800, 600)).some((e) => /1200x630/.test(e)));
+  assert.deepEqual(checkOg(new Set(['og.png']), pngOf(1200, 630)), []);
 });
