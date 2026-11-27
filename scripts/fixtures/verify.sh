@@ -7,10 +7,13 @@ TOOLS=/nf-agents-tools
 source "$TOOLS/lib.sh"
 trap 'chown -R "${HOST_UID:-0}:${HOST_GID:-0}" "$PWD"' EXIT
 RUN1=$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["RUN1"])' oracle/ids.json)
+kind=$(python3 -c 'import json; print(json.load(open("manifest.json"))["kind"])')
 
-rc=0
-nextflow lineage check "$RUN1/summary.txt" > /dev/null 2>&1 || rc=$?
-[[ $rc == 1 ]] || die "check without restored mtimes exited $rc, expected 1"
+if [[ $kind == core ]]; then # the agent store has no FileOutputs
+  rc=0
+  nextflow lineage check "$RUN1/summary.txt" > /dev/null 2>&1 || rc=$?
+  [[ $rc == 1 ]] || die "check without restored mtimes exited $rc, expected 1"
+fi
 
 python3 "$TOOLS/restore_mtimes.py" .
 lids=$(python3 -c 'import sys; sys.path.insert(0, sys.argv[1]); import export

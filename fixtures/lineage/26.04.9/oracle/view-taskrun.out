@@ -2,7 +2,7 @@
   "version": "lineage/v1beta1",
   "kind": "TaskRun",
   "spec": {
-    "sessionId": "261b80b8-5382-4e3f-9768-dc4fb1c443fd",
+    "sessionId": "05862c88-d91c-4a3d-988a-b3770d317e97",
     "name": "GENERATE",
     "codeChecksum": {
       "value": "e67d7c9646ca428311e63339b99a61c4",
@@ -18,7 +18,7 @@
           {
             "path": "file:///nf-agents-fixture/pipeline/data/seed.txt",
             "checksum": {
-              "value": "b03f036a0cd756cc64179a67e35a2f2b",
+              "value": "422519070bb94314e5580f556c7ea2be",
               "algorithm": "nextflow",
               "mode": "standard"
             }
@@ -37,7 +37,7 @@
     "architecture": null,
     "globalVars": {},
     "binEntries": [],
-    "workflowRun": "lid://80bbb7765617f9a381c8f6f7228ff4c8",
+    "workflowRun": "lid://31cd129f93a7451ba93fdfbba27a019a",
     "moduleId": null
   }
 }

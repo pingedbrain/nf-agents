@@ -15,8 +15,8 @@
     "repository": null,
     "commitId": null
   },
-  "sessionId": "352d67e5-a82b-4607-8fa6-501e93179425",
-  "name": "lonely_ritchie",
+  "sessionId": "8e97ff52-cb19-4718-add4-d0d388dc409e",
+  "name": "amazing_marconi",
   "params": [
     {
       "type": "String",
@@ -40,7 +40,7 @@
     },
     "process": {},
     "executor": {},
-    "runName": "lonely_ritchie",
+    "runName": "amazing_marconi",
     "outputDir": "results-hello",
     "workDir": "work",
     "poolSize": 2.0

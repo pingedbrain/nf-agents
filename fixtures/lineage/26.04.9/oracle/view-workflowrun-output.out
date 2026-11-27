@@ -2,11 +2,11 @@
   {
     "type": "Path",
     "name": "upper",
-    "value": "lid://80bbb7765617f9a381c8f6f7228ff4c8/upper/upper.txt"
+    "value": "lid://31cd129f93a7451ba93fdfbba27a019a/upper/upper.txt"
   },
   {
     "type": "Path",
     "name": "summary",
-    "value": "lid://80bbb7765617f9a381c8f6f7228ff4c8/summary.txt"
+    "value": "lid://31cd129f93a7451ba93fdfbba27a019a/summary.txt"
   }
 ]

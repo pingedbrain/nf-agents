@@ -7,8 +7,8 @@ phases:
   spec: done
   design: done
   tasks: done
-  apply: in-progress (PR A done)
-  verify: PR A pass-with-warnings
+  apply: done (PR A, PR B)
+  verify: PR A pass-with-warnings; PR B see verify-report.md
   archive: pending
 updated: 2026-11-26
-next: sdd-verify (PR A), then sdd-apply (PR B, tasks 5.1-8.3)
+next: sdd-verify (PR B), then orchestrator commit + PR; after merge C-fx-run

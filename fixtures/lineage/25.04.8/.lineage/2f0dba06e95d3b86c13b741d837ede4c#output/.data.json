@@ -1,1 +1,0 @@
-{"version":"lineage/v1beta1","kind":"TaskOutput","taskRun":"lid://2f0dba06e95d3b86c13b741d837ede4c","workflowRun":"lid://9650ca0e72e550d6ffd8eae3321b39d4","createdAt":"2026-11-26T21:21:38.326485003Z","output":[{"type":"path","name":null,"value":"lid://2f0dba06e95d3b86c13b741d837ede4c/upper.txt"}],"labels":null}

@@ -1,0 +1,209 @@
+# shape format 1
+record FileOutput kind str
+record FileOutput spec object
+record FileOutput spec.checksum object
+record FileOutput spec.checksum.algorithm str
+record FileOutput spec.checksum.mode str
+record FileOutput spec.checksum.value str
+record FileOutput spec.createdAt str
+record FileOutput spec.labels array
+record FileOutput spec.labels null
+record FileOutput spec.labels[] str
+record FileOutput spec.modifiedAt str
+record FileOutput spec.path str
+record FileOutput spec.size number
+record FileOutput spec.source str
+record FileOutput spec.taskRun null
+record FileOutput spec.taskRun str
+record FileOutput spec.workflowRun str
+record FileOutput version str
+record TaskOutput kind str
+record TaskOutput spec object
+record TaskOutput spec.createdAt str
+record TaskOutput spec.labels null
+record TaskOutput spec.output array
+record TaskOutput spec.output[] object
+record TaskOutput spec.output[].name null
+record TaskOutput spec.output[].type str
+record TaskOutput spec.output[].value str
+record TaskOutput spec.taskRun str
+record TaskOutput spec.workflowRun str
+record TaskOutput version str
+record TaskRun kind str
+record TaskRun spec object
+record TaskRun spec.architecture null
+record TaskRun spec.binEntries array
+record TaskRun spec.codeChecksum object
+record TaskRun spec.codeChecksum.algorithm str
+record TaskRun spec.codeChecksum.mode str
+record TaskRun spec.codeChecksum.value str
+record TaskRun spec.conda null
+record TaskRun spec.container null
+record TaskRun spec.eval null
+record TaskRun spec.globalVars object
+record TaskRun spec.input array
+record TaskRun spec.input[] object
+record TaskRun spec.input[].name str
+record TaskRun spec.input[].type str
+record TaskRun spec.input[].value array
+record TaskRun spec.input[].value str
+record TaskRun spec.input[].value[] object
+record TaskRun spec.input[].value[] str
+record TaskRun spec.input[].value[].checksum object
+record TaskRun spec.input[].value[].checksum.algorithm str
+record TaskRun spec.input[].value[].checksum.mode str
+record TaskRun spec.input[].value[].checksum.value str
+record TaskRun spec.input[].value[].path str
+record TaskRun spec.moduleId null
+record TaskRun spec.name str
+record TaskRun spec.script str
+record TaskRun spec.sessionId str
+record TaskRun spec.spack null
+record TaskRun spec.workflowRun str
+record TaskRun version str
+record WorkflowOutput kind str
+record WorkflowOutput spec object
+record WorkflowOutput spec.createdAt str
+record WorkflowOutput spec.output array
+record WorkflowOutput spec.output[] object
+record WorkflowOutput spec.output[].name str
+record WorkflowOutput spec.output[].type str
+record WorkflowOutput spec.output[].value str
+record WorkflowOutput spec.workflowRun str
+record WorkflowOutput version str
+record WorkflowRun kind str
+record WorkflowRun spec object
+record WorkflowRun spec.config object
+record WorkflowRun spec.config.env object
+record WorkflowRun spec.config.executor object
+record WorkflowRun spec.config.lineage object
+record WorkflowRun spec.config.lineage.enabled bool
+record WorkflowRun spec.config.outputDir str
+record WorkflowRun spec.config.outputFormat str
+record WorkflowRun spec.config.params object
+record WorkflowRun spec.config.params.greeting str
+record WorkflowRun spec.config.poolSize number
+record WorkflowRun spec.config.process object
+record WorkflowRun spec.config.runName str
+record WorkflowRun spec.config.workDir str
+record WorkflowRun spec.metadata object
+record WorkflowRun spec.metadata.commandLine str
+record WorkflowRun spec.metadata.commitId null
+record WorkflowRun spec.metadata.complete null
+record WorkflowRun spec.metadata.configFiles array
+record WorkflowRun spec.metadata.configFiles[] str
+record WorkflowRun spec.metadata.container object
+record WorkflowRun spec.metadata.containerEngine null
+record WorkflowRun spec.metadata.failOnIgnore bool
+record WorkflowRun spec.metadata.fusion object
+record WorkflowRun spec.metadata.fusion.enabled bool
+record WorkflowRun spec.metadata.fusion.version null
+record WorkflowRun spec.metadata.homeDir str
+record WorkflowRun spec.metadata.launchDir str
+record WorkflowRun spec.metadata.manifest object
+record WorkflowRun spec.metadata.manifest.author null
+record WorkflowRun spec.metadata.manifest.contributors null
+record WorkflowRun spec.metadata.manifest.defaultBranch null
+record WorkflowRun spec.metadata.manifest.description null
+record WorkflowRun spec.metadata.manifest.diagram null
+record WorkflowRun spec.metadata.manifest.docsUrl null
+record WorkflowRun spec.metadata.manifest.doi null
+record WorkflowRun spec.metadata.manifest.gitmodules null
+record WorkflowRun spec.metadata.manifest.homePage null
+record WorkflowRun spec.metadata.manifest.icon null
+record WorkflowRun spec.metadata.manifest.license null
+record WorkflowRun spec.metadata.manifest.mainScript null
+record WorkflowRun spec.metadata.manifest.name null
+record WorkflowRun spec.metadata.manifest.nextflowVersion null
+record WorkflowRun spec.metadata.manifest.organization null
+record WorkflowRun spec.metadata.manifest.recurseSubmodules bool
+record WorkflowRun spec.metadata.manifest.version null
+record WorkflowRun spec.metadata.nextflow object
+record WorkflowRun spec.metadata.nextflow.build number
+record WorkflowRun spec.metadata.nextflow.enable object
+record WorkflowRun spec.metadata.nextflow.timestamp str
+record WorkflowRun spec.metadata.nextflow.version str
+record WorkflowRun spec.metadata.outputDir str
+record WorkflowRun spec.metadata.platform object
+record WorkflowRun spec.metadata.platform.computeEnv null
+record WorkflowRun spec.metadata.platform.labels null
+record WorkflowRun spec.metadata.platform.pipeline null
+record WorkflowRun spec.metadata.platform.schedRunId null
+record WorkflowRun spec.metadata.platform.user null
+record WorkflowRun spec.metadata.platform.workflowId null
+record WorkflowRun spec.metadata.platform.workflowUrl null
+record WorkflowRun spec.metadata.platform.workspace null
+record WorkflowRun spec.metadata.preview bool
+record WorkflowRun spec.metadata.profile str
+record WorkflowRun spec.metadata.projectDir str
+record WorkflowRun spec.metadata.projectName str
+record WorkflowRun spec.metadata.repository null
+record WorkflowRun spec.metadata.resume bool
+record WorkflowRun spec.metadata.revision null
+record WorkflowRun spec.metadata.runName str
+record WorkflowRun spec.metadata.scriptFile str
+record WorkflowRun spec.metadata.scriptId str
+record WorkflowRun spec.metadata.scriptName str
+record WorkflowRun spec.metadata.sessionId str
+record WorkflowRun spec.metadata.start str
+record WorkflowRun spec.metadata.stubRun bool
+record WorkflowRun spec.metadata.userName str
+record WorkflowRun spec.metadata.wave object
+record WorkflowRun spec.metadata.wave.enabled bool
+record WorkflowRun spec.metadata.workDir str
+record WorkflowRun spec.name str
+record WorkflowRun spec.params array
+record WorkflowRun spec.params[] object
+record WorkflowRun spec.params[].name str
+record WorkflowRun spec.params[].type str
+record WorkflowRun spec.params[].value str
+record WorkflowRun spec.sessionId str
+record WorkflowRun spec.workflow object
+record WorkflowRun spec.workflow.commitId null
+record WorkflowRun spec.workflow.repository null
+record WorkflowRun spec.workflow.scriptFiles array
+record WorkflowRun spec.workflow.scriptFiles[] object
+record WorkflowRun spec.workflow.scriptFiles[].checksum object
+record WorkflowRun spec.workflow.scriptFiles[].checksum.algorithm str
+record WorkflowRun spec.workflow.scriptFiles[].checksum.mode str
+record WorkflowRun spec.workflow.scriptFiles[].checksum.value str
+record WorkflowRun spec.workflow.scriptFiles[].path str
+record WorkflowRun version str
+store .history/<hex> x2
+store <hex>#output/.data.json x8
+store <hex>/.data.json x8
+store <hex>/raw.txt/.data.json x2
+store <hex>/summary.txt/.data.json x4
+store <hex>/upper.txt/.data.json x2
+store <hex>/upper/upper.txt/.data.json x2
+case check-mtime-only exit=1 out=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 err=3b2fc4b86a62cca4c59a94a3d670d8b8053c475e7145649f890416e391676fa7
+case check-published exit=0 out=3848eaa7b289c78d19b38cc3854d648478e856ea0aa4a03827e0d6ac64d0fec7 err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case check-tampered exit=1 out=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 err=5946382560f49c81ab5831f397e4da2db8988849ba3fcde4e68f792366b06813
+case check-taskfile exit=0 out=3848eaa7b289c78d19b38cc3854d648478e856ea0aa4a03827e0d6ac64d0fec7 err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case check-taskrun exit=1 out=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 err=fc09a24f016f58190c7f6629e4538cc933cd3b346f5e7c0eb3ed825f8e0366fb
+case diff-runs exit=0 out=0769f3ad689cdc130d3f049cf1eb04de1d2ad9c0898c963fb036361efb12c653 err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case diff-tasks exit=0 out=bb481b397227dabfc7b130f9e43d8ac0df3766004339a8799cb3850953e8b6a0 err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case find-bad-field exit=0 out=65538a7b62eb757f35fa17ffc1fd9fae55539d6bd0e1170e021f4082aee8fa7a err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case find-fileoutput-label exit=0 out=a03395d208e5c47f26b548567f96f63c8020abd4e1e1b26ab800c18876d4ea03 err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case find-fileoutput exit=0 out=ac1b1de67bb7f1a14505e48980ba57fb96666f257abf72a8d37df2c441290e0a err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case find-noeq exit=0 out=85346a76fa528bdb1743f99ee942b05627b94c78bd918fafd6ce399e23e7e1b7 err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case find-taskoutput exit=0 out=d7751cb84de94d2c3690d32f22ba8ea29a0414072e3ad47aa60babc04f51591a err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case find-taskrun exit=0 out=9dc766835d082b531962070b82676dd978da12f2dcdfda2c8cfe72e3b7b2dcec err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case find-workflowoutput exit=0 out=8f4f47378ba081e77e22216c62e187bc8c343c04d37b6e54d407a302e20dbc5e err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case find-workflowrun exit=0 out=91743d17c539a3b02a409116eda152eb4763e741240c65c35578e029cb817607 err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case help exit=0 out=e7c415a65ec7c195d9c769893ba3729983b6293a5daba50b4199ed5699fb2e17 err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case list exit=0 out=3a82522391e805c36b3c640b340f9cb085f89cd32d65b168743ec1caccbd8566 err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case render-file exit=0 out=4217e666678b6105c1141b19028e8ab61439abc43bad2514b2dbb1f5d4781411 err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case render-run exit=0 out=afe0f84f5cdbb69cb74d41fd38a3e43d9014014917be803171a6c4a17c955ece err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case version exit=0 out=7d2d4795cd6c5996780a3d579b94b6c147c2e009072dc2b0ef870502fcf8376c err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case view-field exit=0 out=94afacec69b3cd25fc4a003ec30c752707cb184720b7b4114c2e24c7d1d9c2cc err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case view-missing exit=0 out=071a95d74d0c9fc4af8ac1c0b6a99a841127fc5f908a1867208f86bfe38441b0 err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case view-not-lid exit=1 out=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 err=75d9ed258b60cfb7047ede0dd5cccc858e2b31c83028d7e0a126b8866a572d4b
+case view-published-file-subdir exit=0 out=7c8950de3eec918c2fb5d2e830cd858beed05e6f764f6e80e18d1e8f874d55e2 err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case view-published-file exit=0 out=a5c94ba93a7cdb371f63b8eb5f8ba3c6d5fb76715c73039f6de3c87f0095f449 err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case view-task-fileoutput exit=0 out=d2c8ab6e3e67916e20fff076668bf7e997eee17f4ffa150b5d7841cd18510fde err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case view-taskoutput exit=0 out=506a7cb15191176a5a802749c08d4212831d2f198594f4fcc5394d411d06729d err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case view-taskrun-summarize exit=0 out=3f74408a637435a8f4b5fe8729408914cabaeccb340154de09b0c96e5cb7b781 err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case view-taskrun exit=0 out=9c10644b10e8a08160366caa0ca8cbe14ab87a5b74dbc9ed2941f8439a886277 err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case view-workflowrun-output exit=0 out=568b9f4ea3b94a21e68dc56ee72851e5fb66729c269de4ff62e2bbf94b88e626 err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case view-workflowrun exit=0 out=aed730aee5b27476a28bc26e628767c544d5afcbdbfed8166e504a42aa71af6b err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855

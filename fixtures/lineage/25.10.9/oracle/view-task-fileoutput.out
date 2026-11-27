@@ -2,18 +2,18 @@
   "version": "lineage/v1beta1",
   "kind": "FileOutput",
   "spec": {
-    "path": "/nf-agents-fixture/work/81/503e4abf998cc487bcd8089010daf7/summary.txt",
+    "path": "/nf-agents-fixture/work/0a/4aa28f491b982677a78f18700451bf/summary.txt",
     "checksum": {
-      "value": "a9dbee63bd74c217994d12847f5896fe",
+      "value": "b7dc30be8fa018215856d2a68f736142",
       "algorithm": "nextflow",
       "mode": "standard"
     },
-    "source": "lid://81503e4abf998cc487bcd8089010daf7",
-    "workflowRun": "lid://0ca6fd07711e8cff8a64ff8bf5149796",
-    "taskRun": "lid://81503e4abf998cc487bcd8089010daf7",
+    "source": "lid://0a4aa28f491b982677a78f18700451bf",
+    "workflowRun": "lid://f76a46a7275784cbc8e19fd6078dfd4b",
+    "taskRun": "lid://0a4aa28f491b982677a78f18700451bf",
     "size": 9,
-    "createdAt": "2026-11-26T21:22:38.140133857Z",
-    "modifiedAt": "2026-11-26T21:22:38.141164183Z",
+    "createdAt": "2026-11-26T21:41:38.078001336Z",
+    "modifiedAt": "2026-11-26T21:41:38.079508854Z",
     "labels": null
   }
 }

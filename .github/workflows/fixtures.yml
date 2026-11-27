@@ -1,0 +1,102 @@
+# Regenerates fixtures/lineage (fixtures/README.md) and opens a PR only when the format drifts.
+name: Fixtures
+
+on:
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Open the PR even when no shape.txt changed
+        type: boolean
+        default: false
+      edge:
+        description: Edge tag to preview (empty skips the edge job)
+        type: string
+        default: 26.11.0-edge
+  schedule:
+    - cron: "17 5 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fixtures
+  cancel-in-progress: false
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      BRANCH: automation/lineage-fixtures
+      FORCE: ${{ inputs.force || false }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+      - run: scripts/gen-fixtures.sh
+      - run: python3 -I -m unittest discover -s scripts/fixtures -p 'test_*.py'
+      - run: python3 -I scripts/fixtures/check.py fixtures/lineage
+      - id: drift
+        run: |
+          changed=$(git status --porcelain --untracked-files=all -- 'fixtures/lineage/*/shape.txt' | awk '{print $2}' | cut -d/ -f3 | sort -u | xargs)
+          echo "versions=$changed" >> "$GITHUB_OUTPUT"
+          if [[ -z $changed && $FORCE != true ]]; then
+            echo "no format drift" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "open=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.drift.outputs.open == 'true'
+        env:
+          VERSIONS: ${{ steps.drift.outputs.versions }}
+          BASE: ${{ github.ref_name }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch -C "$BRANCH"
+          git add fixtures/
+          git commit -m "chore(fixtures): regenerate lineage fixtures"
+          git push --force origin "$BRANCH"
+          {
+            echo "Automated regeneration by \`scripts/gen-fixtures.sh\` (\`.github/workflows/fixtures.yml\`)."
+            echo
+            echo "Versions with a changed \`shape.txt\`: ${VERSIONS:-none (forced run)}"
+            echo
+            echo "Images:"
+            for m in fixtures/lineage/*/manifest.json; do echo "- \`$(jq -r .image "$m")\`"; done
+            echo
+            echo "**CI did not run on this PR**: pushes made with \`GITHUB_TOKEN\` do not start workflows."
+            echo "A maintainer must re-trigger it (close and reopen the PR, or push an empty commit)."
+          } > /tmp/body.md
+          pr=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[].number')
+          if [[ -n $pr ]]; then
+            gh pr edit "$pr" --body-file /tmp/body.md
+          else
+            gh pr create --base "$BASE" --head "$BRANCH" --title "chore(fixtures): regenerate lineage fixtures" \
+              --body-file /tmp/body.md || {
+              echo "::error::Could not open the PR. Enable Settings > Actions > General > 'Allow GitHub Actions to create and approve pull requests', or open a PR from $BRANCH by hand."
+              exit 1
+            }
+          fi
+
+  edge:
+    if: github.event_name == 'schedule' || inputs.edge != ''
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    permissions:
+      contents: read
+    env:
+      EDGE: ${{ inputs.edge || '26.11.0-edge' }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - run: |
+          out=$(mktemp -d)
+          scripts/gen-fixtures.sh --out "$out" "$EDGE"
+          {
+            echo "### shape.txt: $EDGE vs 26.10.7"
+            echo '```diff'
+            diff fixtures/lineage/26.10.7/shape.txt "$out/$EDGE/shape.txt" || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

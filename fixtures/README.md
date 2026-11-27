@@ -13,7 +13,9 @@ really writes.
 | Path | What |
 | --- | --- |
 | `pipelines/minimal/` | The pipeline: `GENERATE -> TRANSFORM -> SUMMARIZE`, a `greeting` param, an `output` block publishing `upper/upper.txt` and `summary.txt` (label `summary`). |
+| `pipelines/agent/` | Three `agent`s for the AgentRun store: plain, structured output (`outputSchema`), tool use (`tools`). |
 | `lineage/<version>/` | One version dir per Nextflow release (`25.04.8`, `25.10.9`, `26.04.9`, `26.10.7`). |
+| `lineage/26.10.7-agent/` | The AgentRun store (below). |
 
 Each version dir holds two runs (`--greeting hello` = `RUN1`, `--greeting bonjour` = `RUN2`):
 
@@ -24,6 +26,18 @@ Each version dir holds two runs (`--greeting hello` = `RUN1`, `--greeting bonjou
 | `nextflow.config` | The config the runs used (`lineage.enabled = true`). |
 | `oracle/` | `nextflow lineage …` output per case: `<case>.args` (JSON argv after `nextflow`), `.out`, `.err` (byte-exact), `.exit`; `ids.json` maps `RUN1`, `RUN2`, `TASK_<PROCESS>_RUN<n>` to LIDs. `check-tampered` and `check-mtime-only` ran on a throw-away copy. |
 | `manifest.json` | Provenance and the mtime manifest (below). |
+| `shape.txt` | Format fingerprint: record field paths and types, store layout, per-case exit code and masked output hashes. LIDs, hashes, UUIDs, timestamps, run names and `find` order are masked, so it only changes when the format does. Recompute with `python3 scripts/fixtures/shape.py <version dir>`. |
+
+## AgentRun store
+
+`lineage/26.10.7-agent/` is one run of `pipelines/agent/` with Nextflow 26.10.7, runner
+`langchain4j` and plugin `nf-agent@0.2.0`. The "LLM" is `scripts/fixtures/llm_stub.py`, a
+stdlib stub on `127.0.0.1` inside the same container: no API key, no outbound LLM traffic. It
+answers chat completions with `stub-ok` or with JSON valid for the requested schema. The store
+holds three `AgentRun` records (`qa`, `qa_structured` with `outputSchema`, `shouty` with
+`tools`) and no data files; its oracle has `version`, `list`, `find-agentrun`,
+`view-agentrun[-output]-<agent>` and `render-agentrun`, and `ids.json` maps `RUN1` and
+`AGENT_<NAME>` to LIDs.
 
 ## Provenance
 
@@ -58,7 +72,7 @@ Needs bash and Docker only (no Nextflow, Python or Java on the host):
 
 ```bash
 scripts/gen-fixtures.sh                 # all core versions into fixtures/lineage
-scripts/gen-fixtures.sh 26.10.7         # one version
+scripts/gen-fixtures.sh 26.10.7         # one version (26.10.7 also builds 26.10.7-agent)
 scripts/gen-fixtures.sh --verify        # re-check the committed dirs, no regeneration
 scripts/gen-fixtures.sh --out "$(mktemp -d)" 26.11.0-edge
 ```
@@ -71,3 +85,20 @@ the oracle) and the offline check all passed. CI runs the offline part on every 
 python3 -I -m unittest discover -s scripts/fixtures -p 'test_*.py'
 python3 -I scripts/fixtures/check.py fixtures/lineage
 ```
+
+## Regeneration workflow
+
+`.github/workflows/fixtures.yml` runs weekly and on demand (`workflow_dispatch`, inputs `force`
+and `edge`). It regenerates every store, runs the checks above and, only if some `shape.txt`
+changed (or `force` is set), force-pushes `fixtures/` to `automation/lineage-fixtures` and opens
+or updates one PR. Otherwise the job summary says "no format drift". A separate, non-blocking
+job generates the `edge` tag into a temp dir and prints its `shape.txt` diff against `26.10.7`.
+
+Two caveats:
+
+- Opening the PR needs the repository setting **Settings > Actions > General > "Allow GitHub
+  Actions to create and approve pull requests"**. While it is off, the job pushes the branch and
+  then fails with an error naming that setting; open the PR from `automation/lineage-fixtures`
+  by hand or enable the setting and re-run.
+- Pushes made with `GITHUB_TOKEN` do not start other workflows, so CI does not run on the bot PR
+  until a maintainer re-triggers it (close and reopen it, or push a commit).

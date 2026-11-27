@@ -128,7 +128,7 @@ No migration. `fixtures.yml` must be run once manually after merge; enable repo 
 
 ## Open Questions
 
-- [ ] Explicit `plugins { id 'nf-agent@0.2.0' }` vs auto-load: confirm during apply that pinning does not change agent behaviour (fallback: rely on 26.10.7's own pin).
+- [x] Explicit `plugins { id 'nf-agent@0.2.0' }` vs auto-load: resolved in PR B. With the pin, the three AgentRun records have the same fields and values (`resolvedModel`, `tools`, `outputSchema`) as the lab's auto-loaded run; the only difference is `config.plugins = ['nf-agent@0.2.0']` in the WorkflowRun. Pin kept.
 
 ## Deviations (2026-11-26, apply PR A)
 
@@ -139,3 +139,26 @@ No migration. `fixtures.yml` must be run once manually after merge; enable repo 
 - `.gitignore` also ignores `__pycache__/` (created when the unittest suite imports the helpers).
 - The helpers that import siblings (`ids.py`, `check.py`) prepend their own directory to
   `sys.path`, because `python3 -I` does not add the script directory.
+
+## Deviations (2026-11-26, apply PR B)
+
+- `check.py --forbid`: the generator passes the literal `$HOME` (skipped for `/` and `/root`)
+  instead of the user name, and `HOST_MARKERS` adds CI workspace shapes (`/runner/`, `/__w/`,
+  `/github/workspace`). A bare user-name substring false-positives on the AgentRun field
+  `"runner"` when CI runs as user `runner`.
+- `check.py` also recomputes `shape.txt` and fails when it is stale (only when the oracle is
+  otherwise complete), so a hand edit or a `shape.py` change without refreshing it is caught
+  offline. `shape.txt` can be refreshed without Docker (`shape.py <dir>`).
+- The agent oracle has three agents (`qa`, `qa-structured`, `shouty`): one plain run on top of
+  the two the spec requires (tools, outputSchema); `ids.json` uses `RUN1` + `AGENT_<NAME>`.
+- `llm_stub.py` serves non-streaming chat completions only (langchain4j sends `stream: false`);
+  streaming requests get 501 like any other unsupported request.
+- `fixtures.yml` pushes the branch before `gh pr create`; when the repository setting "Allow
+  GitHub Actions to create and approve pull requests" is off, the job fails after the push with
+  an error naming the setting (documented in `fixtures/README.md`).
+- `shape.py` strips a trailing `,` from each `find-*` line before sorting: 25.04.8 prints `find`
+  results as a JSON array, so which LID lacks the comma depended on the (unstable) order. Found
+  by G-shape (first comparison differed only in `25.04.8 find-fileoutput`), fixed test-first.
+- G-shape was run as a second full generation into `--out <scratch>` compared with `cmp` against
+  the committed `shape.txt` files, equivalent to regenerating in place and `git diff`, without
+  having to discard the other diffs.

@@ -1,0 +1,137 @@
+# shape format 1
+record FileOutput checksum object
+record FileOutput checksum.algorithm str
+record FileOutput checksum.mode str
+record FileOutput checksum.value str
+record FileOutput createdAt str
+record FileOutput kind str
+record FileOutput labels array
+record FileOutput labels null
+record FileOutput labels[] str
+record FileOutput modifiedAt str
+record FileOutput path str
+record FileOutput size number
+record FileOutput source str
+record FileOutput taskRun null
+record FileOutput taskRun str
+record FileOutput version str
+record FileOutput workflowRun str
+record TaskOutput createdAt str
+record TaskOutput kind str
+record TaskOutput labels null
+record TaskOutput output array
+record TaskOutput output[] object
+record TaskOutput output[].name null
+record TaskOutput output[].type str
+record TaskOutput output[].value str
+record TaskOutput taskRun str
+record TaskOutput version str
+record TaskOutput workflowRun str
+record TaskRun architecture null
+record TaskRun binEntries array
+record TaskRun codeChecksum object
+record TaskRun codeChecksum.algorithm str
+record TaskRun codeChecksum.mode str
+record TaskRun codeChecksum.value str
+record TaskRun conda null
+record TaskRun container null
+record TaskRun globalVars object
+record TaskRun input array
+record TaskRun input[] object
+record TaskRun input[].name str
+record TaskRun input[].type str
+record TaskRun input[].value array
+record TaskRun input[].value str
+record TaskRun input[].value[] object
+record TaskRun input[].value[] str
+record TaskRun input[].value[].checksum object
+record TaskRun input[].value[].checksum.algorithm str
+record TaskRun input[].value[].checksum.mode str
+record TaskRun input[].value[].checksum.value str
+record TaskRun input[].value[].path str
+record TaskRun kind str
+record TaskRun name str
+record TaskRun script str
+record TaskRun sessionId str
+record TaskRun spack null
+record TaskRun version str
+record TaskRun workflowRun str
+record WorkflowOutput createdAt str
+record WorkflowOutput kind str
+record WorkflowOutput output array
+record WorkflowOutput output[] object
+record WorkflowOutput output[].name str
+record WorkflowOutput output[].type str
+record WorkflowOutput output[].value str
+record WorkflowOutput version str
+record WorkflowOutput workflowRun str
+record WorkflowRun config object
+record WorkflowRun config.env object
+record WorkflowRun config.executor object
+record WorkflowRun config.lineage object
+record WorkflowRun config.lineage.enabled bool
+record WorkflowRun config.outputDir str
+record WorkflowRun config.params object
+record WorkflowRun config.params.greeting str
+record WorkflowRun config.poolSize number
+record WorkflowRun config.process object
+record WorkflowRun config.runName str
+record WorkflowRun config.session object
+record WorkflowRun config.workDir str
+record WorkflowRun kind str
+record WorkflowRun name str
+record WorkflowRun params array
+record WorkflowRun params[] object
+record WorkflowRun params[].name str
+record WorkflowRun params[].type str
+record WorkflowRun params[].value str
+record WorkflowRun sessionId str
+record WorkflowRun version str
+record WorkflowRun workflow object
+record WorkflowRun workflow.commitId null
+record WorkflowRun workflow.repository null
+record WorkflowRun workflow.scriptFiles array
+record WorkflowRun workflow.scriptFiles[] object
+record WorkflowRun workflow.scriptFiles[].checksum object
+record WorkflowRun workflow.scriptFiles[].checksum.algorithm str
+record WorkflowRun workflow.scriptFiles[].checksum.mode str
+record WorkflowRun workflow.scriptFiles[].checksum.value str
+record WorkflowRun workflow.scriptFiles[].path str
+store .history/<hex> x2
+store <hex>#output/.data.json x8
+store <hex>/.data.json x8
+store <hex>/raw.txt/.data.json x2
+store <hex>/summary.txt/.data.json x4
+store <hex>/upper.txt/.data.json x2
+store <hex>/upper/upper.txt/.data.json x2
+case check-mtime-only exit=1 out=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 err=3b2fc4b86a62cca4c59a94a3d670d8b8053c475e7145649f890416e391676fa7
+case check-published exit=0 out=3848eaa7b289c78d19b38cc3854d648478e856ea0aa4a03827e0d6ac64d0fec7 err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case check-tampered exit=1 out=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 err=5946382560f49c81ab5831f397e4da2db8988849ba3fcde4e68f792366b06813
+case check-taskfile exit=0 out=3848eaa7b289c78d19b38cc3854d648478e856ea0aa4a03827e0d6ac64d0fec7 err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case check-taskrun exit=1 out=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 err=fc09a24f016f58190c7f6629e4538cc933cd3b346f5e7c0eb3ed825f8e0366fb
+case diff-runs exit=0 out=fc61a94b17988313b19ab07c69945f980e7d3f501c87fff279f2b0d6b248838f err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case diff-tasks exit=0 out=bfb774d73ff1bce3450f1fc7ebb76ea9c4d25fc5d70d2ad2cc17546585436790 err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case find-bad-field exit=0 out=65538a7b62eb757f35fa17ffc1fd9fae55539d6bd0e1170e021f4082aee8fa7a err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case find-fileoutput-label exit=0 out=25d39330e65e9d49ccbad9fb9d3a00e1d2cec9262241953fcd8fa890eaad4596 err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case find-fileoutput exit=0 out=4a8793cc4d41dca83eae8b750be4bd092874c4ea77b01c25dd9b5b32a6c63ccf err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case find-noeq exit=0 out=85346a76fa528bdb1743f99ee942b05627b94c78bd918fafd6ce399e23e7e1b7 err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case find-taskoutput exit=0 out=38745294b09a1216c9aa67ad399f1b03b1fcaeec8f8605ce62187020d711895b err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case find-taskrun exit=0 out=05b36140c67ee15f9e5637d16dd7360b1ccf5dc3af8fd6eb317a30b3d2f2760d err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case find-workflowoutput exit=0 out=ecee230aadaa952083a69f5c6e3c058d145c22f7390873361efb8e5b6c825903 err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case find-workflowrun exit=0 out=9b519118ab93afa460446c9ce784630324eeb6f4536566e10f6777391ba034c4 err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case help exit=0 out=e7c415a65ec7c195d9c769893ba3729983b6293a5daba50b4199ed5699fb2e17 err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case list exit=0 out=3a82522391e805c36b3c640b340f9cb085f89cd32d65b168743ec1caccbd8566 err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case render-file exit=0 out=4217e666678b6105c1141b19028e8ab61439abc43bad2514b2dbb1f5d4781411 err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case render-run exit=0 out=afe0f84f5cdbb69cb74d41fd38a3e43d9014014917be803171a6c4a17c955ece err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case version exit=0 out=565441644b72ccba2752aedd0d83f87440acf4b44903454d79102faee3d2d87c err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case view-field exit=0 out=94afacec69b3cd25fc4a003ec30c752707cb184720b7b4114c2e24c7d1d9c2cc err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case view-missing exit=0 out=071a95d74d0c9fc4af8ac1c0b6a99a841127fc5f908a1867208f86bfe38441b0 err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case view-not-lid exit=1 out=75d9ed258b60cfb7047ede0dd5cccc858e2b31c83028d7e0a126b8866a572d4b err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case view-published-file-subdir exit=0 out=c79cbf68f7cbd349c4a1ee905f3193b4ada64ebbaac683d087f0fa13ea72fb48 err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case view-published-file exit=0 out=a730200ce7c86765034dfcdc43e36291cd613b0409f7f812e4e2b9abc69286bb err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case view-task-fileoutput exit=0 out=f180aa647f71c10bce83fa19215f3d815b2bd16def3464d0a6bd391c009785ce err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case view-taskoutput exit=0 out=506a7cb15191176a5a802749c08d4212831d2f198594f4fcc5394d411d06729d err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case view-taskrun-summarize exit=0 out=7801b933f05c5eb335739d5e0bb536854fd37d25c001dff4f954e067f6431d6f err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case view-taskrun exit=0 out=a37739f8ef3d1a00a2bc277f58c662abe48bd945f0fc54be3988c88609e09ed9 err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case view-workflowrun-output exit=0 out=568b9f4ea3b94a21e68dc56ee72851e5fb66729c269de4ff62e2bbf94b88e626 err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+case view-workflowrun exit=0 out=efcca8da3fbde04fd15109eb6f9fa381d09cf5d28f544c95b787b404505da245 err=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
