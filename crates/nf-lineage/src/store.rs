@@ -175,11 +175,10 @@ impl ObjectLineageStore {
 
     async fn matching(
         &self,
-        lid: Result<Lid, LineageError>,
+        lid: Lid,
         location: Path,
         query: &FindQuery,
     ) -> Result<Option<Lid>, LineageError> {
-        let lid = lid?;
         let record = Record::parse(&self.read(&location).await?, location.as_ref())?;
         Ok(query.matches(&record).then_some(lid))
     }
@@ -193,14 +192,16 @@ impl ObjectLineageStore {
         if parts.pop()? != RECORD_FILE || parts.first()? == HISTORY_DIR {
             return None;
         }
-        Some(
-            Lid::parse(&format!("lid://{}", parts.join("/"))).map_err(|e| {
-                LineageError::InvalidFormat {
-                    path: location.to_string(),
-                    message: e.to_string(),
-                }
-            }),
-        )
+        let invalid = |message: String| LineageError::InvalidFormat {
+            path: location.to_string(),
+            message,
+        };
+        // `<hash>#output` is the only `#` key; a `#` in a path segment would be read as the
+        // fragment separator, so such a key has no LID.
+        if parts.iter().skip(1).any(|p| p.contains('#')) {
+            return Some(Err(invalid("object key contains '#'".into())));
+        }
+        Some(Lid::parse(&format!("lid://{}", parts.join("/"))).map_err(|e| invalid(e.to_string())))
     }
 }
 
@@ -271,12 +272,17 @@ impl LineageStore for ObjectLineageStore {
     }
 
     async fn find(&self, query: &FindQuery) -> Result<Vec<Lid>, LineageError> {
-        let candidates: Vec<(Result<Lid, LineageError>, Path)> = self
-            .list(&self.prefix)
-            .await?
-            .into_iter()
-            .filter_map(|meta| Some((self.record_lid(&meta.location)?, meta.location)))
-            .collect();
+        let mut candidates = Vec::new();
+        for meta in self.list(&self.prefix).await? {
+            match self.record_lid(&meta.location) {
+                Some(Ok(lid)) => candidates.push((lid, meta.location)),
+                Some(Err(e)) => {
+                    // Skipped, not fatal: one unrepresentable key must not hide the other records.
+                    tracing::warn!(key = %meta.location, error = %e, "skipping object without a lineage ID");
+                }
+                None => {}
+            }
+        }
         let matched: Vec<Option<Lid>> = stream::iter(candidates)
             .map(|(lid, location)| self.matching(lid, location, query))
             .buffer_unordered(16)

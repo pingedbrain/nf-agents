@@ -161,7 +161,7 @@ async fn stat(path: &str, opts: &CheckOptions) -> Result<Option<(String, u64, i6
         }
         None => path.to_owned(),
     };
-    let local = local_path(&hashed, opts);
+    let local = local_path(&hashed, opts)?;
     match std::fs::metadata(&local) {
         Ok(meta) => {
             let modified = meta.modified().map_err(|source| io(&local, source))?;
@@ -179,9 +179,19 @@ fn io(path: &FsPath, source: std::io::Error) -> LineageError {
     }
 }
 
-/// Applies the first matching `path_map` prefix.
-fn local_path(recorded: &str, opts: &CheckOptions) -> PathBuf {
-    opts.path_map
+/// Applies the first matching `path_map` prefix. A recorded path with a `..` component is
+/// refused before the map applies, so it cannot climb out of the mapped directory.
+fn local_path(recorded: &str, opts: &CheckOptions) -> Result<PathBuf, LineageError> {
+    if FsPath::new(recorded)
+        .components()
+        .any(|c| c == std::path::Component::ParentDir)
+    {
+        return Err(LineageError::Unsupported(format!(
+            "recorded path {recorded} has a '..' component"
+        )));
+    }
+    Ok(opts
+        .path_map
         .iter()
         .find_map(|(prefix, dir)| {
             FsPath::new(recorded)
@@ -189,7 +199,7 @@ fn local_path(recorded: &str, opts: &CheckOptions) -> PathBuf {
                 .ok()
                 .map(|rest| dir.join(rest))
         })
-        .unwrap_or_else(|| recorded.into())
+        .unwrap_or_else(|| recorded.into()))
 }
 
 /// Size and mtime (ms) of `key` from a listing of its parent prefix: S3 `HEAD` drops the
@@ -354,17 +364,43 @@ mod tests {
     }
 
     #[test]
+    fn rejects_parent_components_before_path_map() {
+        let opts = CheckOptions {
+            path_map: vec![("/rec".to_owned(), "/local".into())],
+            ..CheckOptions::default()
+        };
+        for recorded in ["/rec/../secret", "/other/../x", "/rec/a/../../etc"] {
+            assert!(
+                matches!(
+                    local_path(recorded, &opts),
+                    Err(LineageError::Unsupported(_))
+                ),
+                "{recorded}"
+            );
+        }
+        assert!(local_path("/rec/a..b/c", &opts).is_ok());
+    }
+
+    #[tokio::test]
+    async fn check_refuses_parent_components_in_recorded_paths() {
+        let path = "/no/such/dir/../file";
+        let ok = r#"{"value":"x","algorithm":"nextflow","mode":"STANDARD"}"#;
+        let err = run(path, ok).await.unwrap_err();
+        assert!(matches!(err, LineageError::Unsupported(_)), "{err}");
+    }
+
+    #[test]
     fn path_map_remaps_on_component_boundaries() {
         let opts = CheckOptions {
             path_map: vec![("/rec".to_owned(), "/local".into())],
             ..CheckOptions::default()
         };
         assert_eq!(
-            local_path("/rec/a/b.txt", &opts),
+            local_path("/rec/a/b.txt", &opts).unwrap(),
             std::path::Path::new("/local/a/b.txt")
         );
         assert_eq!(
-            local_path("/record/b.txt", &opts),
+            local_path("/record/b.txt", &opts).unwrap(),
             std::path::Path::new("/record/b.txt")
         );
     }
