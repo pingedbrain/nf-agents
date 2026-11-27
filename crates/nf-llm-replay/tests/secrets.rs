@@ -57,30 +57,39 @@ async fn recorded_cassette_contains_no_credentials() {
 }
 
 #[test]
-fn committed_example_cassette_contains_no_credentials() {
-    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../docs/examples/nf-llm-replay/cassettes/example.jsonl");
-    // Loads as a valid cassette (also proves the file is there and not empty).
-    let text = std::fs::read_to_string(&path).unwrap();
-    nf_llm_replay::cassette::Cassette::load(&path).unwrap();
-    assert!(text.lines().count() >= 4, "expected the 4 example requests");
-    for needle in [
-        "sk-",
-        "Bearer ",
-        "authorization",
-        "x-api-key",
-        "key=",
-        "fake-upstream-key",
-        "/home/",
-        "/Users/",
-        "/root/",
-        "/tmp/",
-        "/data/",
-        "<cwd>/",
-    ] {
+fn committed_cassettes_contain_no_credentials() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    // (cassette, requests the pipeline makes)
+    let cassettes = [
+        ("docs/examples/nf-llm-replay/cassettes/example.jsonl", 4),
+        ("demo/cassettes/demo.jsonl", 2),
+    ];
+    for (rel, requests) in cassettes {
+        let path = root.join(rel);
+        // Loads as a valid cassette (also proves the file is there and not empty).
+        let text = std::fs::read_to_string(&path).unwrap();
+        nf_llm_replay::cassette::Cassette::load(&path).unwrap();
         assert!(
-            !text.contains(needle),
-            "example cassette contains `{needle}`"
+            text.lines().count() >= requests,
+            "{rel}: expected {requests} requests"
         );
+        for needle in [
+            "sk-",
+            "Bearer ",
+            "authorization",
+            "x-api-key",
+            "key=",
+            "fake-upstream-key",
+            "/home/",
+            "/Users/",
+            "/root/",
+            "/tmp/",
+            "/data/",
+            "/demo/",
+            "/src/",
+            "<cwd>/",
+        ] {
+            assert!(!text.contains(needle), "{rel} contains `{needle}`");
+        }
     }
 }

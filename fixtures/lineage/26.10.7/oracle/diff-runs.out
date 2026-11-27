@@ -1,0 +1,74 @@
+diff --git ad34808575cc59cad2b2a70be796f645 f93fffc5f64069cd3b083b95b366096f
+--- ad34808575cc59cad2b2a70be796f645
++++ f93fffc5f64069cd3b083b95b366096f
+@@ -16,13 +16,13 @@
+       "repository": null,
+       "commitId": null
+     },
+-    "sessionId": "75ac772a-ab55-48f5-b10a-1be0f134a11e",
+-    "name": "compassionate_planck",
++    "sessionId": "9fec1cec-ba1a-4265-bd9b-573d4b77c0de",
++    "name": "friendly_ride",
+     "params": [
+       {
+         "type": "String",
+         "name": "greeting",
+-        "value": "hello"
++        "value": "bonjour"
+       },
+       {
+         "type": "String",
+@@ -33,31 +33,31 @@
+     "config": {
+       "env": {},
+       "params": {
+-        "greeting": "hello"
++        "greeting": "bonjour"
+       },
+       "lineage": {
+         "enabled": true
+       },
+       "executor": {},
+       "process": {},
+-      "runName": "compassionate_planck",
+-      "outputDir": "results-hello",
++      "runName": "friendly_ride",
++      "outputDir": "results-bonjour",
+       "outputFormat": "text",
+       "workDir": "work",
+       "poolSize": 2.0
+     },
+     "metadata": {
+-      "runName": "compassionate_planck",
++      "runName": "friendly_ride",
+       "scriptId": "2318fdd93ce721f0fc23a386a78c5bde",
+       "scriptFile": "/nf-agents-fixture/pipeline/main.nf",
+       "scriptName": "main.nf",
+       "repository": null,
+       "commitId": null,
+       "revision": null,
+-      "start": "2026-11-26T21:44:13.852961958Z",
++      "start": "2026-11-26T21:44:17.394930281Z",
+       "complete": null,
+       "container": {},
+-      "commandLine": "nextflow run pipeline/main.nf --greeting hello -output-dir results-hello",
++      "commandLine": "nextflow run pipeline/main.nf --greeting bonjour -output-dir results-bonjour",
+       "nextflow": {
+         "version": "26.10.7",
+         "build": 15252.0,
+@@ -67,12 +67,12 @@
+       "projectDir": "/nf-agents-fixture/pipeline",
+       "projectName": "main.nf",
+       "launchDir": "/nf-agents-fixture",
+-      "outputDir": "/nf-agents-fixture/results-hello",
++      "outputDir": "/nf-agents-fixture/results-bonjour",
+       "workDir": "/nf-agents-fixture/work",
+       "homeDir": "/root",
+       "userName": "root",
+       "profile": "standard",
+-      "sessionId": "75ac772a-ab55-48f5-b10a-1be0f134a11e",
++      "sessionId": "9fec1cec-ba1a-4265-bd9b-573d4b77c0de",
+       "resume": false,
+       "stubRun": false,
+       "preview": false,
+

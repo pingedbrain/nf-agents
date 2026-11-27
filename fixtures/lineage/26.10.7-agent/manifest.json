@@ -1,0 +1,9 @@
+{
+  "format": 1,
+  "kind": "agent",
+  "nextflow_version": "26.10.7",
+  "image": "nextflow/nextflow:26.10.7@sha256:8f53903ad3e88d2d184551d10ec6d70c402dd09986886e68566a114370dba068",
+  "recorded_root": "/nf-agents-fixture",
+  "store": ".lineage",
+  "files": []
+}

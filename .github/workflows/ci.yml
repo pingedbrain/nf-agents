@@ -42,8 +42,46 @@ jobs:
       - run: rustup toolchain install
       - uses: Swatinem/rust-cache@v2
       - run: cargo test --workspace --locked
+      # Offline fixture checks (no Docker, no network): helper unit tests + committed stores.
+      - run: python3 -I -m unittest discover -s scripts/fixtures -p 'test_*.py'
+      - run: python3 -I scripts/fixtures/check.py fixtures/lineage
+      # Local demo checks (no Docker): tour logic, run.sh early exits, shell lint.
+      - run: python3 -I -m unittest discover -s demo -p 'test_*.py'
+      - run: shellcheck demo/run.sh
 
-  # Builds the image (never pushed) and runs the example pipeline offline against it.
+  # Named status check for `nextflow lineage` parity against the committed fixtures/lineage oracles
+  # (no Docker, no network beyond crates.io, no secrets). `test` runs the same suite.
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - run: rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test -p nf-lineage --test contract --locked
+
+  # S3 integration tests against MiniStack (an AWS emulator). The tests use fixed dummy
+  # credentials (`test`/`test`) and their own buckets; no secrets are involved.
+  integration:
+    runs-on: ubuntu-latest
+    services:
+      ministack:
+        image: ministackorg/ministack:1.5.45
+        ports:
+          - 4566:4566
+    env:
+      NF_LINEAGE_MINISTACK_URL: http://localhost:4566
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - run: rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test -p nf-lineage --test s3_ministack --locked
+
+  # Builds the images (never pushed): the proxy runs the example pipeline offline, the MCP
+  # server answers a scripted stdio session against a committed fixture store.
   docker:
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -64,3 +102,27 @@ jobs:
         env:
           E2E_REQUIRE_DOCKER: "1"
           IMAGE: nf-llm-replay:ci
+      - run: docker build -f crates/nf-lineage-mcp/Dockerfile -t nf-lineage-mcp:ci .
+      - name: MCP image runs as 65532:65532 and is at most 30 MB
+        run: |
+          user=$(docker image inspect nf-lineage-mcp:ci --format '{{.Config.User}}')
+          size=$(docker image inspect nf-lineage-mcp:ci --format '{{.Size}}')
+          echo "user=$user size=$size"
+          test "$user" = "65532:65532"
+          test "$size" -le 31457280
+      - name: MCP stdio smoke session against the 26.10.7 fixture store
+        run: |
+          out=$(docker run -i --rm -v "$PWD/fixtures/lineage/26.10.7/.lineage:/store:ro" \
+            nf-lineage-mcp:ci --store /store < crates/nf-lineage-mcp/tests/data/session.jsonl)
+          echo "$out"
+          test "$(grep -o 'lid://[0-9a-f]\{32\}' <<<"$out" | sort -u | wc -l)" -eq 2
+          grep -q '"isError":false' <<<"$out"
+      # The README demo end to end with the images above (no rebuild): pipeline + replay + MCP tour.
+      - name: Local demo
+        shell: bash
+        env:
+          MCP_IMAGE: nf-lineage-mcp:ci
+          REPLAY_IMAGE: nf-llm-replay:ci
+        run: |
+          demo/run.sh | tee "$RUNNER_TEMP/demo.log"
+          grep -q 'claude mcp add --transport stdio nf-lineage -- docker run -i' "$RUNNER_TEMP/demo.log"

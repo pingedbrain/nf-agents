@@ -1,0 +1,12 @@
+[
+  {
+    "type": "Path",
+    "name": "upper",
+    "value": "lid://f76a46a7275784cbc8e19fd6078dfd4b/upper/upper.txt"
+  },
+  {
+    "type": "Path",
+    "name": "summary",
+    "value": "lid://f76a46a7275784cbc8e19fd6078dfd4b/summary.txt"
+  }
+]

@@ -1,0 +1,1 @@
+{"version":"lineage/v1beta1","kind":"WorkflowOutput","spec":{"createdAt":"2026-11-26T21:41:41.517786598Z","workflowRun":"lid://dba0d07dbb22ef8b975fee3dc958bb18","output":[{"type":"Path","name":"upper","value":"lid://dba0d07dbb22ef8b975fee3dc958bb18/upper/upper.txt"},{"type":"Path","name":"summary","value":"lid://dba0d07dbb22ef8b975fee3dc958bb18/summary.txt"}]}}

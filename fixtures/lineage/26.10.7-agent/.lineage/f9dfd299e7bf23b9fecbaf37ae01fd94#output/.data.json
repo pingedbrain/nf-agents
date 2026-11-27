@@ -1,0 +1,1 @@
+{"version":"lineage/v1beta1","kind":"TaskOutput","spec":{"taskRun":"lid://f9dfd299e7bf23b9fecbaf37ae01fd94","workflowRun":"lid://8f7036e726eeccce01c8ef73d19ce81c","createdAt":"2026-11-26T21:45:48.697673892Z","output":[{"type":"Record","name":"a","value":{"answer":"stub-ok","confidence":0.5}}],"labels":null}}

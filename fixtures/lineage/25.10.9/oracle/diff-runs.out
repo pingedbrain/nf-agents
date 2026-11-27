@@ -1,0 +1,37 @@
+diff --git f76a46a7275784cbc8e19fd6078dfd4b dba0d07dbb22ef8b975fee3dc958bb18
+--- f76a46a7275784cbc8e19fd6078dfd4b
++++ dba0d07dbb22ef8b975fee3dc958bb18
+@@ -16,13 +16,13 @@
+       "repository": null,
+       "commitId": null
+     },
+-    "sessionId": "b623afc5-f0d0-49e4-b31b-7b757a2cc1f1",
+-    "name": "distraught_kirch",
++    "sessionId": "cde5726d-e535-46c4-bfd1-fcfc3b4994eb",
++    "name": "angry_ekeblad",
+     "params": [
+       {
+         "type": "String",
+         "name": "greeting",
+-        "value": "hello"
++        "value": "bonjour"
+       },
+       {
+         "type": "String",
+@@ -37,12 +37,12 @@
+       "env": {},
+       "session": {},
+       "params": {
+-        "greeting": "hello"
++        "greeting": "bonjour"
+       },
+       "process": {},
+       "executor": {},
+-      "runName": "distraught_kirch",
+-      "outputDir": "results-hello",
++      "runName": "angry_ekeblad",
++      "outputDir": "results-bonjour",
+       "workDir": "work",
+       "poolSize": 2.0
+     }
+

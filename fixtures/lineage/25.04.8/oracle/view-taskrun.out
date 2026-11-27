@@ -1,0 +1,40 @@
+{
+  "version": "lineage/v1beta1",
+  "kind": "TaskRun",
+  "sessionId": "8e97ff52-cb19-4718-add4-d0d388dc409e",
+  "name": "GENERATE",
+  "codeChecksum": {
+    "value": "e67d7c9646ca428311e63339b99a61c4",
+    "algorithm": "nextflow",
+    "mode": "standard"
+  },
+  "script": "\n    while read -r w; do echo \"hello $w\"; done \u003c seed.txt \u003e raw.txt\n    ",
+  "input": [
+    {
+      "type": "path",
+      "name": "seed",
+      "value": [
+        {
+          "path": "file:///nf-agents-fixture/pipeline/data/seed.txt",
+          "checksum": {
+            "value": "dc2e6848081d6821502ac309d291984b",
+            "algorithm": "nextflow",
+            "mode": "standard"
+          }
+        }
+      ]
+    },
+    {
+      "type": "val",
+      "name": "greeting",
+      "value": "hello"
+    }
+  ],
+  "container": null,
+  "conda": null,
+  "spack": null,
+  "architecture": null,
+  "globalVars": {},
+  "binEntries": [],
+  "workflowRun": "lid://8f3d850448e810f44c1eaea411b7b9c2"
+}

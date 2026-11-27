@@ -2,13 +2,12 @@
 
 ## Purpose
 
-Cargo workspace, toolchain, shared metadata and lint policy that every nf-agents crate inherits, plus the `nf-lineage` stub that makes the workspace build.
+Cargo workspace, toolchain, shared metadata and lint policy that every nf-agents crate inherits. Crate behaviour lives in each crate's own capability (e.g. `nf-lineage`).
 
 ## Verification checks
 
 | ID | Kind | Command / name |
 |----|------|----------------|
-| T-1 | cargo test | `nf_lineage::tests::version_is_pre_release` |
 | C-fmt | CI `lint` | `cargo fmt --all -- --check` |
 | C-clippy | CI `lint` | `cargo clippy --workspace --all-targets --locked -- -D warnings` |
 | C-test | CI `test` | `cargo test --workspace --locked` |
@@ -22,7 +21,7 @@ Cargo workspace, toolchain, shared metadata and lint policy that every nf-agents
 
 The repository root MUST be a Cargo workspace (resolver `"3"`) with members under `crates/`, and `cargo test --workspace` MUST pass without secrets, with `Cargo.lock` committed.
 
-#### Scenario: Clean checkout (C-test, T-1)
+#### Scenario: Clean checkout (C-test)
 - GIVEN a fresh clone with the pinned toolchain
 - WHEN `cargo test --workspace --locked` runs
 - THEN it exits 0 and runs at least one test
@@ -78,22 +77,3 @@ Every member MUST inherit `[workspace.lints]`. Non-test code MUST NOT compile un
 - GIVEN a source file not matching rustfmt output
 - WHEN C-fmt runs
 - THEN it fails
-
-### Requirement: nf-lineage stub
-
-`crates/nf-lineage` MUST be a library with crate-level docs stating it is pre-alpha, version `0.x`, at least one unit test, zero dependencies, and MUST NOT be publishable (`publish = false`) until a release change flips it.
-
-#### Scenario: Stub is pre-release (T-1)
-- GIVEN the crate is built
-- WHEN T-1 runs
-- THEN `CARGO_PKG_VERSION` starts with `0.`
-
-#### Scenario: No dependencies (V-meta, C-machete)
-- GIVEN the stub manifest
-- WHEN metadata is read and C-machete runs
-- THEN `nf-lineage` has no dependencies and C-machete reports nothing
-
-#### Scenario: Pre-alpha stated (V-meta)
-- GIVEN `crates/nf-lineage/src/lib.rs`
-- WHEN its crate docs are read
-- THEN they contain "pre-alpha" and `publish` is `false`

@@ -27,6 +27,18 @@ cargo test --workspace --locked
 
 Use `cargo fmt --all` to fix formatting. The test suite must pass without API keys, cloud credentials or GPUs.
 
+### S3 integration tests (MiniStack)
+
+`nf-lineage` reads lineage stores from S3. Its S3 tests run against [MiniStack](https://github.com/ministackorg/ministack), a local AWS emulator, and need only Docker:
+
+```sh
+docker run --rm -d --name ministack -p 4566:4566 ministackorg/ministack:1.5.45
+NF_LINEAGE_MINISTACK_URL=http://localhost:4566 cargo test -p nf-lineage --test s3_ministack
+docker stop ministack
+```
+
+The tests create their own buckets with dummy `test`/`test` credentials. Without `NF_LINEAGE_MINISTACK_URL` they print a skip notice and pass, so `cargo test --workspace` works without Docker. With the variable set they wait up to 60 seconds for MiniStack and fail if it does not answer. CI runs them in the `integration` job.
+
 ## Pull requests
 
 - Keep PRs small: one task per PR.

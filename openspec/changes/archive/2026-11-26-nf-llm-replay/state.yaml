@@ -1,0 +1,21 @@
+change: nf-llm-replay
+artifact_store: openspec
+mode: auto
+phases:
+  explore: done
+  proposal: done
+  spec: done
+  design: done
+  tasks: done
+  apply: done
+  verify: done  # PR E verified 2026-11-26; image rebuilt with the shared .dockerignore during nf-lineage-mcp PR C
+  archive: done        # 2026-11-26
+batches:
+  - {id: A, title: "normalization + cassette model", est_lines: 500, status: applied}
+  - {id: B, title: "replay server + CLI", est_lines: 700, actual_lines: 1190, status: applied}
+  - {id: C1, title: "upstream client + Recorder", est_lines: 450, actual_lines: 470, status: applied}
+  - {id: C2, title: "record + passthrough wiring", est_lines: 650, actual_lines: 910, status: applied}
+  - {id: D, title: "SSE streaming + normalization flags", est_lines: 420, actual_lines: 575, status: applied}
+  - {id: E, title: "Docker image + offline example + CI docker job", est_lines: 380, actual_lines: 375, status: applied}
+updated: 2026-11-26
+next: none (archived)

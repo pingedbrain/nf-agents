@@ -1,0 +1,31 @@
+{
+  "version": "lineage/v1beta1",
+  "kind": "TaskRun",
+  "spec": {
+    "sessionId": "05862c88-d91c-4a3d-988a-b3770d317e97",
+    "name": "SUMMARIZE",
+    "codeChecksum": {
+      "value": "703e3bb2494aafbd6c61e3d4c8973c60",
+      "algorithm": "nextflow",
+      "mode": "standard"
+    },
+    "script": "\n    echo \"lines: $(wc -l \u003c upper.txt)\" \u003e summary.txt\n    ",
+    "input": [
+      {
+        "type": "path",
+        "name": "upper",
+        "value": [
+          "lid://0e85ba496e02c97d4b1db9f05add5ea5/upper.txt"
+        ]
+      }
+    ],
+    "container": null,
+    "conda": null,
+    "spack": null,
+    "architecture": null,
+    "globalVars": {},
+    "binEntries": [],
+    "workflowRun": "lid://31cd129f93a7451ba93fdfbba27a019a",
+    "moduleId": null
+  }
+}

@@ -1,0 +1,7 @@
+[
+  {
+    "type": "String",
+    "name": "$out",
+    "value": "stub-ok"
+  }
+]

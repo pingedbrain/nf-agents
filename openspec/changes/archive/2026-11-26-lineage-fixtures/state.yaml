@@ -1,0 +1,14 @@
+change: lineage-fixtures
+artifact_store: openspec
+mode: auto
+phases:
+  explore: done
+  proposal: done
+  spec: done
+  design: done
+  tasks: done
+  apply: done (PR A, PR B)
+  verify: pass-with-warnings  # PR A + PR B
+  archive: done
+updated: 2026-11-26
+next: post-merge C-fx-run (workflow_dispatch, force false)

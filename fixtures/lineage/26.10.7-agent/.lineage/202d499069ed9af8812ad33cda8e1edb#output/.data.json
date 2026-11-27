@@ -1,0 +1,1 @@
+{"version":"lineage/v1beta1","kind":"TaskOutput","spec":{"taskRun":"lid://202d499069ed9af8812ad33cda8e1edb","workflowRun":"lid://8f7036e726eeccce01c8ef73d19ce81c","createdAt":"2026-11-26T21:45:48.697448034Z","output":[{"type":"String","name":"$out","value":"stub-ok"}],"labels":null}}

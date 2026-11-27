@@ -1,0 +1,38 @@
+diff --git dd84a7bfe4411a27b7860cf6dcc6cace 9c9bac8b141a1ff1cd3b8c39fbe16e89
+--- dd84a7bfe4411a27b7860cf6dcc6cace
++++ 9c9bac8b141a1ff1cd3b8c39fbe16e89
+@@ -1,14 +1,14 @@
+ {
+   "version": "lineage/v1beta1",
+   "kind": "TaskRun",
+-  "sessionId": "8e97ff52-cb19-4718-add4-d0d388dc409e",
++  "sessionId": "2252f68a-e7dc-4d08-8eec-5c7cd172be2e",
+   "name": "GENERATE",
+   "codeChecksum": {
+     "value": "e67d7c9646ca428311e63339b99a61c4",
+     "algorithm": "nextflow",
+     "mode": "standard"
+   },
+-  "script": "\n    while read -r w; do echo \"hello $w\"; done \u003c seed.txt \u003e raw.txt\n    ",
++  "script": "\n    while read -r w; do echo \"bonjour $w\"; done \u003c seed.txt \u003e raw.txt\n    ",
+   "input": [
+     {
+       "type": "path",
+@@ -27,7 +27,7 @@
+     {
+       "type": "val",
+       "name": "greeting",
+-      "value": "hello"
++      "value": "bonjour"
+     }
+   ],
+   "container": null,
+@@ -36,5 +36,5 @@
+   "architecture": null,
+   "globalVars": {},
+   "binEntries": [],
+-  "workflowRun": "lid://8f3d850448e810f44c1eaea411b7b9c2"
++  "workflowRun": "lid://2a69598ddc5fe3d4ab1c7c2a4e8a5740"
+ }
+\ No newline at end of file
+

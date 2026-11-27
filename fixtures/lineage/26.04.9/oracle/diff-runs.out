@@ -1,0 +1,75 @@
+diff --git 31cd129f93a7451ba93fdfbba27a019a d91ff47e1481e4f4cba6e2a16762bff4
+--- 31cd129f93a7451ba93fdfbba27a019a
++++ d91ff47e1481e4f4cba6e2a16762bff4
+@@ -16,13 +16,13 @@
+       "repository": null,
+       "commitId": null
+     },
+-    "sessionId": "05862c88-d91c-4a3d-988a-b3770d317e97",
+-    "name": "lethal_sinoussi",
++    "sessionId": "5ef19bcf-00d8-4766-a243-8d4acb8506ba",
++    "name": "fervent_galileo",
+     "params": [
+       {
+         "type": "String",
+         "name": "greeting",
+-        "value": "hello"
++        "value": "bonjour"
+       },
+       {
+         "type": "String",
+@@ -32,7 +32,7 @@
+     ],
+     "config": {
+       "params": {
+-        "greeting": "hello"
++        "greeting": "bonjour"
+       },
+       "lineage": {
+         "enabled": true
+@@ -41,24 +41,24 @@
+       "session": {},
+       "process": {},
+       "executor": {},
+-      "runName": "lethal_sinoussi",
+-      "outputDir": "results-hello",
++      "runName": "fervent_galileo",
++      "outputDir": "results-bonjour",
+       "outputFormat": "text",
+       "workDir": "work",
+       "poolSize": 2.0
+     },
+     "metadata": {
+-      "runName": "lethal_sinoussi",
++      "runName": "fervent_galileo",
+       "scriptId": "2318fdd93ce721f0fc23a386a78c5bde",
+       "scriptFile": "/nf-agents-fixture/pipeline/main.nf",
+       "scriptName": "main.nf",
+       "repository": null,
+       "commitId": null,
+       "revision": null,
+-      "start": "2026-11-26T21:42:54.895768836Z",
++      "start": "2026-11-26T21:42:58.280115945Z",
+       "complete": null,
+       "container": {},
+-      "commandLine": "nextflow run pipeline/main.nf --greeting hello -output-dir results-hello",
++      "commandLine": "nextflow run pipeline/main.nf --greeting bonjour -output-dir results-bonjour",
+       "nextflow": {
+         "version": "26.04.9",
+         "build": 14305.0,
+@@ -68,12 +68,12 @@
+       "projectDir": "/nf-agents-fixture/pipeline",
+       "projectName": "main.nf",
+       "launchDir": "/nf-agents-fixture",
+-      "outputDir": "/nf-agents-fixture/results-hello",
++      "outputDir": "/nf-agents-fixture/results-bonjour",
+       "workDir": "/nf-agents-fixture/work",
+       "homeDir": "/root",
+       "userName": "root",
+       "profile": "standard",
+-      "sessionId": "05862c88-d91c-4a3d-988a-b3770d317e97",
++      "sessionId": "5ef19bcf-00d8-4766-a243-8d4acb8506ba",
+       "resume": false,
+       "stubRun": false,
+       "preview": false,
+

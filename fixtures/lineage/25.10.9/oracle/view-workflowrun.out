@@ -1,0 +1,50 @@
+{
+  "version": "lineage/v1beta1",
+  "kind": "WorkflowRun",
+  "spec": {
+    "workflow": {
+      "scriptFiles": [
+        {
+          "path": "file:///nf-agents-fixture/pipeline/main.nf",
+          "checksum": {
+            "value": "2318fdd93ce721f0fc23a386a78c5bde",
+            "algorithm": "nextflow",
+            "mode": "standard"
+          }
+        }
+      ],
+      "repository": null,
+      "commitId": null
+    },
+    "sessionId": "b623afc5-f0d0-49e4-b31b-7b757a2cc1f1",
+    "name": "distraught_kirch",
+    "params": [
+      {
+        "type": "String",
+        "name": "greeting",
+        "value": "hello"
+      },
+      {
+        "type": "String",
+        "name": "input",
+        "value": "file:///nf-agents-fixture/pipeline/data/seed.txt"
+      }
+    ],
+    "config": {
+      "lineage": {
+        "enabled": true
+      },
+      "env": {},
+      "session": {},
+      "params": {
+        "greeting": "hello"
+      },
+      "process": {},
+      "executor": {},
+      "runName": "distraught_kirch",
+      "outputDir": "results-hello",
+      "workDir": "work",
+      "poolSize": 2.0
+    }
+  }
+}
