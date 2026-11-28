@@ -2,30 +2,30 @@
 
 ## Purpose
 
-`nf-lineage-mcp`: a read-only MCP server (stdio) that lets AI agents query a Nextflow lineage store through `nf-lineage`: list runs, view records, find records, diff, check and trace provenance. Fixtures: `fixtures/lineage/<ver>/` (change `lineage-fixtures`), recorded root `/nf-agents-fixture`, LIDs from `oracle/ids.json` and `oracle/<case>.args`.
+`baqueano-mcp`: a read-only MCP server (stdio) that lets AI agents query a Nextflow lineage store through `baqueano-lineage`: list runs, view records, find records, diff, check and trace provenance. Fixtures: `fixtures/lineage/<ver>/` (change `lineage-fixtures`), recorded root `/nf-agents-fixture`, LIDs from `oracle/ids.json` and `oracle/<case>.args`.
 
 ## Verification checks
 
-Unit tests: `crates/nf-lineage-mcp/src/<module>.rs` (`<module>::tests::<name>`). Integration: `crates/nf-lineage-mcp/tests/<file>.rs` (`<file>::<name>`). "Over MCP" = rmcp client and server in-process over `tokio::io::duplex`, real JSON-RPC.
+Unit tests: `crates/baqueano-mcp/src/<module>.rs` (`<module>::tests::<name>`). Integration: `crates/baqueano-mcp/tests/<file>.rs` (`<file>::<name>`). "Over MCP" = rmcp client and server in-process over `tokio::io::duplex`, real JSON-RPC.
 
 | ID | Kind | Command / name |
 |----|------|----------------|
 | C-test | CI `test` | `cargo test --workspace --locked` (all T below) |
 | C-lint | CI `lint` | fmt, clippy `-D warnings`, `cargo deny check`, `cargo machete` |
 | C-docker | CI `docker` | D-* checks of this spec |
-| D-build | CI `docker` | `docker build -f crates/nf-lineage-mcp/Dockerfile -t nf-lineage-mcp:ci .` |
+| D-build | CI `docker` | `docker build -f crates/baqueano-mcp/Dockerfile -t baqueano-mcp:ci .` |
 | D-user | CI `docker` | `Config.User` is `65532:65532` |
 | D-size | CI `docker` | image ≤ 30 MB |
-| D-smoke | CI `docker` | scripted JSON-RPC (`initialize`, `notifications/initialized`, `tools/call list_runs`) piped into `docker run -i --rm -v <26.10.7 store>:/store:ro nf-lineage-mcp:ci --store /store`; stdout has 2 run LIDs and `"isError":false` |
-| V-pkg | verify | `cargo package -p nf-lineage -p nf-lineage-mcp --locked` |
+| D-smoke | CI `docker` | scripted JSON-RPC (`initialize`, `notifications/initialized`, `tools/call list_runs`) piped into `docker run -i --rm -v <26.10.7 store>:/store:ro baqueano-mcp:ci --store /store`; stdout has 2 run LIDs and `"isError":false` |
+| V-pkg | verify | `cargo package -p baqueano-lineage -p baqueano-mcp --locked` |
 | V-grep | verify | `src/` has 0 hits for `println!`, `print!`, `std::io::stdout`, `std::process::exit`, `set_var`; 0 non-test `unwrap/expect` |
-| V-doc | verify | README greps: `claude mcp add`, `--transport stdio`, `-- nf-lineage-mcp --store`, `docker run -i`, `MAX_MCP_OUTPUT_TOKENS`, `NF_LINEAGE_STORE`, `--path-map` |
+| V-doc | verify | README greps: `claude mcp add`, `--transport stdio`, `-- baqueano-mcp --store`, `docker run -i`, `MAX_MCP_OUTPUT_TOKENS`, `BAQUEANO_LINEAGE_STORE`, `--path-map` |
 
 ## Requirements
 
 ### Requirement: Server identity and tool catalogue
 
-`initialize` MUST report `serverInfo.name = "nf-lineage-mcp"`, `version` = crate version, capability `tools`, and `instructions` stating: read-only, the store location, the six tools and when to use each, the LID syntax, and the truncation rule. `tools/list` MUST return exactly `list_runs`, `view`, `find`, `diff`, `check`, `provenance`, each with a description written for LLM agents (purpose, inputs, output shape, an example), an `inputSchema` (JSON Schema 2020-12, every property described, `additionalProperties: false`) and annotations `readOnlyHint: true`, `idempotentHint: true`, `destructiveHint: false`, `openWorldHint: false`.
+`initialize` MUST report `serverInfo.name = "baqueano-mcp"`, `version` = crate version, capability `tools`, and `instructions` stating: read-only, the store location, the six tools and when to use each, the LID syntax, and the truncation rule. `tools/list` MUST return exactly `list_runs`, `view`, `find`, `diff`, `check`, `provenance`, each with a description written for LLM agents (purpose, inputs, output shape, an example), an `inputSchema` (JSON Schema 2020-12, every property described, `additionalProperties: false`) and annotations `readOnlyHint: true`, `idempotentHint: true`, `destructiveHint: false`, `openWorldHint: false`.
 
 #### Scenario: Catalogue (T `protocol::server_info_and_tool_catalogue`)
 - GIVEN a server over a fixture store
@@ -34,7 +34,7 @@ Unit tests: `crates/nf-lineage-mcp/src/<module>.rs` (`<module>::tests::<name>`).
 
 ### Requirement: Configuration and startup
 
-Store location MUST come from `--store` or env `NF_LINEAGE_STORE` (flag wins): local path, `file://`, `s3://`, `gs://`, `az://` (via `ObjectLineageStore::open`, cloud credentials from the standard environment). `--max-response-bytes` (env `NF_LINEAGE_MCP_MAX_RESPONSE_BYTES`) MUST default to 32768 and reject values < 1024. `--path-map FROM=TO` MAY repeat; empty side or missing `=` MUST be rejected. Invalid arguments MUST exit 2 (usage); a store that cannot be opened MUST exit 1 with a message on stderr and nothing on stdout. Stdin EOF MUST end the process with exit 0 after in-flight calls finish.
+Store location MUST come from `--store` or env `BAQUEANO_LINEAGE_STORE` (flag wins): local path, `file://`, `s3://`, `gs://`, `az://` (via `ObjectLineageStore::open`, cloud credentials from the standard environment). `--max-response-bytes` (env `BAQUEANO_LINEAGE_MCP_MAX_RESPONSE_BYTES`) MUST default to 32768 and reject values < 1024. `--path-map FROM=TO` MAY repeat; empty side or missing `=` MUST be rejected. Invalid arguments MUST exit 2 (usage); a store that cannot be opened MUST exit 1 with a message on stderr and nothing on stdout. Stdin EOF MUST end the process with exit 0 after in-flight calls finish.
 
 #### Scenario: Bad store (T `stdio::unopenable_store_fails_fast`)
 - GIVEN `--store /nonexistent/x`
@@ -47,10 +47,10 @@ Store location MUST come from `--store` or env `NF_LINEAGE_STORE` (flag wins): l
 
 ### Requirement: Stdio protocol hygiene
 
-Stdout MUST carry only JSON-RPC messages; all logs MUST go to stderr (filter env `NF_LINEAGE_MCP_LOG`, default `info`). The process MUST NOT panic on any input.
+Stdout MUST carry only JSON-RPC messages; all logs MUST go to stderr (filter env `BAQUEANO_LINEAGE_MCP_LOG`, default `info`). The process MUST NOT panic on any input.
 
 #### Scenario: Scripted session (T `stdio::scripted_session_over_stdio`)
-- GIVEN the built binary, `NF_LINEAGE_STORE` = 26.10.7 store
+- GIVEN the built binary, `BAQUEANO_LINEAGE_STORE` = 26.10.7 store
 - WHEN `initialize`, `notifications/initialized`, `tools/list`, `tools/call list_runs` are piped and stdin closes
 - THEN every stdout line parses as JSON-RPC, responses for ids 1–3 exist, the call is not an error, exit 0
 
@@ -59,7 +59,7 @@ Stdout MUST carry only JSON-RPC messages; all logs MUST go to stderr (filter env
 | Tool | Params | Result (JSON text) |
 |---|---|---|
 | `list_runs` | `since?`, `until?` (`YYYY-MM-DD`, inclusive, on the history timestamp date), `pipeline?` (case-insensitive substring of `workflow.repository`, else `metadata.projectName`, else the main script file name) | array of `{timestamp, run_name, session_id, lid, pipeline}` newest first; `[]` when none |
-| `view` | `lid` (fragment allowed) | `nf_lineage::view` output |
+| `view` | `lid` (fragment allowed) | `baqueano_lineage::view` output |
 | `find` | `type?`, `labels?` (all required), `name?`, `terms?` (`key=value`, CLI syntax incl. dotted keys and URL-decoding); ≥ 1 filter | sorted array of LIDs |
 | `diff` | `lid_a`, `lid_b`, `mode?` = `semantic` (default) \| `raw` | `SemanticDiff` JSON, or the raw unified diff text |
 | `check` | `lid` (FileOutput) | `CheckReport` JSON; `Mismatch`/`FileMissing`/`NoChecksum` are results, not errors |
@@ -129,7 +129,7 @@ A result whose text exceeds the cap MUST be cut so all content blocks total ≤ 
 
 ### Requirement: Packaging and docs
 
-Crate `0.1.0`, publishable metadata, README (V-doc, research-use note). Dockerfile multi-stage: `rust:1.100.0-alpine` → `gcr.io/distroless/static-debian12:nonroot`, static musl, `--locked`, `ENTRYPOINT ["/nf-lineage-mcp"]`, user `65532:65532`, OCI labels, no shell, no `EXPOSE`.
+Crate `0.1.0`, publishable metadata, README (V-doc, research-use note). Dockerfile multi-stage: `rust:1.100.0-alpine` → `gcr.io/distroless/static-debian12:nonroot`, static musl, `--locked`, `ENTRYPOINT ["/baqueano-mcp"]`, user `65532:65532`, OCI labels, no shell, no `EXPOSE`.
 
 #### Scenario: Image (D-build, D-user, D-size, D-smoke)
 - GIVEN a clean checkout

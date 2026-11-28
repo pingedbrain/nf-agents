@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Cargo workspace, toolchain, shared metadata and lint policy that every nf-agents crate inherits. Crate behaviour lives in each crate's own capability (e.g. `nf-lineage`).
+Cargo workspace, toolchain, shared metadata and lint policy that every baqueano crate inherits. Crate behaviour lives in each crate's own capability (e.g. `baqueano-lineage`).
 
 ## Verification checks
 
@@ -33,7 +33,7 @@ The repository root MUST be a Cargo workspace (resolver `"3"`) with members unde
 
 ### Requirement: Shared package metadata
 
-Every member MUST inherit from `[workspace.package]`: edition `2024`, license `Apache-2.0`, repository `https://github.com/pingedbrain/nf-agents`, and `rust-version`.
+Every member MUST inherit from `[workspace.package]`: edition `2024`, license `Apache-2.0`, repository `https://github.com/pingedbrain/baqueano`, and `rust-version`.
 
 #### Scenario: Metadata inherited (V-meta)
 - GIVEN any workspace member

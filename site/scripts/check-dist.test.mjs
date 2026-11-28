@@ -8,7 +8,7 @@ const page = (body) => `<!doctype html><html><head><title>t</title></head><body>
 const files = new Set(['index.html', 'docs/index.html', 'favicon.svg']);
 
 test('a clean page has no errors', () => {
-  const html = page('<h1>nf-agents</h1><a href="/nf-agents/docs/">docs</a><img src="/nf-agents/favicon.svg" alt="">');
+  const html = page('<h1>baqueano</h1><a href="/baqueano/docs/">docs</a><img src="/baqueano/favicon.svg" alt="">');
   assert.deepEqual(checkHtml('index.html', html, files), []);
 });
 
@@ -24,13 +24,13 @@ test('missing footer marker or disclaimer is reported', () => {
   assert.ok(checkHtml('index.html', noText, files).some((e) => /Seqera/.test(e)));
 });
 
-test('root-relative links without the /nf-agents/ base are reported', () => {
+test('root-relative links without the /baqueano/ base are reported', () => {
   const errors = checkHtml('index.html', page('<h1>a</h1><a href="/docs/">d</a>'), files);
-  assert.ok(errors.some((e) => /\/nf-agents\//.test(e) && /\/docs\//.test(e)), errors.join('\n'));
+  assert.ok(errors.some((e) => /\/baqueano\//.test(e) && /\/docs\//.test(e)), errors.join('\n'));
 });
 
-test('a /nf-agents/ link that resolves to no dist file is reported', () => {
-  const errors = checkHtml('index.html', page('<h1>a</h1><a href="/nf-agents/missing/">m</a>'), files);
+test('a /baqueano/ link that resolves to no dist file is reported', () => {
+  const errors = checkHtml('index.html', page('<h1>a</h1><a href="/baqueano/missing/">m</a>'), files);
   assert.ok(errors.some((e) => /missing/.test(e)), errors.join('\n'));
 });
 
@@ -52,7 +52,7 @@ test('external url() in inline styles is reported', () => {
 });
 
 test('vendor logo assets are reported', () => {
-  const html = page('<h1>a</h1><img src="/nf-agents/nextflow-logo.svg" alt="">');
+  const html = page('<h1>a</h1><img src="/baqueano/nextflow-logo.svg" alt="">');
   assert.ok(checkHtml('index.html', html, files).some((e) => /nextflow/i.test(e)));
 });
 
@@ -60,8 +60,8 @@ test('checkRoutes names each missing docs route', () => {
   const complete = new Set([
     'docs/index.html',
     'docs/architecture/index.html',
-    'docs/nf-lineage-mcp/index.html',
-    'docs/nf-llm-replay/index.html',
+    'docs/baqueano-mcp/index.html',
+    'docs/baqueano-replay/index.html',
     'docs/roadmap/index.html',
   ]);
   assert.deepEqual(checkRoutes(complete), []);
@@ -79,7 +79,7 @@ test('pngSize reads width and height from the IHDR chunk', () => {
   assert.throws(() => pngSize(Buffer.from('not a png at all, sorry......')));
 });
 
-const OG_URL = 'https://pingedbrain.github.io/nf-agents/og.png';
+const OG_URL = 'https://pingedbrain.github.io/baqueano/og.png';
 const pngOf = (width, height) => {
   const buf = Buffer.alloc(24);
   Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).copy(buf, 0);
@@ -89,7 +89,7 @@ const pngOf = (width, height) => {
   return buf;
 };
 
-test('og:image meta with the /nf-agents/ base passes', () => {
+test('og:image meta with the /baqueano/ base passes', () => {
   const html = page(`<h1>a</h1><meta property="og:image" content="${OG_URL}">`);
   assert.deepEqual(checkOgMeta('index.html', html), []);
 });
@@ -99,7 +99,7 @@ test('missing og:image meta is reported', () => {
   assert.ok(errors.some((e) => /og:image/.test(e)), errors.join('\n'));
 });
 
-test('og:image without the /nf-agents/ base is reported', () => {
+test('og:image without the /baqueano/ base is reported', () => {
   const html = page('<h1>a</h1><meta property="og:image" content="https://pingedbrain.github.io/og.png">');
   assert.ok(checkOgMeta('index.html', html).some((e) => /og:image/.test(e)));
 });
@@ -110,10 +110,11 @@ test('OG image must exist and be 1200x630', () => {
   assert.deepEqual(checkOg(new Set(['og.png']), pngOf(1200, 630)), []);
 });
 
-test('copy: wrong brand case and the docker one-liner are reported on any page', () => {
-  for (const bad of ['NF-Agents', 'Nf-agents', 'docker run ghcr.io/x/nf-agents-demo']) {
+test('copy: the old project name and the docker one-liner are reported on any page', () => {
+  for (const bad of ['nf-agents', 'NF-Agents', 'Nf-agents', 'docker run ghcr.io/x/baqueano-demo']) {
     assert.ok(checkCopy('docs/index.html', page(`<p>${bad}</p>`)).length > 0, bad);
   }
+  assert.deepEqual(checkCopy('docs/index.html', page('<p>nf-agents-fixture</p>')), []);
   assert.deepEqual(checkCopy('docs/roadmap/index.html', page('<p>nf-core/sarek on AWS Batch</p>')), []);
 });
 

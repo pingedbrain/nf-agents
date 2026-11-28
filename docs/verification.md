@@ -1,6 +1,6 @@
 # Verification of upstream behaviour
 
-Date: 2026-11-26. Scope: the assumptions nf-agents relies on before writing code — Nextflow
+Date: 2026-11-26. Scope: the assumptions baqueano relies on before writing code — Nextflow
 data lineage (storage model and `nextflow lineage` CLI), supported Nextflow versions, the
 `agent` primitive, rmcp, object_store, MiniStack and the Rust quality
 tooling. Rule applied: where observed behaviour contradicts an initial assumption, the observed
@@ -34,7 +34,7 @@ Pinned upstream references used below:
 | 1 | `lineage.enabled`, `lineage.store.location`, `.data.json`, `lineage/v1beta1`, types WorkflowRun/TaskRun/TaskOutput/WorkflowOutput/FileOutput | All confirmed. Plus: a 6th type **`AgentRun`** (26.10+), an on-disk **envelope change** (flat in 25.04, `{version, kind, spec}` from 25.10), `#output` sibling directories, a `.history/` folder, and checksums that are **metadata hashes (path + size + mtime), not content hashes** | **Yes** — parser must accept both envelopes; `check` must reimplement Nextflow's murmur3 metadata hash; fixtures must preserve mtimes |
 | 2 | Subcommands `list, view, find, diff, check, render` | Confirmed, exactly those six. Output of `find` changed format (JSON array in 25.04, one LID per line from 25.10). Several errors exit `0` with the message on stdout | **Yes** — contract tests must normalize per version and compare on stdout text, not only exit codes |
 | 3 | Minimum 25.04, define CI matrix | 25.04 is indeed the first release with lineage. Latest stable is **26.10.7**. Four format generations exist across 25.04 / 25.10 / 26.04 / 26.10 | Matrix of 4 (fixtures are generated offline, so it costs nothing per PR) |
-| 4 | `agent` primitive in preview; maybe accepts `baseUrl`; maybe chat completions / responses / streaming | Exists since **26.10** (first in 26.08.0-edge). Accepts `agent.baseUrl`. Default runner `langchain4j` calls **`POST {baseUrl}/chat/completions` non-streaming**. The `pi` runner calls **`POST /v1/responses` with SSE** (OpenAI) or **`POST /v1/messages?beta=true` with SSE** (Anthropic) | **Yes** — nf-llm-replay priority is non-streaming chat completions; SSE is needed for the Responses and Messages APIs, not for chat completions |
+| 4 | `agent` primitive in preview; maybe accepts `baseUrl`; maybe chat completions / responses / streaming | Exists since **26.10** (first in 26.08.0-edge). Accepts `agent.baseUrl`. Default runner `langchain4j` calls **`POST {baseUrl}/chat/completions` non-streaming**. The `pi` runner calls **`POST /v1/responses` with SSE** (OpenAI) or **`POST /v1/messages?beta=true` with SSE** (Anthropic) | **Yes** — baqueano-replay priority is non-streaming chat completions; SSE is needed for the Responses and Messages APIs, not for chat completions |
 | 5 | rmcp: latest stable, features, tool API | `rmcp 3.12.0`; `#[tool_router]` / `#[tool]` / `#[tool_handler]`, `Parameters<T>` with schemars 1; in-process tests over `tokio::io::duplex` work | Minor — pin 3.x, disable default features (chrono advisory) |
 | 6 | object_store covers local, S3, GCS, Azure | `object_store 0.14.2` with features `aws`, `gcp`, `azure` (local `fs` is default, in-memory always on). Verified local + in-memory + S3 on MiniStack. **`Path::from` percent-encodes `#`**, which breaks `<hash>#output` keys unless `Path::parse` is used | **Yes** — key handling rule; `#[async_trait]` stays (native `async fn` is not dyn-compatible) |
 | 7 | Spec Kit: version, init, command names | Spec Kit `v1.4.5`: `uv tool install specify-cli`, `specify init --integration <agent>`, `/speckit.*` commands. | **Yes** — drop `specs/`, use `openspec/specs/` + `openspec/changes/` |
@@ -55,7 +55,7 @@ types `WorkflowRun`, `TaskRun`, `TaskOutput`, `WorkflowOutput`, `FileOutput`.
 Sources: [Data lineage tutorial](https://docs.seqera.io/nextflow/tutorials/data-lineage)
 (the older `nextflow.io/docs/latest/data-lineage.html` URL now redirects there),
 [config reference](https://docs.seqera.io/nextflow/reference/config/lineage),
-`modules/nf-lineage/src/main/nextflow/lineage/` at `v26.10.7` (`DefaultLinStore.groovy`,
+`modules/baqueano-lineage/src/main/nextflow/lineage/` at `v26.10.7` (`DefaultLinStore.groovy`,
 `serde/LinTypeAdapterFactory.groovy`, `model/v1beta1/*.groovy`, `DefaultLinHistoryLog.groovy`,
 `LinHistoryRecord.groovy`, `LinObserver.groovy`), and lineage stores generated locally.
 
@@ -189,7 +189,7 @@ as the oracle.
 ### 2.2 Finding
 
 Sources: [CLI reference](https://docs.seqera.io/nextflow/reference/cli/lineage),
-`modules/nf-lineage/src/main/nextflow/lineage/cli/LinCommandImpl.groovy` at each tag, and the
+`modules/baqueano-lineage/src/main/nextflow/lineage/cli/LinCommandImpl.groovy` at each tag, and the
 captured stdout, stderr and exit code of every subcommand on each version.
 
 Exactly six subcommands, **no flags** besides `-h`. `nextflow lineage -h` (26.10.7):
@@ -288,11 +288,11 @@ Fixture generation: the minimal pipeline must use an `output` block (otherwise t
 `nextflow.preview.output = true`. Fixtures are generated under a fixed absolute path inside the
 container, with a `nextflow.config` that sets `lineage.enabled = true` copied into the launch
 directory (the CLI needs it). An agent fixture (26.10.7, `langchain4j`, against
-`nf-llm-replay`) covers `AgentRun`.
+`baqueano-replay`) covers `AgentRun`.
 
 ---
 
-## 4. The `agent` primitive (what `nf-llm-replay` must emulate)
+## 4. The `agent` primitive (what `baqueano-replay` must emulate)
 
 ### 4.1 Initial assumption
 
@@ -346,7 +346,7 @@ The `pi` requests contain **volatile data**: `prompt_cache_key`, the `session_id
 The lineage side works as documented: each agent run is an `AgentRun` record
 (checked with `nextflow lineage view`) and its result a `TaskOutput`.
 
-### 4.3 Design impact: exactly what `nf-llm-replay` must emulate
+### 4.3 Design impact: exactly what `baqueano-replay` must emulate
 
 Yes, the priorities flip compared to the initial assumption (streaming first):
 
@@ -369,7 +369,7 @@ Yes, the priorities flip compared to the initial assumption (streaming first):
 7. Docs example: `agent.baseUrl = 'http://localhost:<port>/v1'` with no key for langchain4j;
    for pi also set `agent.apiKey` to any dummy value and make the proxy reachable from the
    runner container (host network or a reachable host name).
-8. The acceptance criterion "a pipeline example pointing to `nf-llm-replay`" is now confirmed
+8. The acceptance criterion "a pipeline example pointing to `baqueano-replay`" is now confirmed
    feasible and should become a real test (needs only Docker + the Nextflow image).
 
 ---
@@ -445,7 +445,7 @@ impl LineageServer {
     }
 }
 
-#[tool_handler(router = self.tool_router, name = "nf-lineage-mcp", version = "0.0.0",
+#[tool_handler(router = self.tool_router, name = "baqueano-mcp", version = "0.0.0",
                instructions = "read-only lineage probe")]
 impl ServerHandler for LineageServer {}
 
@@ -562,8 +562,8 @@ and command names.
 
 ### 7.3 Design impact
 
-Yes: replace `specs/` with `openspec/` (`openspec/specs/nf-lineage`, `openspec/specs/nf-llm-replay`,
-`openspec/specs/nf-lineage-mcp`). Do not run `specify init` (two SDD layouts would confuse contributors).
+Yes: replace `specs/` with `openspec/` (`openspec/specs/baqueano-lineage`, `openspec/specs/baqueano-replay`,
+`openspec/specs/baqueano-mcp`). Do not run `specify init` (two SDD layouts would confuse contributors).
 
 ---
 

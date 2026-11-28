@@ -4,7 +4,7 @@
 # The LLM is llm_stub.py on 127.0.0.1: no credentials are passed in, nothing leaves the container
 # except the nf-agent plugin download.
 set -euo pipefail
-VER=$1 IMAGE=$2 TOOLS=/nf-agents-tools
+VER=$1 IMAGE=$2 TOOLS=/baqueano-tools
 OUT=/out/$VER-agent
 ORACLE=$OUT/oracle
 # shellcheck source=lib.sh

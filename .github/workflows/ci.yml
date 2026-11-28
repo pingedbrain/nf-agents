@@ -63,7 +63,7 @@ jobs:
           persist-credentials: false
       - run: rustup toolchain install
       - uses: Swatinem/rust-cache@v2
-      - run: cargo test -p nf-lineage --test contract --locked
+      - run: cargo test -p baqueano-lineage --test contract --locked
 
   # S3 integration tests against MiniStack (an AWS emulator). The tests use fixed dummy
   # credentials (`test`/`test`) and their own buckets; no secrets are involved.
@@ -75,14 +75,14 @@ jobs:
         ports:
           - 4566:4566
     env:
-      NF_LINEAGE_MINISTACK_URL: http://localhost:4566
+      BAQUEANO_LINEAGE_MINISTACK_URL: http://localhost:4566
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - run: rustup toolchain install
       - uses: Swatinem/rust-cache@v2
-      - run: cargo test -p nf-lineage --test s3_ministack --locked
+      - run: cargo test -p baqueano-lineage --test s3_ministack --locked
 
   # Builds the images (never pushed): the proxy runs the example pipeline offline, the MCP
   # server answers a scripted stdio session against a committed fixture store.
@@ -93,31 +93,31 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - run: docker build -f crates/nf-llm-replay/Dockerfile -t nf-llm-replay:ci .
+      - run: docker build -f crates/baqueano-replay/Dockerfile -t baqueano-replay:ci .
       - name: Image runs as 65532:65532 and is at most 25 MB
         run: |
-          user=$(docker image inspect nf-llm-replay:ci --format '{{.Config.User}}')
-          size=$(docker image inspect nf-llm-replay:ci --format '{{.Size}}')
+          user=$(docker image inspect baqueano-replay:ci --format '{{.Config.User}}')
+          size=$(docker image inspect baqueano-replay:ci --format '{{.Size}}')
           echo "user=$user size=$size"
           test "$user" = "65532:65532"
           test "$size" -le 26214400
-      - run: docker run --rm nf-llm-replay:ci --help
-      - run: docs/examples/nf-llm-replay/e2e.sh
+      - run: docker run --rm baqueano-replay:ci --help
+      - run: docs/examples/baqueano-replay/e2e.sh
         env:
           E2E_REQUIRE_DOCKER: "1"
-          IMAGE: nf-llm-replay:ci
-      - run: docker build -f crates/nf-lineage-mcp/Dockerfile -t nf-lineage-mcp:ci .
+          IMAGE: baqueano-replay:ci
+      - run: docker build -f crates/baqueano-mcp/Dockerfile -t baqueano-mcp:ci .
       - name: MCP image runs as 65532:65532 and is at most 30 MB
         run: |
-          user=$(docker image inspect nf-lineage-mcp:ci --format '{{.Config.User}}')
-          size=$(docker image inspect nf-lineage-mcp:ci --format '{{.Size}}')
+          user=$(docker image inspect baqueano-mcp:ci --format '{{.Config.User}}')
+          size=$(docker image inspect baqueano-mcp:ci --format '{{.Size}}')
           echo "user=$user size=$size"
           test "$user" = "65532:65532"
           test "$size" -le 31457280
       - name: MCP stdio smoke session against the 26.10.7 fixture store
         run: |
           out=$(docker run -i --rm -v "$PWD/fixtures/lineage/26.10.7/.lineage:/store:ro" \
-            nf-lineage-mcp:ci --store /store < crates/nf-lineage-mcp/tests/data/session.jsonl)
+            baqueano-mcp:ci --store /store < crates/baqueano-mcp/tests/data/session.jsonl)
           echo "$out"
           test "$(grep -o 'lid://[0-9a-f]\{32\}' <<<"$out" | sort -u | wc -l)" -eq 2
           grep -q '"isError":false' <<<"$out"
@@ -125,8 +125,8 @@ jobs:
       - name: Local demo
         shell: bash
         env:
-          MCP_IMAGE: nf-lineage-mcp:ci
-          REPLAY_IMAGE: nf-llm-replay:ci
+          MCP_IMAGE: baqueano-mcp:ci
+          REPLAY_IMAGE: baqueano-replay:ci
         run: |
           demo/run.sh | tee "$RUNNER_TEMP/demo.log"
-          grep -q 'claude mcp add --transport stdio nf-lineage -- docker run -i' "$RUNNER_TEMP/demo.log"
+          grep -q 'claude mcp add --transport stdio baqueano-lineage -- docker run -i' "$RUNNER_TEMP/demo.log"

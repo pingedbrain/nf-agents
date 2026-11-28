@@ -24,7 +24,7 @@ The workflow MUST run `check` on pull requests that change `site/**` or `.github
 - THEN `check` runs the three steps and passes when all succeed
 
 #### Scenario: Broken prefix (P-check)
-- GIVEN a PR that adds a link missing the `/nf-agents` base
+- GIVEN a PR that adds a link missing the `/baqueano` base
 - WHEN `npm test` runs the `dist/` check
 - THEN `check` fails
 

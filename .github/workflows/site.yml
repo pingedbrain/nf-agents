@@ -7,8 +7,8 @@ on:
       - '.github/workflows/site.yml'
       - 'docs/demo.md'
       - 'docs/architecture.md'
-      - 'crates/nf-lineage-mcp/README.md'
-      - 'docs/examples/nf-llm-replay/README.md'
+      - 'crates/baqueano-mcp/README.md'
+      - 'docs/examples/baqueano-replay/README.md'
       - 'ROADMAP.md'
       - 'brand/logo/**'
   push:

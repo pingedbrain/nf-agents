@@ -4,7 +4,7 @@ import { readFile, readdir } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-const BASE = '/nf-agents/';
+const BASE = '/baqueano/';
 const SITE_HOST = 'pingedbrain.github.io';
 const DISCLAIMER = 'Not affiliated with or endorsed by Seqera';
 const DENYLIST = [/fonts\.googleapis/, /fonts\.gstatic/, /googletagmanager/, /google-analytics/, /plausible/];
@@ -12,8 +12,8 @@ const VENDOR_LOGO = /nextflow|seqera|\baws\b|azure|\bgcp\b|google-cloud/i;
 const DOCS_ROUTES = [
   'docs/index.html',
   'docs/architecture/index.html',
-  'docs/nf-lineage-mcp/index.html',
-  'docs/nf-llm-replay/index.html',
+  'docs/baqueano-mcp/index.html',
+  'docs/baqueano-replay/index.html',
   'docs/roadmap/index.html',
 ];
 
@@ -87,7 +87,7 @@ export function checkText(relPath, text) {
 }
 
 // Copy rules from the project-site spec (S-copy). The roadmap may name sarek; the landing may not.
-const COPY_BANNED = [/NF-Agents/, /Nf-agents/, /docker run ghcr\.io/];
+const COPY_BANNED = [/nf-agents(?!-fixture)/i, /docker run ghcr\.io/];
 const LANDING_BANNED = [/\bsarek\b/i];
 const LANDING_REQUIRED = ['demo/run.sh', 'params.greeting'];
 
@@ -104,7 +104,7 @@ export function checkRoutes(files) {
   return DOCS_ROUTES.filter((r) => !files.has(r)).map((r) => `missing docs route: ${r}`);
 }
 
-export const OG_IMAGE_URL = 'https://pingedbrain.github.io/nf-agents/og.png';
+export const OG_IMAGE_URL = 'https://pingedbrain.github.io/baqueano/og.png';
 
 export function checkOgMeta(relPath, html) {
   const metas = html.match(/<meta\b[^>]*>/gi) ?? [];

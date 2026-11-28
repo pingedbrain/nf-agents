@@ -1,0 +1,42 @@
+[package]
+name = "baqueano-lineage"
+version = "0.1.0"
+description = "Read, query, check and diff Nextflow data lineage stores (local, S3, GCS, Azure)."
+readme = "README.md"
+documentation = "https://docs.rs/baqueano-lineage"
+keywords = ["nextflow", "lineage", "provenance", "bioinformatics", "workflow"]
+categories = ["science::bioinformatics", "parser-implementations"]
+# The tests need the repository fixtures (fixtures/lineage), so only the library ships.
+include = ["/src", "/README.md"]
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lints]
+workspace = true
+
+[features]
+default = ["aws", "gcp", "azure"]
+# Cloud object stores (s3://, gs://, az://); local paths and file:// always work.
+aws = ["object_store/aws"]
+gcp = ["object_store/gcp"]
+azure = ["object_store/azure"]
+
+[dependencies]
+async-trait.workspace = true
+futures.workspace = true
+murmur3.workspace = true
+object_store.workspace = true
+serde.workspace = true
+serde_json = { workspace = true, features = ["preserve_order"] }
+similar.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+url.workspace = true
+
+[dev-dependencies]
+insta.workspace = true
+regex.workspace = true
+tempfile.workspace = true
+tokio.workspace = true

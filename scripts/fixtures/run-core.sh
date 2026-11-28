@@ -2,7 +2,7 @@
 # Runs inside nextflow/nextflow:<version>, cwd = the recorded root (staged pipeline + config).
 # Usage: run-core.sh <version> <image-ref>. Writes the version dir to /out/<version>.
 set -euo pipefail
-VER=$1 IMAGE=$2 TOOLS=/nf-agents-tools
+VER=$1 IMAGE=$2 TOOLS=/baqueano-tools
 OUT=/out/$VER
 ORACLE=$OUT/oracle
 # shellcheck source=lib.sh

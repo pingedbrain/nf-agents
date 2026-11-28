@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-"""Scripted MCP session against nf-lineage-mcp for the local demo (demo/run.sh).
+"""Scripted MCP session against baqueano-mcp for the local demo (demo/run.sh).
 
 Speaks JSON-RPC over stdin/stdout, prints a short human summary of each step on stderr and
 writes the raw exchange to <workdir>/transcript.jsonl. Python >= 3.9, stdlib only.
@@ -10,7 +10,7 @@ import json
 import os
 import sys
 
-TAMPER_LINE = "edited by the nf-agents demo to show a checksum mismatch\n"
+TAMPER_LINE = "edited by the baqueano demo to show a checksum mismatch\n"
 
 
 class TourError(Exception):
@@ -125,7 +125,7 @@ def main(argv=None, rx=sys.stdin, tx=sys.stdout, err=sys.stderr):
         s = Session(rx, tx, transcript)
         try:
             s.request("initialize", {"protocolVersion": "2025-06-18", "capabilities": {},
-                                     "clientInfo": {"name": "nf-agents-demo", "version": "0"}})
+                                     "clientInfo": {"name": "baqueano-demo", "version": "0"}})
             s.notify("notifications/initialized")
             run_tour(s, args.workdir, say)
         except TourError as e:

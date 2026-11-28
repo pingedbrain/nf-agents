@@ -14,14 +14,14 @@ import Terminal from './Terminal.astro';
   <div class="split">
     <div class="stack">
       <p class="step-label">1. Run the demo</p>
-      <pre class="command" tabindex="0"><code>git clone https://github.com/pingedbrain/nf-agents.git && cd nf-agents && demo/run.sh</code></pre>
+      <pre class="command" tabindex="0"><code>git clone https://github.com/pingedbrain/baqueano.git && cd baqueano && demo/run.sh</code></pre>
       <p class="muted small">
         The script runs one pipeline with an agent step twice, with <code>--greeting hello</code>
         and then <code>--greeting bonjour</code>. It then asks the lineage server what changed.
         The first run builds both images (about 3 minutes); later runs take about 24 seconds.
       </p>
       <p class="step-label">2. Ask Claude Code about the runs</p>
-      <pre class="command" tabindex="0"><code>claude mcp add --transport stdio nf-lineage -- docker run -i --rm --network none -v "$PWD/demo/.run:/demo:ro" nf-lineage-mcp:demo --store /demo/.lineage</code></pre>
+      <pre class="command" tabindex="0"><code>claude mcp add --transport stdio baqueano-lineage -- docker run -i --rm --network none -v "$PWD/demo/.run:/demo:ro" baqueano-mcp:demo --store /demo/.lineage</code></pre>
       <p class="muted small">
         The server is read-only and has no network access. Ask "What changed between my last two
         runs?" The full transcript and troubleshooting are in <a href={`${import.meta.env.BASE_URL}docs/`}>the docs</a>.

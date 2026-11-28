@@ -2,7 +2,7 @@
 # Runs inside nextflow/nextflow:<version> on a plain copy of a version dir (mtimes lost, as after
 # a git checkout) mounted at the recorded root. Proves the mtime manifest is necessary and enough.
 set -euo pipefail
-TOOLS=/nf-agents-tools
+TOOLS=/baqueano-tools
 # shellcheck source=lib.sh
 source "$TOOLS/lib.sh"
 trap 'chown -R "${HOST_UID:-0}:${HOST_GID:-0}" "$PWD"' EXIT

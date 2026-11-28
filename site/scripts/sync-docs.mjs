@@ -4,13 +4,13 @@ import { readFile, writeFile, mkdir, copyFile, readdir, rm } from 'node:fs/promi
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-const REPO = 'https://github.com/pingedbrain/nf-agents/';
+const REPO = 'https://github.com/pingedbrain/baqueano/';
 
 export const SOURCES = [
   { src: 'docs/demo.md', slug: '' },
   { src: 'docs/architecture.md', slug: 'architecture' },
-  { src: 'crates/nf-lineage-mcp/README.md', slug: 'nf-lineage-mcp' },
-  { src: 'docs/examples/nf-llm-replay/README.md', slug: 'nf-llm-replay' },
+  { src: 'crates/baqueano-mcp/README.md', slug: 'baqueano-mcp' },
+  { src: 'docs/examples/baqueano-replay/README.md', slug: 'baqueano-replay' },
   { src: 'ROADMAP.md', slug: 'roadmap' },
 ];
 
@@ -22,13 +22,13 @@ function routeFor(slug, base) {
 
 // Resolve a link found in `src` (a repo-relative path). `..` is clipped at the
 // repository root, so `../../issues` in crates/... points at the repo's issues page.
-export function rewriteLink(target, src, base = '/nf-agents') {
+export function rewriteLink(target, src, base = '/baqueano') {
   if (target.startsWith('#') || SCHEME.test(target) || target.startsWith('//')) return target;
   const hashAt = target.indexOf('#');
   const hash = hashAt === -1 ? '' : target.slice(hashAt);
   const pathAndQuery = hashAt === -1 ? target : target.slice(0, hashAt);
   const resolved = new URL(pathAndQuery, REPO + src);
-  const rel = resolved.pathname.replace(/^\/pingedbrain\/nf-agents\//, '');
+  const rel = resolved.pathname.replace(/^\/pingedbrain\/baqueano\//, '');
   const mapped = SOURCES.find((s) => s.src === rel);
   if (mapped && !resolved.search) return routeFor(mapped.slug, base) + hash;
   const isDir = pathAndQuery.endsWith('/');
@@ -72,7 +72,7 @@ function assertNoRelativeImages(body, src) {
   }
 }
 
-export function transform(md, { src, base = '/nf-agents' }) {
+export function transform(md, { src, base = '/baqueano' }) {
   const lines = md.split('\n');
   const first = lines.findIndex((l) => l.trim() !== '');
   const h1 = first === -1 ? null : /^# (.+?)\s*$/.exec(lines[first]);
@@ -85,7 +85,7 @@ export function transform(md, { src, base = '/nf-agents' }) {
   return `---\ntitle: ${JSON.stringify(title)}\neditUrl: ${JSON.stringify(editUrl)}\n---\n\n${rewritten}`;
 }
 
-export async function sync({ repoRoot, siteRoot, base = '/nf-agents' }) {
+export async function sync({ repoRoot, siteRoot, base = '/baqueano' }) {
   const docsDir = join(siteRoot, 'src/content/docs/docs');
   const brandDir = join(siteRoot, 'src/generated/brand');
   await rm(docsDir, { recursive: true, force: true });

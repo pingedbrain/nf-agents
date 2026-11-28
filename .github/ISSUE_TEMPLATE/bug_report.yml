@@ -1,5 +1,5 @@
 name: Bug report
-description: Something in nf-agents does not work as expected.
+description: Something in baqueano does not work as expected.
 labels: [bug]
 body:
   - type: markdown
@@ -11,9 +11,9 @@ body:
     attributes:
       label: Component
       options:
-        - nf-lineage
-        - nf-lineage-mcp
-        - nf-llm-replay
+        - baqueano-lineage
+        - baqueano-mcp
+        - baqueano-replay
         - nf-evals
         - Agent module
         - Infrastructure (OpenTofu)
@@ -40,9 +40,9 @@ body:
     id: environment
     attributes:
       label: Environment
-      description: nf-agents version or commit, Nextflow version, OS, executor/cloud.
+      description: baqueano version or commit, Nextflow version, OS, executor/cloud.
       placeholder: |
-        nf-agents: 
+        baqueano: 
         Nextflow: 
         OS: 
         Executor / cloud: 

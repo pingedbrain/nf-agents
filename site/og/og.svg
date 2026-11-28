@@ -8,7 +8,7 @@
     <path d="M24 14L34 24L24 34L14 24Z" fill="#0B6B58"/>
     <circle cx="24" cy="24" r="3" fill="#FFFFFF"/>
   </g>
-  <text x="300" y="224" font-family="JetBrains Mono, monospace" font-weight="500" font-size="88" letter-spacing="-2"><tspan fill="#7A847F">nf-</tspan><tspan fill="#141816">agents</tspan></text>
+  <text x="300" y="224" font-family="JetBrains Mono, monospace" font-weight="500" font-size="88" letter-spacing="-2"><tspan fill="#141816">baqueano</tspan></text>
   <text x="96" y="380" font-family="Inter, sans-serif" font-weight="600" font-size="52" fill="#141816">AI agents inside your Nextflow pipelines.</text>
   <text x="96" y="452" font-family="Inter, sans-serif" font-weight="400" font-size="48" fill="#0B6B58">With evals and lineage.</text>
   <text x="96" y="560" font-family="Inter, sans-serif" font-weight="400" font-size="28" fill="#5C6661">Open source · Apache-2.0 · Pre-alpha</text>

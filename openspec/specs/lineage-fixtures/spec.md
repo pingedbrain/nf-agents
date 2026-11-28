@@ -3,8 +3,8 @@
 ## Purpose
 
 Committed, offline, reproducible Nextflow lineage stores plus the `nextflow lineage` CLI output
-(the oracle) for every supported Nextflow format generation, so that `nf-lineage` and
-`nf-lineage-mcp` can be tested from a plain git checkout with no Docker, network, cards or keys.
+(the oracle) for every supported Nextflow format generation, so that `baqueano-lineage` and
+`baqueano-mcp` can be tested from a plain git checkout with no Docker, network, cards or keys.
 Generation needs only bash and Docker.
 
 Terms: **version dir** = `fixtures/lineage/<name>/`; **recorded root** = `/nf-agents-fixture`

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Tag-driven release of nf-agents: crates.io (three crates, `0.1.0`), GHCR images for `nf-lineage-mcp` and `nf-llm-replay`, and a GitHub Release. `ci.yml` never publishes.
+Tag-driven release of baqueano: crates.io (three crates, `0.1.0`), GHCR images for `baqueano-mcp` and `baqueano-replay`, and a GitHub Release. `ci.yml` never publishes.
 
 ## Verification checks
 
@@ -10,7 +10,7 @@ Tag-driven release of nf-agents: crates.io (three crates, `0.1.0`), GHCR images 
 |----|------|----------------|
 | R-check | test (offline) | `scripts/release/check.sh` exits 0 on the tree; names the crate when `keywords` is missing |
 | R-tag | test (offline) | `check.sh v9.9.9` exits non-zero; `check.sh v<version>` exits 0 |
-| R-pkg | test (offline) | `cargo package --workspace --locked`; `--list` of `nf-llm-replay` has no `tests/` |
+| R-pkg | test (offline) | `cargo package --workspace --locked`; `--list` of `baqueano-replay` has no `tests/` |
 | R-yaml | verify (static) | inspect `.github/workflows/release.yml` |
 | R-tag-main | verify (real tag) | tag on a commit not on `main`: `check` fails |
 | R-crates | verify (real tag) | `v0.1.0`: three crates at `0.1.0` on crates.io |
@@ -21,7 +21,7 @@ Tag-driven release of nf-agents: crates.io (three crates, `0.1.0`), GHCR images 
 
 ### Requirement: Publishable crate metadata
 
-`nf-llm-replay` MUST NOT set `publish = false`, MUST declare `readme`, `keywords`, `categories` and `include = ["/src", "/README.md"]`, and ship a crate `README.md`. Every publishable crate MUST declare `readme`, `keywords` and `categories`.
+`baqueano-replay` MUST NOT set `publish = false`, MUST declare `readme`, `keywords`, `categories` and `include = ["/src", "/README.md"]`, and ship a crate `README.md`. Every publishable crate MUST declare `readme`, `keywords` and `categories`.
 
 #### Scenario: Metadata complete (R-check)
 - GIVEN the workspace
@@ -33,7 +33,7 @@ Tag-driven release of nf-agents: crates.io (three crates, `0.1.0`), GHCR images 
 - THEN `check.sh` exits non-zero and names the crate
 
 #### Scenario: Test files excluded (R-pkg)
-- WHEN `cargo package -p nf-llm-replay --list` runs
+- WHEN `cargo package -p baqueano-replay --list` runs
 - THEN no path under `tests/` is listed
 
 ### Requirement: Tag check
@@ -75,7 +75,7 @@ The `crates` job MUST run in environment `release`, publish with `cargo publish 
 
 ### Requirement: Image publishing
 
-The `images` job MUST build with `docker build` and push `ghcr.io/pingedbrain/nf-lineage-mcp` and `ghcr.io/pingedbrain/nf-llm-replay` with `docker push`. Tags MUST be `X.Y.Z`; `latest` MUST be applied only when the tag has no `-`. Provenance MUST be attached with `actions/attest-build-provenance`.
+The `images` job MUST build with `docker build` and push `ghcr.io/pingedbrain/baqueano-mcp` and `ghcr.io/pingedbrain/baqueano-replay` with `docker push`. Tags MUST be `X.Y.Z`; `latest` MUST be applied only when the tag has no `-`. Provenance MUST be attached with `actions/attest-build-provenance`.
 
 #### Scenario: Stable and prerelease tags (R-images, R-release)
 - GIVEN tag `v0.1.0` THEN both images carry `0.1.0`, `latest` and a provenance attestation
