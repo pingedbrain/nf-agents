@@ -43,7 +43,6 @@ def make_workspace(root, crates):
         crate = os.path.join(root, "crates", name)
         write(os.path.join(crate, "Cargo.toml"), text)
         write(os.path.join(crate, "src", "lib.rs"), "")
-        write(os.path.join(crate, "README.md"), "# test\n")
 
 
 def write(path, text):
