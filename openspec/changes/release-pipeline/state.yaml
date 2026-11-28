@@ -7,7 +7,7 @@ phases:
   spec: done
   design: done
   tasks: done
-  apply: pending
+  apply: done
   verify: pending
   archive: pending
 depends_on:
@@ -19,4 +19,4 @@ rollout:
   - "maintainer: push v0.1.0 from main"
   - "maintainer: trusted publishers on crates.io, delete secret, revoke token; GHCR packages public"
 updated: 2026-11-28
-next: apply
+next: verify
