@@ -1,0 +1,22 @@
+change: release-pipeline
+artifact_store: openspec
+mode: auto
+phases:
+  explore: skipped
+  proposal: done
+  spec: done
+  design: done
+  tasks: done
+  apply: pending
+  verify: pending
+  archive: pending
+depends_on:
+  - nf-lineage-mcp  # path dep on nf-lineage, Dockerfile
+  - nf-llm-replay   # Dockerfile, crate made publishable here
+  - local-demo      # README image fast path follows after the release
+rollout:
+  - "maintainer: environment release (v* only), bootstrap token secret, v* tag ruleset"
+  - "maintainer: push v0.1.0 from main"
+  - "maintainer: trusted publishers on crates.io, delete secret, revoke token; GHCR packages public"
+updated: 2026-11-28
+next: apply
