@@ -2,7 +2,7 @@
 
 ## Purpose
 
-A reproducible local demo of stage 1. It needs Docker and bash only: no API keys and no Rust toolchain. A Nextflow pipeline with an AI step runs twice, with lineage enabled and the model answers replayed from a committed cassette by `nf-llm-replay`. A scripted MCP session against `nf-lineage-mcp` then shows the value of the stage, and the script prints how to ask Claude Code the same questions.
+A reproducible local demo of stage 1. It needs Docker and bash only: no API keys and no Rust toolchain. A Nextflow pipeline with an AI step runs twice, with lineage enabled and the model answers replayed from a committed cassette by `baqueano-replay`. A scripted MCP session against `baqueano-mcp` then shows the value of the stage, and the script prints how to ask Claude Code the same questions.
 
 Terms: **workdir** = `DEMO_WORKDIR` (default `<repo>/demo/.run`), mounted at `/demo` in every container. **Run A / Run B** = the `hello` / `bonjour` runs.
 
@@ -14,10 +14,10 @@ Unit tests: `demo/test_tour.py` (`<Class>.<test>`), stdlib `unittest`, no Docker
 
 | ID | Kind | Command / name |
 |----|------|----------------|
-| DM-run | CI `docker` | `MCP_IMAGE=nf-lineage-mcp:ci REPLAY_IMAGE=nf-llm-replay:ci demo/run.sh` → exit 0; stdout has `claude mcp add --transport stdio nf-lineage -- docker run -i` |
+| DM-run | CI `docker` | `MCP_IMAGE=baqueano-mcp:ci REPLAY_IMAGE=baqueano-replay:ci demo/run.sh` → exit 0; stdout has `claude mcp add --transport stdio baqueano-lineage -- docker run -i` |
 | DM-unit | CI `test` | `python3 -I -m unittest discover -s demo -p 'test_*.py'` |
 | DM-sh | CI `test` | `shellcheck demo/run.sh` |
-| DM-cas | CI `test` | `secrets::committed_cassettes_contain_no_credentials` (crate `nf-llm-replay`) |
+| DM-cas | CI `test` | `secrets::committed_cassettes_contain_no_credentials` (crate `baqueano-replay`) |
 | DM-miss | verify (Docker) | remove one cassette line → `run.sh` exits ≠ 0 and prints the `DEMO_RECORD=1` hint |
 | DM-record | verify (Docker) | `DEMO_RECORD=1` against the fake upstream → cassette bytes unchanged |
 | DM-time | verify (Docker) | warm and cold timings measured and recorded in `docs/demo.md` |
@@ -27,7 +27,7 @@ Unit tests: `demo/test_tour.py` (`<Class>.<test>`), stdlib `unittest`, no Docker
 
 ### Requirement: Entry point
 
-`demo/run.sh` MUST work from any cwd with bash ≥ 3.2 and Docker. It MUST validate the workdir before anything else, then fail with exit 1 and `docker is required` when Docker is missing or not running. Images: `MCP_IMAGE` / `REPLAY_IMAGE` MUST be used as given; when unset, the script MUST build `nf-lineage-mcp:demo` and `nf-llm-replay:demo` from the repo Dockerfiles. It MUST NOT forward host environment variables to containers (except as stated under "Re-recording").
+`demo/run.sh` MUST work from any cwd with bash ≥ 3.2 and Docker. It MUST validate the workdir before anything else, then fail with exit 1 and `docker is required` when Docker is missing or not running. Images: `MCP_IMAGE` / `REPLAY_IMAGE` MUST be used as given; when unset, the script MUST build `baqueano-mcp:demo` and `baqueano-replay:demo` from the repo Dockerfiles. It MUST NOT forward host environment variables to containers (except as stated under "Re-recording").
 
 #### Scenario: No Docker (T `RunScriptTests.test_fails_fast_without_docker`)
 - GIVEN a stub `docker` first on `PATH` that exits 1 (daemon down)
@@ -45,7 +45,7 @@ Unit tests: `demo/test_tour.py` (`<Class>.<test>`), stdlib `unittest`, no Docker
 
 ### Requirement: Workdir safety
 
-The workdir MUST be recreated on every run. A non-empty directory without the marker file `.nf-agents-demo` MUST NOT be deleted: exit 1 with `refusing to delete`. After the run, every file in the workdir MUST be owned by the invoking user, and the Docker network and containers MUST be removed, on failure too.
+The workdir MUST be recreated on every run. A non-empty directory without the marker file `.baqueano-demo` MUST NOT be deleted: exit 1 with `refusing to delete`. After the run, every file in the workdir MUST be owned by the invoking user, and the Docker network and containers MUST be removed, on failure too.
 
 #### Scenario: Foreign directory (T `RunScriptTests.test_refuses_foreign_workdir`)
 - GIVEN `DEMO_WORKDIR` = a temp dir containing `keep.txt`
@@ -54,7 +54,7 @@ The workdir MUST be recreated on every run. A non-empty directory without the ma
 
 ### Requirement: Pipeline and replay
 
-The script MUST run `demo/main.nf` twice in `nextflow/nextflow:26.10.7` with `lineage.enabled = true`, first with `--greeting hello` and then with `--greeting bonjour`, each with `-output-dir results-<greeting>`. The pipeline MUST be GENERATE → TRANSFORM → SUMMARIZE (as in the minimal fixture) plus the agent `QC_NOTE` (`openai/gpt-5-mini`, runner `langchain4j`, structured output `QcVerdict {answer, confidence}`). That agent is asked whether `upper.txt` contains lowercase letters, and is reached through `agent.baseUrl = http://replay:8080/v1` on an `--internal` Docker network (the pinned `nf-agent@0.2.0` plugin is fetched first, then Nextflow runs with `NXF_OFFLINE=true`). `nf-llm-replay` MUST run `--mode replay` with `demo/cassettes/demo.jsonl` mounted read-only. No container receives an API key. Inputs are synthetic.
+The script MUST run `demo/main.nf` twice in `nextflow/nextflow:26.10.7` with `lineage.enabled = true`, first with `--greeting hello` and then with `--greeting bonjour`, each with `-output-dir results-<greeting>`. The pipeline MUST be GENERATE → TRANSFORM → SUMMARIZE (as in the minimal fixture) plus the agent `QC_NOTE` (`openai/gpt-5-mini`, runner `langchain4j`, structured output `QcVerdict {answer, confidence}`). That agent is asked whether `upper.txt` contains lowercase letters, and is reached through `agent.baseUrl = http://replay:8080/v1` on an `--internal` Docker network (the pinned `nf-agent@0.2.0` plugin is fetched first, then Nextflow runs with `NXF_OFFLINE=true`). `baqueano-replay` MUST run `--mode replay` with `demo/cassettes/demo.jsonl` mounted read-only. No container receives an API key. Inputs are synthetic.
 
 #### Scenario: Offline answers (DM-run)
 - GIVEN the committed cassette
@@ -71,17 +71,17 @@ The script MUST run `demo/main.nf` twice in `nextflow/nextflow:26.10.7` with `li
 `demo/cassettes/demo.jsonl` MUST hold exactly the 2 entries the two runs need. It MUST contain no credentials and no absolute host paths. `docs/demo.md` MUST say which upstream (fake, or model + date) recorded it.
 
 #### Scenario: Secret-free (DM-cas)
-- GIVEN the committed cassettes (`docs/examples/nf-llm-replay/cassettes/*.jsonl`, `demo/cassettes/*.jsonl`)
+- GIVEN the committed cassettes (`docs/examples/baqueano-replay/cassettes/*.jsonl`, `demo/cassettes/*.jsonl`)
 - WHEN scanned
 - THEN no credential pattern or host path is found
 
 ### Requirement: Re-recording
 
-With `DEMO_RECORD=1` and `UPSTREAM=<url>`, the replay container MUST run `--mode record --upstream $UPSTREAM` on the host network (so a local upstream on `127.0.0.1` is reachable). It MUST receive `NF_LLM_REPLAY_API_KEY` by name only, run as the invoking user, record into a fresh cassette in the workdir, and the script MUST copy it to `demo/cassettes/demo.jsonl` only when both runs succeed. The script MUST NOT print the key. Without `UPSTREAM` it MUST exit 1 before starting containers.
+With `DEMO_RECORD=1` and `UPSTREAM=<url>`, the replay container MUST run `--mode record --upstream $UPSTREAM` on the host network (so a local upstream on `127.0.0.1` is reachable). It MUST receive `BAQUEANO_REPLAY_API_KEY` by name only, run as the invoking user, record into a fresh cassette in the workdir, and the script MUST copy it to `demo/cassettes/demo.jsonl` only when both runs succeed. The script MUST NOT print the key. Without `UPSTREAM` it MUST exit 1 before starting containers.
 
 #### Scenario: Deterministic regeneration (DM-record)
-- GIVEN the fake upstream (`cargo run -p nf-llm-replay --example fake_upstream -- --port 18181`)
-- WHEN `NF_LLM_REPLAY_API_KEY=unused DEMO_RECORD=1 UPSTREAM=http://127.0.0.1:18181 demo/run.sh`
+- GIVEN the fake upstream (`cargo run -p baqueano-replay --example fake_upstream -- --port 18181`)
+- WHEN `BAQUEANO_REPLAY_API_KEY=unused DEMO_RECORD=1 UPSTREAM=http://127.0.0.1:18181 demo/run.sh`
 - THEN the cassette is rewritten byte-identical to the committed one
 
 ### Requirement: MCP tour
@@ -115,10 +115,10 @@ With `DEMO_RECORD=1` and `UPSTREAM=<url>`, the replay container MUST run `--mode
 ### Requirement: Claude Code hand-off
 
 On success, the script MUST print, with the absolute workdir:
-- `claude mcp add --transport stdio nf-lineage -- docker run -i --rm --network none -v "<workdir>:/demo:ro" <MCP_IMAGE> --store /demo/.lineage`
-- the native variant `nf-lineage-mcp --store "<workdir>/.lineage" --path-map /demo="<workdir>"` (install via `cargo install`)
+- `claude mcp add --transport stdio baqueano-lineage -- docker run -i --rm --network none -v "<workdir>:/demo:ro" <MCP_IMAGE> --store /demo/.lineage`
+- the native variant `baqueano-mcp --store "<workdir>/.lineage" --path-map /demo="<workdir>"` (install via `cargo install`)
 - ≥ 3 example prompts, including "What changed between my last two Nextflow runs?"
-- `claude mcp remove nf-lineage`
+- `claude mcp remove baqueano-lineage`
 
 #### Scenario: Printed (DM-run)
 - THEN stdout contains both `claude mcp add` lines and the workdir path

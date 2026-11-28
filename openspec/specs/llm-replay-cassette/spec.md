@@ -2,14 +2,14 @@
 
 ## Purpose
 
-How `nf-llm-replay` turns an HTTP request into a stable key, and how request/response pairs are stored
+How `baqueano-replay` turns an HTTP request into a stable key, and how request/response pairs are stored
 in a reviewable, secret-free JSONL cassette. Acceptance criteria: "volatile fields give the same key"
 and "no cassette contains Authorization or keys"; see `docs/verification.md` section 4.3, items 4-5.
 
 ## Verification checks
 
-Unit tests live in `crates/nf-llm-replay/src/<module>.rs` (`mod tests`); integration tests in
-`crates/nf-llm-replay/tests/<file>.rs`. "PR" = the batch of change `nf-llm-replay` (archived) that added the test.
+Unit tests live in `crates/baqueano-replay/src/<module>.rs` (`mod tests`); integration tests in
+`crates/baqueano-replay/tests/<file>.rs`. "PR" = the batch of change `baqueano-replay` (archived) that added the test.
 
 | ID | Test | PR |
 |----|------|----|

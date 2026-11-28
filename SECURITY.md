@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-nf-agents is pre-alpha. Only the latest commit on `main` receives security fixes.
+baqueano is pre-alpha. Only the latest commit on `main` receives security fixes.
 
 ## Reporting a vulnerability
 

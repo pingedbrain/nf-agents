@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The `nf-llm-replay` HTTP proxy: what each mode does, which requests it must serve correctly, how it
+The `baqueano-replay` HTTP proxy: what each mode does, which requests it must serve correctly, how it
 talks to the upstream provider, how it fails, and how it is configured. The original plan as adjusted by
 `docs/verification.md` section 4.3 (non-streaming chat completions first, SSE for Responses/Messages).
 
@@ -93,11 +93,11 @@ returned for every matching request regardless of order or concurrency.
 ### Requirement: Miss contract
 
 A replay miss MUST return HTTP **599**, `content-type: application/json`, body
-`{"error":{"type":"nf_llm_replay_miss","message":M,"key":K,"request":{"method","path","model","messages","last_message"},"cassette":C,"record_command":R}}`.
+`{"error":{"type":"baqueano_replay_miss","message":M,"key":K,"request":{"method","path","model","messages","last_message"},"cassette":C,"record_command":R}}`.
 `model` = body `model` or null; `messages` = length of `messages` or `input` array (1 if `input` is a
 string, else null); `last_message` = text of the last message/input item (string content, or `text`
 parts joined), truncated to 120 characters (char boundary) with `…`, or null. R MUST be
-`NF_LLM_REPLAY_API_KEY=<key> nf-llm-replay --mode record --cassette C --upstream U` where U is
+`BAQUEANO_REPLAY_API_KEY=<key> baqueano-replay --mode record --cassette C --upstream U` where U is
 `--upstream` if set, else `https://api.anthropic.com` for paths ending `/messages`, else
 `https://api.openai.com`. M MUST be one sentence naming method, path, model, key prefix (12 hex) and R,
 since Nextflow prints the raw body. The miss MUST be logged at `warn` with the same summary.
@@ -119,8 +119,8 @@ the upstream, and forward missing keys to `--upstream` + path + original query w
 body bytes. Concurrent requests with the same missing key MUST share one upstream call. Only 2xx
 responses MUST be stored; other statuses MUST be returned unchanged and not stored. The client
 MUST receive exactly what a later replay returns (status, `content-type`, body/events).
-Upstream connect/timeout (600 s)/non-UTF-8 errors MUST yield 502 JSON `nf_llm_replay_upstream_error`;
-a failed write MUST yield 500 JSON `nf_llm_replay_cassette_error`. An upstream answer larger than 64 MiB (`MAX_UPSTREAM_BODY`) MUST NOT be read whole: it MUST yield 502 `nf_llm_replay_upstream_error` as soon as the limit is passed (T `proxy::tests::upstream_body_is_capped`).
+Upstream connect/timeout (600 s)/non-UTF-8 errors MUST yield 502 JSON `baqueano_replay_upstream_error`;
+a failed write MUST yield 500 JSON `baqueano_replay_cassette_error`. An upstream answer larger than 64 MiB (`MAX_UPSTREAM_BODY`) MUST NOT be read whole: it MUST yield 502 `baqueano_replay_upstream_error` as soon as the limit is passed (T `proxy::tests::upstream_body_is_capped`).
 
 #### Scenario: Round trip (W-rt, W-tool)
 - GIVEN a fake upstream answering plain, `json_schema` strict and tool-call requests, then a tool-result follow-up
@@ -139,7 +139,7 @@ a failed write MUST yield 500 JSON `nf_llm_replay_cassette_error`. An upstream a
 
 ### Requirement: Upstream credentials and headers
 
-The upstream key MUST come only from env `NF_LLM_REPLAY_API_KEY` (no flag) and is required in record and
+The upstream key MUST come only from env `BAQUEANO_REPLAY_API_KEY` (no flag) and is required in record and
 passthrough. Client `authorization`, `x-api-key`, `api-key`, `x-goog-api-key` and `cookie` MUST NOT be
 forwarded; the key MUST be injected as `x-api-key` if the client sent `x-api-key`, `api-key` if it
 sent `api-key`, else `authorization: Bearer <key>`. Hop-by-hop headers (`connection`, `upgrade`,
@@ -179,12 +179,12 @@ replay MUST NOT add delays.
 
 ### Requirement: Configuration and process behaviour
 
-Flags (env): `--mode` (`NF_LLM_REPLAY_MODE`, `record|replay|passthrough`, default `replay`),
-`--cassette` (`NF_LLM_REPLAY_CASSETTE`, required unless passthrough), `--upstream`
-(`NF_LLM_REPLAY_UPSTREAM`, http(s) URL with no query, fragment or userinfo, required for record/passthrough; T `config::tests::upstream_must_be_an_http_url`), `--port`
-(`NF_LLM_REPLAY_PORT`, default 8080, 0 = ephemeral), `--bind` (`NF_LLM_REPLAY_BIND`, default
-`127.0.0.1`), `--volatile-field` (`NF_LLM_REPLAY_VOLATILE_FIELDS`, comma-separated, repeatable),
-`--volatile-pattern` (`NF_LLM_REPLAY_VOLATILE_PATTERNS`, newline-separated, repeatable). Usage errors
+Flags (env): `--mode` (`BAQUEANO_REPLAY_MODE`, `record|replay|passthrough`, default `replay`),
+`--cassette` (`BAQUEANO_REPLAY_CASSETTE`, required unless passthrough), `--upstream`
+(`BAQUEANO_REPLAY_UPSTREAM`, http(s) URL with no query, fragment or userinfo, required for record/passthrough; T `config::tests::upstream_must_be_an_http_url`), `--port`
+(`BAQUEANO_REPLAY_PORT`, default 8080, 0 = ephemeral), `--bind` (`BAQUEANO_REPLAY_BIND`, default
+`127.0.0.1`), `--volatile-field` (`BAQUEANO_REPLAY_VOLATILE_FIELDS`, comma-separated, repeatable),
+`--volatile-pattern` (`BAQUEANO_REPLAY_VOLATILE_PATTERNS`, newline-separated, repeatable). Usage errors
 exit 2; startup errors (missing/corrupt cassette, missing key, bad pattern) exit 1 with one clear
 line on stderr. After binding, the process MUST print `listening on <ip>:<port>` to stdout. Logs go to
 stderr (`RUST_LOG`, default `info`), one line per request (mode, method, path, key prefix, outcome,

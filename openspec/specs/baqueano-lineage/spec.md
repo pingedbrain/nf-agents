@@ -1,4 +1,4 @@
-# nf-lineage Specification
+# baqueano-lineage Specification
 
 ## Purpose
 
@@ -6,15 +6,15 @@ Library crate that reads Nextflow data-lineage stores (`lineage/v1beta1`) typed 
 
 ## Verification checks
 
-Unit tests live in `crates/nf-lineage/src/<module>.rs` (`<module>::tests::<name>`); integration tests in `crates/nf-lineage/tests/<file>.rs` (`<file>::<name>`).
+Unit tests live in `crates/baqueano-lineage/src/<module>.rs` (`<module>::tests::<name>`); integration tests in `crates/baqueano-lineage/tests/<file>.rs` (`<file>::<name>`).
 
 | ID | Kind | Command / name |
 |----|------|----------------|
 | C-test | CI `test` | `cargo test --workspace --locked` (all T-* below) |
-| C-contract | CI `contract` | `cargo test -p nf-lineage --test contract --locked` |
-| C-it | CI `integration` | `cargo test -p nf-lineage --test s3_ministack --locked` with MiniStack |
-| C-doc | CI `test` | doctests of `nf-lineage` |
-| V-pkg | verify | `cargo package -p nf-lineage --locked` succeeds; metadata inspected |
+| C-contract | CI `contract` | `cargo test -p baqueano-lineage --test contract --locked` |
+| C-it | CI `integration` | `cargo test -p baqueano-lineage --test s3_ministack --locked` with MiniStack |
+| C-doc | CI `test` | doctests of `baqueano-lineage` |
+| V-pkg | verify | `cargo package -p baqueano-lineage --locked` succeeds; metadata inspected |
 | V-grep | verify | grep the crate for `Path::from(`, `set_var`, `std::process::exit` → 0 hits in `src/` |
 
 ## Requirements
@@ -70,7 +70,7 @@ Unit tests live in `crates/nf-lineage/src/<module>.rs` (`<module>::tests::<name>
 `FindQuery::parse_args` MUST follow `nextflow lineage find`: `k=v` (no `=` → `InvalidQuery` "Parameter <arg> doesn't contain '=' separator"); URL-decode key and value (`+`→space, `%XX`; malformed → `InvalidQuery`); `label`→`labels`; repeated keys accumulate; each dot segment of a key MUST be a model property (else `InvalidQuery` "Property '<seg>' doesn't exist in the lineage model."). `FindQuery::new(pairs)` MUST apply alias and validation without decoding. `matches(record)` MUST: treat key `type` as the record kind (case-sensitive); navigate dot paths flattening arrays (falsy items dropped, single result unwrapped); never match falsy values (null, false, 0, "", empty array/object); match arrays when they contain all expected values; match scalars only with one expected value by string equality; stringify numbers as integers for `size`/`maxIterations` and as Java `Double.toString` elsewhere.
 
 #### Scenario: CLI behaviour table (T `query::tests::matches_cli_semantics_table`)
-- GIVEN the 26.10.7 records and the 37 non-error queries recorded from the CLI (e.g. `params.value=12.0`, `size=0`, `labels=summary labels=other`, `input.value.path=…`), stored with host paths scrubbed in `crates/nf-lineage/tests/data/find_cli.json`
+- GIVEN the 26.10.7 records and the 37 non-error queries recorded from the CLI (e.g. `params.value=12.0`, `size=0`, `labels=summary labels=other`, `input.value.path=…`), stored with host paths scrubbed in `crates/baqueano-lineage/tests/data/find_cli.json`
 - THEN `matches` selects exactly the CLI's LID set
 
 #### Scenario: CLI errors (T `query::tests::parse_args_errors_match_cli_messages`)
@@ -103,11 +103,11 @@ Unit tests live in `crates/nf-lineage/src/<module>.rs` (`<module>::tests::<name>
 `ObjectLineageStore::open(location)` MUST accept a local path, `file://`, `s3://bucket[/prefix]`, `gs://…`, `az://…`/`abfs[s]://…` (cloud schemes behind default-on features `aws`, `gcp`, `azure`), reading cloud settings from the environment (`AWS_ENDPOINT_URL`, `AWS_ALLOW_HTTP`, credentials, …). `open_with_options(location, pairs)` MUST layer explicit `object_store` config keys over the environment. Object keys MUST be built with `Path::parse` (never `Path::from`). The crate MUST NOT write, delete or create objects.
 
 #### Scenario: S3 on MiniStack (C-it `s3_ministack::s3_store_roundtrip`)
-- GIVEN the 26.10.7 fixture uploaded to MiniStack and `NF_LINEAGE_MINISTACK_URL` set
+- GIVEN the 26.10.7 fixture uploaded to MiniStack and `BAQUEANO_LINEAGE_MINISTACK_URL` set
 - THEN `open_with_options("s3://…/store", endpoint opts)` lists, gets a `#output` record and finds as locally
 
 #### Scenario: No MiniStack (C-test)
-- GIVEN `NF_LINEAGE_MINISTACK_URL` unset
+- GIVEN `BAQUEANO_LINEAGE_MINISTACK_URL` unset
 - THEN the integration tests print a skip notice and pass
 
 ### Requirement: Check

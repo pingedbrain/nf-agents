@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Every agent module ships with typed input/output records (`schema.json`), `meta.yml`, a `SKILL.md`, nf-test tests against `nf-llm-replay`, and evals with a pass threshold. No evals, no merge.
+        Every agent module ships with typed input/output records (`schema.json`), `meta.yml`, a `SKILL.md`, nf-test tests against `baqueano-replay`, and evals with a pass threshold. No evals, no merge.
         Agent modules produce research material only: no clinical claims.
   - type: input
     id: name

@@ -61,7 +61,7 @@ representative at an online or offline event.
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
 reported privately to the community leaders responsible for enforcement, through
 GitHub's private reporting form at
-https://github.com/pingedbrain/nf-agents/security/advisories/new. That form is
+https://github.com/pingedbrain/baqueano/security/advisories/new. That form is
 also used for conduct reports and is visible only to maintainers.
 All complaints will be reviewed and investigated promptly and fairly.
 

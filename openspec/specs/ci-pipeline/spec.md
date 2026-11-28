@@ -10,8 +10,8 @@ GitHub Actions gates every PR and every push to `main` with five jobs in `ci.yml
 |----|------|----------------|
 | C-run | CI | the change's own PR run shows `lint` and `test` green |
 | C-deny | CI `lint` | `cargo deny check` |
-| C-contract | CI `contract` | `cargo test -p nf-lineage --test contract --locked` |
-| C-it | CI `integration` | `cargo test -p nf-lineage --test s3_ministack --locked` with MiniStack |
+| C-contract | CI `contract` | `cargo test -p baqueano-lineage --test contract --locked` |
+| C-it | CI `integration` | `cargo test -p baqueano-lineage --test s3_ministack --locked` with MiniStack |
 | C-docker | CI `docker` | the PR run shows `docker` green: D-build, D-user, D-size, D-run, D-e2e of llm-replay-packaging and D-build, D-user, D-size, D-smoke of lineage-mcp |
 | C-fixtures | CI `test` | `python3 -I -m unittest discover -s scripts/fixtures -p 'test_*.py'` and `python3 -I scripts/fixtures/check.py fixtures/lineage` |
 | C-demo-unit | CI `test` | DM-unit and DM-sh of local-demo |
@@ -105,7 +105,7 @@ CI MUST install the toolchain from `rust-toolchain.toml` (single source of truth
 ### Requirement: Contract job
 
 Job `contract` MUST run on every PR and push to `main`, install the pinned toolchain, and run
-`cargo test -p nf-lineage --test contract --locked` against the committed `fixtures/lineage/*` oracles.
+`cargo test -p baqueano-lineage --test contract --locked` against the committed `fixtures/lineage/*` oracles.
 It MUST NOT need Docker, network beyond crates.io, or secrets. (The `test` job also runs these
 tests; `contract` exists as a named status check.)
 
@@ -117,8 +117,8 @@ tests; `contract` exists as a named status check.)
 ### Requirement: Integration job
 
 Job `integration` MUST run on every PR and push to `main` with a service container
-`ministackorg/ministack:1.5.45` on port 4566, set `NF_LINEAGE_MINISTACK_URL=http://localhost:4566`,
-and run `cargo test -p nf-lineage --test s3_ministack --locked`. It MUST NOT use `secrets.*`: the tests
+`ministackorg/ministack:1.5.45` on port 4566, set `BAQUEANO_LINEAGE_MINISTACK_URL=http://localhost:4566`,
+and run `cargo test -p baqueano-lineage --test s3_ministack --locked`. It MUST NOT use `secrets.*`: the tests
 use fixed dummy credentials (`test`/`test`) in their own code, so the workflow defines none. The tests themselves MUST wait for
 MiniStack readiness (bounded, ≤ 60 s) and fail, not skip, when the variable is set but MiniStack is unreachable.
 
@@ -134,21 +134,21 @@ MiniStack readiness (bounded, ≤ 60 s) and fail, not skip, when the variable is
 ### Requirement: Docker job
 
 Job `docker` MUST run on every PR and every push to `main`, on `ubuntu-latest`, with no secrets and no registry login or push. It MUST:
-- build `crates/nf-llm-replay/Dockerfile` from the repo root as `nf-llm-replay:ci`, fail if the image user is not `65532:65532` or the image exceeds 25 MB, and run `docs/examples/nf-llm-replay/e2e.sh` with `E2E_REQUIRE_DOCKER=1` and `IMAGE=nf-llm-replay:ci`;
-- build `crates/nf-lineage-mcp/Dockerfile` as `nf-lineage-mcp:ci`, fail if its user is not `65532:65532` or it exceeds 30 MB, and run the D-smoke stdio session against `fixtures/lineage/26.10.7/.lineage` mounted read-only;
-- as its last step, run `demo/run.sh` with `MCP_IMAGE=nf-lineage-mcp:ci` and `REPLAY_IMAGE=nf-llm-replay:ci` (no image rebuild) and fail if the script fails or its stdout lacks the `claude mcp add` hand-off.
+- build `crates/baqueano-replay/Dockerfile` from the repo root as `baqueano-replay:ci`, fail if the image user is not `65532:65532` or the image exceeds 25 MB, and run `docs/examples/baqueano-replay/e2e.sh` with `E2E_REQUIRE_DOCKER=1` and `IMAGE=baqueano-replay:ci`;
+- build `crates/baqueano-mcp/Dockerfile` as `baqueano-mcp:ci`, fail if its user is not `65532:65532` or it exceeds 30 MB, and run the D-smoke stdio session against `fixtures/lineage/26.10.7/.lineage` mounted read-only;
+- as its last step, run `demo/run.sh` with `MCP_IMAGE=baqueano-mcp:ci` and `REPLAY_IMAGE=baqueano-replay:ci` (no image rebuild) and fail if the script fails or its stdout lacks the `claude mcp add` hand-off.
 
 It MUST NOT depend on `lint`/`test`, so it runs in parallel with them. It SHOULD finish in under 10 minutes (`timeout-minutes: 20`).
 
 #### Scenario: PR touching the proxy (C-docker)
 - GIVEN a PR
 - WHEN CI runs
-- THEN `docker` builds `nf-llm-replay:ci` and the offline e2e passes
+- THEN `docker` builds `baqueano-replay:ci` and the offline e2e passes
 
 #### Scenario: PR touching the MCP server (C-docker)
 - GIVEN a PR
 - WHEN CI runs
-- THEN `docker` builds `nf-lineage-mcp:ci` and the stdio smoke returns 2 run LIDs
+- THEN `docker` builds `baqueano-mcp:ci` and the stdio smoke returns 2 run LIDs
 
 #### Scenario: README demo cannot rot (C-demo)
 - GIVEN a PR that breaks any piece the demo uses (pipeline, cassette, a tool contract, an image)

@@ -1,6 +1,6 @@
-# Contributing to nf-agents
+# Contributing to baqueano
 
-Thanks for your interest. nf-agents is pre-alpha, so expect things to move. This guide covers setup, what to run before a PR, and the project rules.
+Thanks for your interest. baqueano is pre-alpha, so expect things to move. This guide covers setup, what to run before a PR, and the project rules.
 
 ## Dev setup
 
@@ -29,19 +29,19 @@ Use `cargo fmt --all` to fix formatting. The test suite must pass without API ke
 
 ### S3 integration tests (MiniStack)
 
-`nf-lineage` reads lineage stores from S3. Its S3 tests run against [MiniStack](https://github.com/ministackorg/ministack), a local AWS emulator, and need only Docker:
+`baqueano-lineage` reads lineage stores from S3. Its S3 tests run against [MiniStack](https://github.com/ministackorg/ministack), a local AWS emulator, and need only Docker:
 
 ```sh
 docker run --rm -d --name ministack -p 4566:4566 ministackorg/ministack:1.5.45
-NF_LINEAGE_MINISTACK_URL=http://localhost:4566 cargo test -p nf-lineage --test s3_ministack
+BAQUEANO_LINEAGE_MINISTACK_URL=http://localhost:4566 cargo test -p baqueano-lineage --test s3_ministack
 docker stop ministack
 ```
 
-The tests create their own buckets with dummy `test`/`test` credentials. Without `NF_LINEAGE_MINISTACK_URL` they print a skip notice and pass, so `cargo test --workspace` works without Docker. With the variable set they wait up to 60 seconds for MiniStack and fail if it does not answer. CI runs them in the `integration` job.
+The tests create their own buckets with dummy `test`/`test` credentials. Without `BAQUEANO_LINEAGE_MINISTACK_URL` they print a skip notice and pass, so `cargo test --workspace` works without Docker. With the variable set they wait up to 60 seconds for MiniStack and fail if it does not answer. CI runs them in the `integration` job.
 
 ### Docs site (`site/`)
 
-The site is Astro + Starlight. The docs pages are generated from `docs/demo.md`, `docs/architecture.md`, `crates/nf-lineage-mcp/README.md`, `docs/examples/nf-llm-replay/README.md` and `ROADMAP.md`, so edit those sources, not the generated pages. Run the same checks as CI (`.github/workflows/site.yml`):
+The site is Astro + Starlight. The docs pages are generated from `docs/demo.md`, `docs/architecture.md`, `crates/baqueano-mcp/README.md`, `docs/examples/baqueano-replay/README.md` and `ROADMAP.md`, so edit those sources, not the generated pages. Run the same checks as CI (`.github/workflows/site.yml`):
 
 ```sh
 cd site

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Landing page and generated docs for nf-agents, built from `site/` (Astro + Starlight) at `https://pingedbrain.github.io/nf-agents/` (`base: /nf-agents`). Public text is English and matches README.md and ROADMAP.md.
+Landing page and generated docs for baqueano, built from `site/` (Astro + Starlight) at `https://pingedbrain.github.io/baqueano/` (`base: /baqueano`). Public text is English and matches README.md and ROADMAP.md.
 
 ## Verification checks
 
@@ -18,12 +18,12 @@ Landing page and generated docs for nf-agents, built from `site/` (Astro + Starl
 
 ### Requirement: Docs generated from repository sources
 
-The site MUST generate `/docs/` pages from `docs/demo.md`, `docs/architecture.md`, `crates/nf-lineage-mcp/README.md`, `docs/examples/nf-llm-replay/README.md` and `ROADMAP.md`. Generated output MUST be gitignored.
+The site MUST generate `/docs/` pages from `docs/demo.md`, `docs/architecture.md`, `crates/baqueano-mcp/README.md`, `docs/examples/baqueano-replay/README.md` and `ROADMAP.md`. Generated output MUST be gitignored.
 
 #### Scenario: Source edit and links (S-test)
 - GIVEN a source change and a source with a mapped-doc link and a repo-file link
 - WHEN synced and built
-- THEN the change appears, the doc link resolves under `/nf-agents/docs/`, the repo link becomes a GitHub URL, and no tracked file under `site/` changes
+- THEN the change appears, the doc link resolves under `/baqueano/docs/`, the repo link becomes a GitHub URL, and no tracked file under `site/` changes
 
 #### Scenario: H1 and missing source (S-test)
 - GIVEN a source whose first line is an H1
@@ -37,7 +37,7 @@ Public copy MUST state only what README.md and ROADMAP.md support. These six cor
 
 | Reference text | Required site text |
 |----------------|--------------------|
-| `docker run ghcr.io/[ORG]/nf-agents-demo` | `git clone … && demo/run.sh` |
+| `docker run ghcr.io/[ORG]/baqueano-demo` | `git clone … && demo/run.sh` |
 | sarek terminal example | real demo diff (`params.greeting`) |
 | `nf-evals`, modules "In progress" | planned for v0.2; scores `pending` |
 | leaderboard "v0.1", explorer "v0.2" | leaderboard v0.3, explorer v0.6 |
@@ -48,11 +48,11 @@ Public copy MUST state only what README.md and ROADMAP.md support. These six cor
 - GIVEN the built `dist/`
 - THEN each required text appears and no reference text (left column) appears
 - AND every unmeasured score shows `pending`
-- AND `NF-Agents` and `Nf-agents` do not appear
+- AND the old name `nf-agents` does not appear, except inside the fixture label `nf-agents-fixture`
 
 ### Requirement: Brand, footer and claims
 
-`nf-agents` MUST be lowercase in public text. The site MUST NOT show Nextflow, Seqera or cloud-provider logos, MUST NOT make clinical claims, and every page MUST render the mandatory footer disclaimer. Brand tokens MUST define light and dark sets; under `prefers-color-scheme: dark` body text contrast MUST be at least 4.5:1.
+`baqueano` MUST be lowercase in public text. The site MUST NOT show Nextflow, Seqera or cloud-provider logos, MUST NOT make clinical claims, and every page MUST render the mandatory footer disclaimer. Brand tokens MUST define light and dark sets; under `prefers-color-scheme: dark` body text contrast MUST be at least 4.5:1.
 
 #### Scenario: Footer and logos (S-test)
 - GIVEN every generated HTML page
@@ -73,7 +73,7 @@ The site MUST NOT load analytics, font CDNs or other external resources. Fonts M
 
 ### Requirement: Hero, OG image and reduced motion
 
-The hero MUST be an inline SVG with a CSS pipeline flow. Under `prefers-reduced-motion: reduce` all hero animation MUST stop and the static diagram MUST remain. The site MUST provide a 1200x630 Open Graph image (wordmark and tagline) referenced under the `/nf-agents/` base.
+The hero MUST be an inline SVG with a CSS pipeline flow. Under `prefers-reduced-motion: reduce` all hero animation MUST stop and the static diagram MUST remain. The site MUST provide a 1200x630 Open Graph image (wordmark and tagline) referenced under the `/baqueano/` base.
 
 #### Scenario: Reduced motion (S-shot)
 - GIVEN reduced motion requested
@@ -81,7 +81,7 @@ The hero MUST be an inline SVG with a CSS pipeline flow. Under `prefers-reduced-
 
 #### Scenario: OG image (S-test)
 - GIVEN `dist/`
-- THEN the OG image is 1200x630 and `og:image` carries the `/nf-agents/` base
+- THEN the OG image is 1200x630 and `og:image` carries the `/baqueano/` base
 
 ### Requirement: Responsive layout and accessibility
 

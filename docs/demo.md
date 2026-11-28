@@ -7,9 +7,9 @@
 
 1. A small Nextflow pipeline with an AI step runs twice with lineage enabled: once with
    `--greeting hello` (run A) and once with `--greeting bonjour` (run B).
-2. The AI step (`QC_NOTE`, model `openai/gpt-5-mini`) is answered by `nf-llm-replay` from
+2. The AI step (`QC_NOTE`, model `openai/gpt-5-mini`) is answered by `baqueano-replay` from
    `demo/cassettes/demo.jsonl`, on an internal Docker network with no route to any model provider.
-3. A scripted MCP client (`demo/tour.py`) asks `nf-lineage-mcp` what changed, what the AI step
+3. A scripted MCP client (`demo/tour.py`) asks `baqueano-mcp` what changed, what the AI step
    answered, where a file came from and whether a file is intact, and checks every answer.
 4. The script prints the `claude mcp add` command to ask Claude Code the same questions.
 
@@ -19,8 +19,8 @@ Prerequisites: Docker (Engine or Desktop, running), bash, git, and a few GB of f
 images. No Rust toolchain, no Nextflow install, no API keys.
 
 ```sh
-git clone https://github.com/pingedbrain/nf-agents.git
-cd nf-agents
+git clone https://github.com/pingedbrain/baqueano.git
+cd baqueano
 demo/run.sh
 ```
 
@@ -31,9 +31,9 @@ Everything lands in `demo/.run/` (recreated on every run; override with `DEMO_WO
 ```
 run.sh ─ check workdir ─ check docker ─ build (or reuse) images ─ internal network
   ├─ nextflow plugin install nf-agent@0.2.0     (the only step with network access)
-  ├─ nf-llm-replay --mode replay   ◀── HTTP ──┐  cassette mounted read-only
+  ├─ baqueano-replay --mode replay   ◀── HTTP ──┐  cassette mounted read-only
   ├─ nextflow run main.nf  (hello, bonjour) ──┘  → demo/.run/.lineage, results-*/
-  ├─ tour.py ⇄ nf-lineage-mcp over stdio     (both --network none; store mounted read-only)
+  ├─ tour.py ⇄ baqueano-mcp over stdio     (both --network none; store mounted read-only)
   └─ print the Claude Code commands; remove containers and network, on failure too
 ```
 
@@ -43,15 +43,15 @@ Code. The tour writes the raw JSON-RPC exchange to `demo/.run/transcript.jsonl`.
 ## Transcript
 
 A real run on the machine described under [Timings](#timings), images already built. Only the
-checkout path was replaced with `/path/to/nf-agents`.
+checkout path was replaced with `/path/to/baqueano`.
 
 ```text
 $ demo/run.sh
-==> building nf-lineage-mcp:demo from source (first time: a few minutes)
-==> building nf-llm-replay:demo from source (first time: a few minutes)
+==> building baqueano-mcp:demo from source (first time: a few minutes)
+==> building baqueano-replay:demo from source (first time: a few minutes)
 ==> fetching the nf-agent plugin (the only networked step)
 Downloading plugin nf-agent@0.2.0
-==> starting nf-llm-replay in replay mode (internal network, no internet)
+==> starting baqueano-replay in replay mode (internal network, no internet)
 ==> running demo/main.nf twice: --greeting hello, then --greeting bonjour
 N E X T F L O W  ~  version 26.10.7
 Launching `/src/main.nf` [agitated_raman] - revision: 380cdd93f2
@@ -85,7 +85,7 @@ Outputs:
   upper: upper/upper.txt
 
   summary: summary.txt
-==> asking nf-lineage-mcp about the two runs (scripted MCP session, transcript in /path/to/nf-agents/demo/.run/transcript.jsonl)
+==> asking baqueano-mcp about the two runs (scripted MCP session, transcript in /path/to/baqueano/demo/.run/transcript.jsonl)
 1. list_runs: run A agitated_raman (lid://b39e82b08e476e3af186314183e72991), run B agitated_gilbert (lid://2385fd1470135349edfcd93be720f943)
 2. diff A -> B: params.greeting: "hello" → "bonjour" (nothing else changed)
 3. AI step QC_NOTE: model openai/gpt-5-mini, answer "no" (confidence 0.9) to "any lowercase letters?"
@@ -98,16 +98,16 @@ Demo finished in 24s. Research use only, no clinical claims: synthetic data, and
 no model was called.
 
 Ask Claude Code the same questions (the server is read-only and has no network):
-  claude mcp add --transport stdio nf-lineage -- docker run -i --rm --network none -v "/path/to/nf-agents/demo/.run:/demo:ro" nf-lineage-mcp:demo --store /demo/.lineage
-or with the native binary (cargo install --path "/path/to/nf-agents/crates/nf-lineage-mcp"):
-  claude mcp add --transport stdio nf-lineage -- nf-lineage-mcp --store "/path/to/nf-agents/demo/.run/.lineage" --path-map /demo="/path/to/nf-agents/demo/.run"
+  claude mcp add --transport stdio baqueano-lineage -- docker run -i --rm --network none -v "/path/to/baqueano/demo/.run:/demo:ro" baqueano-mcp:demo --store /demo/.lineage
+or with the native binary (cargo install --path "/path/to/baqueano/crates/baqueano-mcp"):
+  claude mcp add --transport stdio baqueano-lineage -- baqueano-mcp --store "/path/to/baqueano/demo/.run/.lineage" --path-map /demo="/path/to/baqueano/demo/.run"
 
 Then ask, for example:
   What changed between my last two Nextflow runs?
   Where did summary.txt of the latest run come from?
   What did the AI step answer, and which model was it?
   Is results-hello/summary.txt still intact?
-Remove it with: claude mcp remove nf-lineage
+Remove it with: claude mcp remove baqueano-lineage
 ```
 
 Run names, task hashes and LIDs change on every run. Step 6 appends a line to the demo's own
@@ -135,12 +135,12 @@ Claude Code anywhere:
 
 ```sh
 # Docker image, no network, store mounted read-only
-claude mcp add --transport stdio nf-lineage -- docker run -i --rm --network none \
-  -v "$PWD/demo/.run:/demo:ro" nf-lineage-mcp:demo --store /demo/.lineage
+claude mcp add --transport stdio baqueano-lineage -- docker run -i --rm --network none \
+  -v "$PWD/demo/.run:/demo:ro" baqueano-mcp:demo --store /demo/.lineage
 
 # Native binary; --path-map translates the /demo paths recorded inside the containers
-cargo install --path crates/nf-lineage-mcp
-claude mcp add --transport stdio nf-lineage -- nf-lineage-mcp \
+cargo install --path crates/baqueano-mcp
+claude mcp add --transport stdio baqueano-lineage -- baqueano-mcp \
   --store "$PWD/demo/.run/.lineage" --path-map /demo="$PWD/demo/.run"
 ```
 
@@ -152,13 +152,13 @@ Example prompts:
 - "What did the AI step answer, and which model was it?"
 - "Are my published files still intact?" (after the tour, `results-hello/summary.txt` is not)
 
-Remove it with `claude mcp remove nf-lineage`. Other stores (S3, GCS, Azure) and the JSON form are
-in the [`nf-lineage-mcp` README](../crates/nf-lineage-mcp/README.md#use-with-claude-code).
+Remove it with `claude mcp remove baqueano-lineage`. Other stores (S3, GCS, Azure) and the JSON form are
+in the [`baqueano-mcp` README](../crates/baqueano-mcp/README.md#use-with-claude-code).
 
 ## Re-recording the cassette
 
 The committed `demo/cassettes/demo.jsonl` was recorded from the deterministic fake upstream in
-`crates/nf-llm-replay/examples/fake_upstream.rs`, not from a real model. Its fixed structured
+`crates/baqueano-replay/examples/fake_upstream.rs`, not from a real model. Its fixed structured
 answer (`{"answer":"no","confidence":0.9}`) is the correct answer to the question asked, so a real
 model gives the same verdict.
 
@@ -167,14 +167,14 @@ new request and `run.sh` stops with a `DEMO_RECORD=1` hint. To re-record from th
 (needs a Rust toolchain; the result is byte-identical when nothing changed):
 
 ```sh
-cargo run -p nf-llm-replay --example fake_upstream -- --port 18181 &
-NF_LLM_REPLAY_API_KEY=unused DEMO_RECORD=1 UPSTREAM=http://127.0.0.1:18181 demo/run.sh
+cargo run -p baqueano-replay --example fake_upstream -- --port 18181 &
+BAQUEANO_REPLAY_API_KEY=unused DEMO_RECORD=1 UPSTREAM=http://127.0.0.1:18181 demo/run.sh
 ```
 
 From a real provider:
 
 ```sh
-NF_LLM_REPLAY_API_KEY=sk-... DEMO_RECORD=1 UPSTREAM=https://api.openai.com demo/run.sh
+BAQUEANO_REPLAY_API_KEY=sk-... DEMO_RECORD=1 UPSTREAM=https://api.openai.com demo/run.sh
 ```
 
 Record mode runs the proxy and Nextflow on the host network (so a local upstream on `127.0.0.1` is
@@ -187,8 +187,8 @@ a host path. State the upstream (and, for a real model, the date) in your PR.
 
 ```sh
 rm -rf demo/.run
-docker rmi nf-lineage-mcp:demo nf-llm-replay:demo
-claude mcp remove nf-lineage
+docker rmi baqueano-mcp:demo baqueano-replay:demo
+claude mcp remove baqueano-lineage
 ```
 
 The script already removes its containers and network on exit, on failure too.
