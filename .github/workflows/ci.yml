@@ -47,7 +47,11 @@ jobs:
       - run: python3 -I scripts/fixtures/check.py fixtures/lineage
       # Local demo checks (no Docker): tour logic, run.sh early exits, shell lint.
       - run: python3 -I -m unittest discover -s demo -p 'test_*.py'
-      - run: shellcheck demo/run.sh
+      # Release metadata and packaging (nothing is published).
+      - run: python3 -I -m unittest discover -s scripts/release -p 'test_*.py'
+      - run: scripts/release/check.sh
+      - run: cargo package --workspace --locked
+      - run: shellcheck demo/run.sh scripts/release/check.sh
 
   # Named status check for `nextflow lineage` parity against the committed fixtures/lineage oracles
   # (no Docker, no network beyond crates.io, no secrets). `test` runs the same suite.
