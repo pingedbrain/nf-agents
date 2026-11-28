@@ -1,8 +1,8 @@
 <svg class="flow" viewBox="0 0 640 260" role="img" aria-labelledby="flow-title flow-desc">
-  <title id="flow-title">Diagram of the nf-agents data flow</title>
+  <title id="flow-title">Diagram of the baqueano data flow</title>
   <desc id="flow-desc">
-    A Nextflow run calls an agent step. The agent step calls a model through nf-llm-replay.
-    The same run writes a lineage store. nf-lineage-mcp reads that store and serves it to an
+    A Nextflow run calls an agent step. The agent step calls a model through baqueano-replay.
+    The same run writes a lineage store. baqueano-mcp reads that store and serves it to an
     MCP client.
   </desc>
   <defs>
@@ -34,13 +34,13 @@
   <text class="caption" x="330" y="124" text-anchor="middle">Agent step</text>
 
   <rect class="node" x="396" y="40" width="224" height="56" rx="10" />
-  <text class="label" x="508" y="74" text-anchor="middle">nf-llm-replay</text>
+  <text class="label" x="508" y="74" text-anchor="middle">baqueano-replay</text>
 
   <rect class="node" x="20" y="172" width="180" height="56" rx="10" />
   <text class="label" x="110" y="206" text-anchor="middle">Lineage store</text>
 
   <rect class="node" x="256" y="172" width="200" height="56" rx="10" />
-  <text class="label" x="356" y="206" text-anchor="middle">nf-lineage-mcp</text>
+  <text class="label" x="356" y="206" text-anchor="middle">baqueano-mcp</text>
 
   <rect class="node" x="476" y="172" width="144" height="56" rx="10" />
   <text class="label" x="548" y="206" text-anchor="middle">MCP client</text>

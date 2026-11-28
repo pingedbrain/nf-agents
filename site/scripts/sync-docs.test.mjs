@@ -5,12 +5,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { transform, rewriteLink, sync } from './sync-docs.mjs';
 
-const BASE = '/nf-agents';
+const BASE = '/baqueano';
 
 test('first H1 becomes the frontmatter title and is removed from the body', () => {
   const out = transform('# Local demo\n\nBody text.\n', { src: 'docs/demo.md', base: BASE });
   assert.match(out, /^---\ntitle: "Local demo"\n/);
-  assert.match(out, /editUrl: "https:\/\/github\.com\/pingedbrain\/nf-agents\/edit\/main\/docs\/demo\.md"/);
+  assert.match(out, /editUrl: "https:\/\/github\.com\/pingedbrain\/baqueano\/edit\/main\/docs\/demo\.md"/);
   assert.equal((out.match(/^# /gm) ?? []).length, 0);
   assert.match(out, /Body text\./);
 });
@@ -23,30 +23,30 @@ test('missing H1 throws and names the file', () => {
 });
 
 test('links to mapped docs resolve to site routes, keeping anchors', () => {
-  assert.equal(rewriteLink('architecture.md', 'docs/demo.md', BASE), '/nf-agents/docs/architecture/');
-  assert.equal(rewriteLink('../../ROADMAP.md', 'crates/nf-lineage-mcp/README.md', BASE), '/nf-agents/docs/roadmap/');
-  assert.equal(rewriteLink('../../docs/demo.md', 'crates/nf-lineage-mcp/README.md', BASE), '/nf-agents/docs/');
+  assert.equal(rewriteLink('architecture.md', 'docs/demo.md', BASE), '/baqueano/docs/architecture/');
+  assert.equal(rewriteLink('../../ROADMAP.md', 'crates/baqueano-mcp/README.md', BASE), '/baqueano/docs/roadmap/');
+  assert.equal(rewriteLink('../../docs/demo.md', 'crates/baqueano-mcp/README.md', BASE), '/baqueano/docs/');
   assert.equal(
     rewriteLink('architecture.md#overview', 'docs/demo.md', BASE),
-    '/nf-agents/docs/architecture/#overview',
+    '/baqueano/docs/architecture/#overview',
   );
 });
 
 test('links to other repo files become GitHub blob URLs, directories become tree URLs', () => {
   assert.equal(
-    rewriteLink('../crates/nf-lineage/README.md#fixtures', 'docs/demo.md', BASE),
-    'https://github.com/pingedbrain/nf-agents/blob/main/crates/nf-lineage/README.md#fixtures',
+    rewriteLink('../crates/baqueano-lineage/README.md#fixtures', 'docs/demo.md', BASE),
+    'https://github.com/pingedbrain/baqueano/blob/main/crates/baqueano-lineage/README.md#fixtures',
   );
   assert.equal(
     rewriteLink('../crates/', 'docs/demo.md', BASE),
-    'https://github.com/pingedbrain/nf-agents/tree/main/crates/',
+    'https://github.com/pingedbrain/baqueano/tree/main/crates/',
   );
 });
 
 test('parent-relative issue links resolve to the repository root', () => {
   assert.equal(
-    rewriteLink('../../issues?q=is%3Aopen', 'crates/nf-lineage-mcp/README.md', BASE),
-    'https://github.com/pingedbrain/nf-agents/issues?q=is%3Aopen',
+    rewriteLink('../../issues?q=is%3Aopen', 'crates/baqueano-mcp/README.md', BASE),
+    'https://github.com/pingedbrain/baqueano/issues?q=is%3Aopen',
   );
 });
 
@@ -61,7 +61,7 @@ test('code fences and inline code are left untouched', () => {
   const out = transform(md, { src: 'ROADMAP.md', base: BASE });
   assert.match(out, /`\[x\]\(docs\/demo\.md\)`/);
   assert.match(out, /```md\n\[y\]\(docs\/demo\.md\)\n```/);
-  assert.match(out, /\[z\]\(\/nf-agents\/docs\/\)/);
+  assert.match(out, /\[z\]\(\/baqueano\/docs\/\)/);
 });
 
 test('relative images throw, external images are allowed', () => {
@@ -88,8 +88,8 @@ test('sync writes docs pages and copies brand assets', async () => {
   const files = {
     'docs/demo.md': '# Local demo\n\nRun it.\n',
     'docs/architecture.md': '# Architecture\n',
-    'crates/nf-lineage-mcp/README.md': '# nf-lineage-mcp\n',
-    'docs/examples/nf-llm-replay/README.md': '# nf-llm-replay\n',
+    'crates/baqueano-mcp/README.md': '# baqueano-mcp\n',
+    'docs/examples/baqueano-replay/README.md': '# baqueano-replay\n',
     'ROADMAP.md': '# Roadmap\n',
     'brand/logo/favicon.svg': '<svg/>',
     'brand/logo/mark-light.svg': '<svg id="l"/>',
