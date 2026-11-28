@@ -62,7 +62,7 @@ Job `lint` MUST run, and fail on failure of any of: `cargo fmt --all -- --check`
 
 ### Requirement: Test job
 
-Job `test` MUST run `cargo test --workspace --locked`, the offline fixture checks (C-fixtures) and the demo checks (C-demo-unit: tour unittest and `shellcheck demo/run.sh`). It MUST fail if any of them fails. The fixture and demo checks MUST NOT need Docker or network.
+Job `test` MUST run `cargo test --workspace --locked`, the offline fixture checks (C-fixtures), the demo checks (C-demo-unit: tour unittest and `shellcheck demo/run.sh`), the release metadata check `scripts/release/check.sh` (R-check) and `cargo package --workspace --locked` (R-pkg). It MUST fail if any of them fails. The fixture and demo checks MUST NOT need Docker or network. The packaging step needs only the crates.io index, as the `contract` job does. Neither the release check nor the packaging step publishes anything.
 
 #### Scenario: Failing test (C-run, V-yaml)
 - GIVEN a failing test in any member
@@ -78,6 +78,20 @@ Job `test` MUST run `cargo test --workspace --locked`, the offline fixture check
 - GIVEN a PR that makes `tour.py` accept a diff with extra changes
 - WHEN `test` runs
 - THEN `TourTests.test_unexpected_diff_fails` fails the job
+
+#### Scenario: Missing crate keyword (R-check)
+- GIVEN a PR that removes `keywords` from a publishable crate
+- WHEN `test` runs
+- THEN `scripts/release/check.sh` fails the job naming the crate
+
+#### Scenario: Unpackageable crate (R-pkg)
+- GIVEN a PR that makes a crate depend on an unpublished path-only crate without a version
+- WHEN `test` runs
+- THEN `cargo package --workspace --locked` fails the job
+
+#### Scenario: No publish from CI (V-yaml)
+- GIVEN `ci.yml`
+- THEN it contains no `cargo publish`, no `CARGO_REGISTRY_TOKEN` and no `secrets.` reference
 
 ### Requirement: Toolchain source and action pinning
 
