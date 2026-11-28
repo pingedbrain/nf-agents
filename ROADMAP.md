@@ -32,7 +32,7 @@ Deliverables:
 - [x] `nf-llm-replay`: `record`, `replay` and `passthrough` modes; OpenAI chat completions (JSON, structured output, tool calls); SSE for the Responses and Messages APIs; normalized request keys; JSONL cassettes without credentials; a distroless image; an offline end-to-end test with Nextflow's `agent` primitive.
 - [x] `nf-lineage-mcp`: a read-only MCP server over stdio with `list_runs`, `view`, `find`, `diff`, `check` and `provenance`, and a configurable cap on response size.
 - [x] Local demo with Docker: an MCP client asks what changed between two pipeline runs.
-- [ ] Release pipeline: crates on crates.io at `0.1.0`, images on GHCR.
+- [x] Release pipeline: crates on crates.io at `0.1.0`, images on GHCR.
 
 **Done when:**
 
