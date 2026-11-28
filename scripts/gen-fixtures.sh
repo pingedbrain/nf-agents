@@ -46,13 +46,13 @@ in_image() { # in_image <version> <docker opts...> -- <command...>: one step in 
   while [[ $1 != -- ]]; do opts+=("$1"); shift; done
   shift
   docker run --rm --cpus 2 -e NXF_ANSI_LOG=false -e HOST_UID -e HOST_GID \
-    -v "$TOOLS:/nf-agents-tools:ro" "${opts[@]}" "nextflow/nextflow:$v" "$@"
+    -v "$TOOLS:/baqueano-tools:ro" "${opts[@]}" "nextflow/nextflow:$v" "$@"
 }
 
 roundtrip() { # roundtrip <version> <version-dir>
   local dst=$tmp/verify-${2##*/}
   cp -r "$2" "$dst" # plain copy: mtimes are lost, as after a git checkout
-  in_image "$1" -v "$dst:$MOUNT" -w "$MOUNT" -- bash /nf-agents-tools/verify.sh ||
+  in_image "$1" -v "$dst:$MOUNT" -w "$MOUNT" -- bash /baqueano-tools/verify.sh ||
     die "$1: round trip failed"
 }
 
@@ -67,9 +67,9 @@ generate() { # generate <version> core|agent
   [[ ! -d $pipe/data ]] || cp -r "$pipe/data" "$root/pipeline/"
   cp "$pipe/nextflow.config" "$root/"
   in_image "$v" -v "$root:$MOUNT" -v "$stage:/out" -w "$MOUNT" -- \
-    bash "/nf-agents-tools/run-$kind.sh" "$v" "$img@${digest#*@}" || die "$name: generation failed"
+    bash "/baqueano-tools/run-$kind.sh" "$v" "$img@${digest#*@}" || die "$name: generation failed"
   roundtrip "$v" "$stage/$name"
-  in_image "$v" -v "$stage:/check:ro" -- python3 -I /nf-agents-tools/check.py /check "${forbid[@]}" ||
+  in_image "$v" -v "$stage:/check:ro" -- python3 -I /baqueano-tools/check.py /check "${forbid[@]}" ||
     die "$name: fixture check failed"
   rm -rf "${out:?}/$name"
   mv "$stage/$name" "$out/$name"

@@ -96,7 +96,7 @@ class TourTests(unittest.TestCase):
                      "SUMMARIZE ← TRANSFORM ← GENERATE ← seed.txt", "Valid", "Mismatch"]:
             self.assertIn(want, out)
         with open(self.server.summary_a) as f:
-            self.assertIn("edited by the nf-agents demo", f.read())
+            self.assertIn("edited by the baqueano demo", f.read())
         with open(os.path.join(self.workdir, "transcript.jsonl")) as f:
             self.assertIn('"method": "initialize"', f.read())
 

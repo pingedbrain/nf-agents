@@ -1,0 +1,32 @@
+[package]
+name = "baqueano-mcp"
+version = "0.1.0"
+description = "Read-only MCP server that lets AI agents query Nextflow data lineage stores."
+keywords = ["nextflow", "lineage", "mcp", "provenance", "bioinformatics"]
+categories = ["science::bioinformatics", "command-line-utilities"]
+readme = "README.md"
+# The tests need the repository fixtures (fixtures/lineage), so only the server ships.
+include = ["/src", "/README.md"]
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+baqueano-lineage = { path = "../baqueano-lineage", version = "0.1.0" }
+rmcp = { workspace = true, features = ["server", "macros", "transport-io"] }
+schemars.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+[dev-dependencies]
+rmcp = { workspace = true, features = ["client"] }
+tempfile.workspace = true

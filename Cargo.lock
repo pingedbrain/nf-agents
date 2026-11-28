@@ -1217,7 +1217,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9252111cf132ba0929b6f8e030cac2a24b507f3a4d6db6fb2896f27b354c714b"
 
 [[package]]
-name = "nf-lineage"
+name = "baqueano-lineage"
 version = "0.1.0"
 dependencies = [
  "async-trait",
@@ -1237,12 +1237,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "nf-lineage-mcp"
+name = "baqueano-mcp"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
- "nf-lineage",
+ "baqueano-lineage",
  "rmcp",
  "schemars",
  "serde",
@@ -1254,7 +1254,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "nf-llm-replay"
+name = "baqueano-replay"
 version = "0.1.0"
 dependencies = [
  "anyhow",

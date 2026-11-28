@@ -70,7 +70,7 @@ jobs:
       artifact-metadata: write
     strategy:
       matrix:
-        crate: [nf-lineage-mcp, nf-llm-replay]
+        crate: [baqueano-mcp, baqueano-replay]
     env:
       CRATE: ${{ matrix.crate }}
     steps:

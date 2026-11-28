@@ -241,7 +241,7 @@ class CheckTests(Tmp):
     def test_host_path_shapes_only(self):
         (self.d / "nextflow.config").write_text('agent { runner = "langchain4j" } // runner\n')
         self.assertEqual(check.check_version_dir(self.d, forbid=["/home/runner"]), [])
-        for leak in ("/home/runner/work/x", "/__w/nf-agents", "/github/workspace/x", "/Users/dev/x"):
+        for leak in ("/home/runner/work/x", "/__w/baqueano", "/github/workspace/x", "/Users/dev/x"):
             with self.subTest(leak=leak):
                 (self.d / "nextflow.config").write_text(leak + "\n")
                 self.assertFails("nextflow.config: contains host marker")
