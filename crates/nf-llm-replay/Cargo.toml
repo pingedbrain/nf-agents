@@ -2,7 +2,11 @@
 name = "nf-llm-replay"
 version = "0.1.0"
 description = "Record/replay proxy for LLM HTTP APIs, for offline Nextflow agent tests (pre-alpha)."
-publish = false
+readme = "README.md"
+keywords = ["llm", "record-replay", "testing", "proxy", "http"]
+categories = ["development-tools::testing"]
+# Ship the library and the command, not the test fixtures or the Dockerfile.
+include = ["/src", "/README.md"]
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
